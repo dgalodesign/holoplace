@@ -3,6 +3,7 @@ package dev.holoplace;
 import dev.holoplace.command.HoloPlaceCommand;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
+import dev.holoplace.render.GhostHud;
 import dev.holoplace.render.GhostRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.resources.Identifier;
@@ -24,6 +25,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         HoloPlaceKeys.register();
         HoloPlaceCommand.register();
         GhostRenderer.register();
+        GhostHud.register();
 
         LOGGER.info("HoloPlace ready — schematics folder: {}", SchematicLibrary.primaryDir());
     }

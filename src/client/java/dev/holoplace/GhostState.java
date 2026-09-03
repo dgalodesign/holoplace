@@ -1,8 +1,12 @@
 package dev.holoplace;
 
+import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import org.jspecify.annotations.Nullable;
 
 /** Mutable singleton: which schematic is shown, where, and how. Read by the renderer each frame. */
@@ -15,6 +19,9 @@ public final class GhostState {
     private BlockPos anchor = BlockPos.ZERO;
     private float opacity = 0.55f;
     private boolean visible;
+    private boolean seeThrough;
+    private Rotation rotation = Rotation.NONE;
+    private Mirror mirror = Mirror.NONE;
 
     private GhostState() {
     }
@@ -53,6 +60,14 @@ public final class GhostState {
         this.visible = visible;
     }
 
+    public boolean seeThrough() {
+        return seeThrough;
+    }
+
+    public void setSeeThrough(boolean seeThrough) {
+        this.seeThrough = seeThrough;
+    }
+
     public float opacity() {
         return opacity;
     }
@@ -63,5 +78,33 @@ public final class GhostState {
 
     public int opacityAlpha() {
         return Mth.clamp(Math.round(opacity * 255.0f), 1, 255);
+    }
+
+    public Rotation rotation() {
+        return rotation;
+    }
+
+    public void setRotation(Rotation rotation) {
+        this.rotation = rotation;
+    }
+
+    public Mirror mirror() {
+        return mirror;
+    }
+
+    public void setMirror(Mirror mirror) {
+        this.mirror = mirror;
+    }
+
+    /** Transform for the current schematic + rotation + mirror, or {@code null} when no schematic. */
+    public @Nullable PlacementTransform transform() {
+        Schematic s = schematic;
+        if (s == null) {
+            return null;
+        }
+        Vec3i size = s.enclosingSize();
+        return new PlacementTransform(
+                Math.max(1, size.getX()), Math.max(1, size.getY()), Math.max(1, size.getZ()),
+                mirror, rotation);
     }
 }

@@ -2,8 +2,10 @@ package dev.holoplace.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
+import dev.holoplace.SchematicImport;
 import dev.holoplace.SchematicLibrary;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
@@ -15,6 +17,7 @@ import java.util.Optional;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -25,6 +28,10 @@ public final class HoloPlaceCommand {
     private HoloPlaceCommand() {
     }
 
+    private static final SuggestionProvider<FabricClientCommandSource> FILE_SUGGESTIONS =
+            (ctx, builder) -> SharedSuggestionProvider.suggest(
+                    SchematicLibrary.list().stream().map(HoloPlaceCommand::bareName).toList(), builder);
+
     public static void register() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 dispatcher.register(ClientCommands.literal("holoplace")
@@ -32,11 +39,17 @@ public final class HoloPlaceCommand {
                         .then(ClientCommands.literal("list").executes(ctx -> list(ctx.getSource())))
                         .then(ClientCommands.literal("info")
                                 .then(ClientCommands.argument("file", StringArgumentType.greedyString())
+                                        .suggests(FILE_SUGGESTIONS)
                                         .executes(HoloPlaceCommand::info)))
                         .then(ClientCommands.literal("show")
                                 .then(ClientCommands.argument("file", StringArgumentType.greedyString())
+                                        .suggests(FILE_SUGGESTIONS)
                                         .executes(HoloPlaceCommand::show)))
-                        .then(ClientCommands.literal("hide").executes(ctx -> hide(ctx.getSource())))));
+                        .then(ClientCommands.literal("hide").executes(ctx -> hide(ctx.getSource())))
+                        .then(ClientCommands.literal("reset").executes(ctx -> {
+                            PlacementController.get().resetTransform();
+                            return 1;
+                        }))));
     }
 
     private static int list(FabricClientCommandSource source) {
@@ -93,27 +106,15 @@ public final class HoloPlaceCommand {
             source.sendError(Component.literal("No schematic named '" + name + "'"));
             return 0;
         }
-        try {
-            Schematic schem = LitematicaSchematicReader.read(path.get());
-            GhostState ghost = GhostState.get();
-            ghost.setAnchor(source.getPlayer().blockPosition());
-            ghost.setSchematic(schem, path.get().getFileName().toString());
-            HoloPlaceConfig.get().lastSchematic = path.get().getFileName().toString();
-            HoloPlaceConfig.save();
-            // Drop straight into grab mode: look around to position, press G to lock.
-            PlacementController.get().toggleGrab();
-            source.sendFeedback(Component.literal("§aShowing §e" + schem.name()
-                    + " §7— look to position, §fG§7 to lock"));
-            if (!schem.missingBlocks().isEmpty()) {
-                source.sendFeedback(Component.literal("  §c" + schem.missingBlocks().size()
-                        + " unknown block id(s) will be invisible"));
-            }
-            return 1;
-        } catch (Exception e) {
-            source.sendError(Component.literal("Failed to read: " + e.getMessage()));
-            HoloPlaceClient.LOGGER.error("Failed to read {}", path.get(), e);
-            return 0;
-        }
+        HoloPlaceConfig.get().lastSchematic = path.get().getFileName().toString();
+        HoloPlaceConfig.save();
+        SchematicImport.show(path.get(), true);
+        return 1;
+    }
+
+    private static String bareName(Path file) {
+        String name = file.getFileName().toString();
+        return name.toLowerCase().endsWith(".litematic") ? name.substring(0, name.length() - 10) : name;
     }
 
     private static int hide(FabricClientCommandSource source) {

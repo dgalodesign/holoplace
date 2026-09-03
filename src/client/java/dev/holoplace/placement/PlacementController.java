@@ -3,13 +3,14 @@ package dev.holoplace.placement;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.holoplace.GhostState;
 import dev.holoplace.config.HoloPlaceConfig;
+import dev.holoplace.schematic.PlacementTransform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -47,6 +48,17 @@ public final class PlacementController {
         HoloPlaceConfig config = HoloPlaceConfig.get();
         this.reach = Mth.clamp(config.reach, MIN_REACH, MAX_REACH);
         this.verticalOffset = Mth.clamp(config.verticalOffset, -MAX_VOFFSET, MAX_VOFFSET);
+        GhostState.get().setRotation(parseEnum(Rotation.values(), config.rotation, Rotation.NONE));
+        GhostState.get().setMirror(parseEnum(Mirror.values(), config.mirror, Mirror.NONE));
+    }
+
+    private static <E extends Enum<E>> E parseEnum(E[] values, String name, E fallback) {
+        for (E value : values) {
+            if (value.name().equals(name)) {
+                return value;
+            }
+        }
+        return fallback;
     }
 
     public void toggleGrab() {
@@ -80,16 +92,28 @@ public final class PlacementController {
         }
     }
 
-    /** @return true if the scroll was consumed (grab mode active). */
+    /**
+     * @return true if the scroll was consumed. In grab mode the wheel drives reach/height;
+     *     whenever the ghost is visible, Alt+wheel drives opacity.
+     */
     public boolean handleScroll(double yOffset) {
-        if (!grabbing || Minecraft.getInstance().screen != null) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) {
             return false;
         }
         int dir = (int) Math.signum(yOffset);
         if (dir == 0) {
+            return grabbing;
+        }
+        boolean alt = InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
+                || InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
+        if (alt && GhostState.get().isVisible()) {
+            adjustOpacity(dir);
             return true;
         }
-        Minecraft mc = Minecraft.getInstance();
+        if (!grabbing) {
+            return false;
+        }
         boolean shift = InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
                 || InputConstants.isKeyDown(mc.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
         if (shift) {
@@ -98,6 +122,76 @@ public final class PlacementController {
             reach = Mth.clamp(reach + dir, MIN_REACH, MAX_REACH);
         }
         return true;
+    }
+
+    public void rotate(boolean clockwise) {
+        if (notReady()) {
+            return;
+        }
+        GhostState ghost = GhostState.get();
+        Rotation next = clockwise
+                ? PlacementTransform.rotateCw(ghost.rotation())
+                : PlacementTransform.rotateCcw(ghost.rotation());
+        ghost.setRotation(next);
+        HoloPlaceConfig.get().rotation = next.name();
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), "§bRotation: §f" + label(next));
+    }
+
+    public void cycleMirror() {
+        if (notReady()) {
+            return;
+        }
+        GhostState ghost = GhostState.get();
+        Mirror next = PlacementTransform.cycleMirror(ghost.mirror());
+        ghost.setMirror(next);
+        HoloPlaceConfig.get().mirror = next.name();
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), "§bMirror: §f" + label(next));
+    }
+
+    public void resetTransform() {
+        if (notReady()) {
+            return;
+        }
+        GhostState.get().setRotation(Rotation.NONE);
+        GhostState.get().setMirror(Mirror.NONE);
+        HoloPlaceConfig.get().rotation = Rotation.NONE.name();
+        HoloPlaceConfig.get().mirror = Mirror.NONE.name();
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), "§bRotation/mirror reset");
+    }
+
+    public void adjustOpacity(int dir) {
+        if (notReady()) {
+            return;
+        }
+        GhostState ghost = GhostState.get();
+        ghost.setOpacity(ghost.opacity() + dir * 0.05f);
+        HoloPlaceConfig.get().opacity = ghost.opacity();
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), "§bOpacity: §f" + Math.round(ghost.opacity() * 100) + "%");
+    }
+
+    private static boolean notReady() {
+        return GhostState.get().schematic() == null;
+    }
+
+    private static String label(Rotation r) {
+        return switch (r) {
+            case NONE -> "0°";
+            case CLOCKWISE_90 -> "90° CW";
+            case CLOCKWISE_180 -> "180°";
+            case COUNTERCLOCKWISE_90 -> "90° CCW";
+        };
+    }
+
+    private static String label(Mirror m) {
+        return switch (m) {
+            case NONE -> "none";
+            case FRONT_BACK -> "front-back";
+            case LEFT_RIGHT -> "left-right";
+        };
     }
 
     public void tick() {
@@ -128,9 +222,11 @@ public final class PlacementController {
             target = BlockPos.containing(end);
         }
 
-        Vec3i size = GhostState.get().schematic().enclosingSize();
-        int anchorX = target.getX() - Math.max(0, size.getX() - 1) / 2;
-        int anchorZ = target.getZ() - Math.max(0, size.getZ() - 1) / 2;
+        PlacementTransform transform = GhostState.get().transform();
+        int footX = transform == null ? 1 : transform.footprintX();
+        int footZ = transform == null ? 1 : transform.footprintZ();
+        int anchorX = target.getX() - Math.max(0, footX - 1) / 2;
+        int anchorZ = target.getZ() - Math.max(0, footZ - 1) / 2;
         int anchorY = target.getY() + verticalOffset;
         return new BlockPos(anchorX, anchorY, anchorZ);
     }

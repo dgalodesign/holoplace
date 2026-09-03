@@ -2,6 +2,7 @@ package dev.holoplace.render;
 
 import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
+import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import dev.holoplace.schematic.SchematicRegion;
 import com.mojang.blaze3d.vertex.QuadInstance;
@@ -57,7 +58,11 @@ public final class GhostRenderer {
         }
 
         BlockPos anchor = state.anchor();
-        SchematicBlockView view = new SchematicBlockView(schematic, anchor);
+        PlacementTransform transform = state.transform();
+        if (transform == null) {
+            return;
+        }
+        SchematicBlockView view = new SchematicBlockView(schematic, anchor, transform);
         BlockStateModelSet models = mc.getModelManager().getBlockStateModelSet();
 
         Vec3 cam = mc.gameRenderer.getMainCamera().position();
@@ -68,13 +73,16 @@ public final class GhostRenderer {
         QUAD.setLightCoords(FULL_BRIGHT);
 
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+        int schMinX = schematic.min().getX();
+        int schMinY = schematic.min().getY();
+        int schMinZ = schematic.min().getZ();
         int emitted = 0;
 
         for (SchematicRegion region : schematic.regions()) {
             BlockPos regionOrigin = region.minCorner();
-            int baseX = anchor.getX() + (regionOrigin.getX() - schematic.min().getX());
-            int baseY = anchor.getY() + (regionOrigin.getY() - schematic.min().getY());
-            int baseZ = anchor.getZ() + (regionOrigin.getZ() - schematic.min().getZ());
+            int authoredBaseX = regionOrigin.getX() - schMinX;
+            int authoredBaseY = regionOrigin.getY() - schMinY;
+            int authoredBaseZ = regionOrigin.getZ() - schMinZ;
 
             for (int y = 0; y < region.sizeY(); y++) {
                 for (int z = 0; z < region.sizeZ(); z++) {
@@ -83,8 +91,11 @@ public final class GhostRenderer {
                         if (blockState.isAir()) {
                             continue;
                         }
-                        worldPos.set(baseX + x, baseY + y, baseZ + z);
-                        emitted += emitBlock(buffer, view, models, blockState, worldPos, cam);
+                        int[] f = transform.forward(
+                                authoredBaseX + x, authoredBaseY + y, authoredBaseZ + z);
+                        worldPos.set(anchor.getX() + f[0], anchor.getY() + f[1], anchor.getZ() + f[2]);
+                        emitted += emitBlock(buffer, view, models,
+                                transform.applyToState(blockState), worldPos, cam);
                     }
                 }
             }

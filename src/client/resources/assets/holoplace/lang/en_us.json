@@ -1,5 +1,7 @@
 {
 	"key.category.holoplace.main": "HoloPlace",
 	"key.holoplace.open_picker": "Open schematic picker",
-	"key.holoplace.toggle_grab": "Toggle grab / place mode"
+	"key.holoplace.toggle_grab": "Toggle grab / place mode",
+	"key.holoplace.rotate": "Rotate ghost (Shift: counter-clockwise)",
+	"key.holoplace.mirror": "Mirror ghost (cycle)"
 }

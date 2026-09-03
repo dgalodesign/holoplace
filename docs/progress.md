@@ -78,11 +78,43 @@ M2 verified in-game 2026-09-02 — "se ve perfecto". `RenderTypes.translucentMov
 - Flow: `/holoplace show <file>` loads it **and drops into grab mode**; look to position; `G` locks;
   `G` again re-grabs; `/holoplace hide` clears.
 
-### Known gaps (M3)
-- Mixin unverified at runtime (build-time AP validation passed). A broken mixin crashes on launch
-  with a clear message.
-- No click-to-lock / Esc-cancel (by design for MVP — `G` toggles).
-- Placement persists in `GhostState` only for the session; config keeps prefs + last name, not the
-  world-specific anchor.
+M3 verified in-game 2026-09-03 — "funcionó genial". Grab mode + scroll mixin work at runtime.
+Initial commit `e5be7df` on `main`.
 
-## Next — M4: HUD controls (opacity slider, rotate ±90°, mirror) + "see through" pipeline
+### Known gaps (M3)
+- No click-to-lock / Esc-cancel (by design for MVP — `G` toggles).
+- Placement persists in `GhostState` only for the session; config keeps prefs, not the anchor.
+
+## M4 — rotation, mirror, opacity, HUD 🚧 (written, compiles, **needs in-game check**)
+
+- `PlacementTransform` (record, in `schematic/`) — mirror-then-rotate mapping between authored
+  bounding-box space and transformed footprint space, `forward` + `inverse`, footprint XZ swap on
+  quarter turns, plus `applyToState` (`state.mirror(m).rotate(r)`). **5 unit tests** (forward∘inverse
+  identity over every mirror×rotation, bijection onto footprint, known corners).
+- `GhostState` carries `Rotation` + `Mirror`; `GhostRenderer` and `SchematicBlockView` both go
+  through the transform (renderer forward, view inverse for culling). `PlacementController` centres
+  the footprint using the transformed dimensions.
+- Keys: `R` rotate CW / `Shift+R` CCW, `M` cycle mirror. `Alt+wheel` (ghost visible) = opacity ±5%.
+  `/holoplace reset`. All persisted to `config/holoplace/config.json`.
+- `GhostHud` — always-visible one-panel readout (name, pos, footprint size, rotation, mirror,
+  opacity, key hints) via `HudElementRegistry.attachElementAfter(HOTBAR, …)` + `GuiGraphicsExtractor`.
+- 15 unit tests green.
+
+M4 verified in-game 2026-09-03 — "todo funciona perfecto". Rotation, mirror, opacity and the HUD
+panel all work (HUD renders via the new 26.1 extractor model).
+
+## M5 — OS drag-and-drop, flat picker, tab-completion 🚧 (written, compiles, **needs in-game check**)
+
+- `MouseHandlerMixin.onDrop` — a `.litematic` dropped onto the game window is copied into
+  `config/holoplace/schematics/` and shown (into grab mode). MC's own `onDrop` still runs.
+- `SchematicImport` — the one "load + show + grab" path shared by the command, picker and file-drop.
+- `SchematicPickerScreen` (`K`) — flat `LinearLayout` of one button per `.litematic` (capped at 14,
+  overflow hint), one click loads. "Open folder" when empty. No folders, no nested menus.
+- `/holoplace show|info` now tab-complete schematic names.
+
+### Known gaps / risks (M5)
+- Picker + drop unverified at runtime. Picker has no scroll (button list capped) — fine for a
+  handful of files, a real scroll list (`ObjectSelectionList` on the new extractor model) is later.
+- Dropping while a screen is open: MC forwards to `screen.onFilesDrop`; we still import.
+
+## Next — M6: "see through walls" pipeline · per-section VBO cache (perf) · biome tint · fluids/BEs

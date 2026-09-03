@@ -20,9 +20,26 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M0 | Project scaffolding, mod boots | ✅ |
 | M1 | `.litematic` parser → in-memory model + unit tests | ✅ |
 | M2 | Static textured ghost overlay render | ✅ |
-| M3 | Drag-to-position (raycast anchor, wheel distance/height) | 🚧 written, needs in-game check |
-| M4 | HUD controls: opacity slider, rotate ±90°, mirror | |
-| M5 | In-game file picker + OS drag-and-drop import; Sodium pass | |
+| M3 | Drag-to-position (raycast anchor, wheel distance/height) | ✅ |
+| M4 | Rotate / mirror / opacity + always-visible HUD panel | ✅ |
+| M5 | Flat picker screen + OS drag-and-drop import + tab-complete | 🚧 written, needs in-game check |
+
+## Controls
+
+| Input | Action |
+|---|---|
+| Drop a `.litematic` on the window | Import it and enter grab mode |
+| `K` | Open the schematic picker |
+| `/holoplace show <file>` | Load a `.litematic` and enter grab mode (tab-completes) |
+| `/holoplace hide` · `/holoplace reset` | Clear the ghost · reset rotation & mirror |
+| Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
+| Wheel · `Shift`+wheel (grab mode) | Reach distance · vertical offset |
+| `G` | Toggle grab mode / lock |
+| `R` · `Shift`+`R` | Rotate 90° CW · CCW |
+| `M` | Cycle mirror (none → front-back → left-right) |
+| `Alt`+wheel | Opacity ±5% |
+
+Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`.
 
 ## Target
 

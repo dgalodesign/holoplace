@@ -2,6 +2,7 @@ package dev.holoplace;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.holoplace.placement.PlacementController;
+import dev.holoplace.ui.SchematicPickerScreen;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
@@ -16,18 +17,22 @@ public final class HoloPlaceKeys {
     public static final KeyMapping.Category CATEGORY =
             KeyMapping.Category.register(Identifier.fromNamespaceAndPath(HoloPlaceClient.MOD_ID, "main"));
 
-    public static final KeyMapping OPEN_PICKER = new KeyMapping(
-            "key.holoplace.open_picker", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
-
-    public static final KeyMapping TOGGLE_GRAB = new KeyMapping(
-            "key.holoplace.toggle_grab", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+    public static final KeyMapping OPEN_PICKER = key("open_picker", GLFW.GLFW_KEY_K);
+    public static final KeyMapping TOGGLE_GRAB = key("toggle_grab", GLFW.GLFW_KEY_G);
+    public static final KeyMapping ROTATE = key("rotate", GLFW.GLFW_KEY_R);
+    public static final KeyMapping MIRROR = key("mirror", GLFW.GLFW_KEY_M);
 
     private HoloPlaceKeys() {
     }
 
+    private static KeyMapping key(String name, int code) {
+        return new KeyMapping("key.holoplace." + name, InputConstants.Type.KEYSYM, code, CATEGORY);
+    }
+
     public static void register() {
-        KeyMappingHelper.registerKeyMapping(OPEN_PICKER);
-        KeyMappingHelper.registerKeyMapping(TOGGLE_GRAB);
+        for (KeyMapping k : new KeyMapping[] {OPEN_PICKER, TOGGLE_GRAB, ROTATE, MIRROR}) {
+            KeyMappingHelper.registerKeyMapping(k);
+        }
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (OPEN_PICKER.consumeClick()) {
@@ -36,19 +41,22 @@ public final class HoloPlaceKeys {
             while (TOGGLE_GRAB.consumeClick()) {
                 PlacementController.get().toggleGrab();
             }
+            while (ROTATE.consumeClick()) {
+                PlacementController.get().rotate(!shiftDown(client));
+            }
+            while (MIRROR.consumeClick()) {
+                PlacementController.get().cycleMirror();
+            }
             PlacementController.get().tick();
         });
     }
 
-    private static void onOpenPicker(Minecraft client) {
-        // M5: open SchematicPickerScreen.
-        actionBar(client, "§e[HoloPlace] picker not implemented yet — use §f/holoplace list");
-        HoloPlaceClient.LOGGER.info("open_picker pressed");
+    private static boolean shiftDown(Minecraft client) {
+        return InputConstants.isKeyDown(client.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
+                || InputConstants.isKeyDown(client.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
-    private static void actionBar(Minecraft client, String message) {
-        if (client.gui != null) {
-            client.gui.setOverlayMessage(Component.literal(message), false);
-        }
+    private static void onOpenPicker(Minecraft client) {
+        client.setScreen(new SchematicPickerScreen(null));
     }
 }

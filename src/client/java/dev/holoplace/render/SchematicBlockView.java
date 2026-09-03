@@ -1,5 +1,6 @@
 package dev.holoplace.render;
 
+import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import dev.holoplace.schematic.SchematicRegion;
 import net.minecraft.core.BlockPos;
@@ -16,9 +17,9 @@ import net.minecraft.world.level.material.FluidState;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Read-only {@link BlockAndTintGetter} over a placed {@link Schematic}, queried in camera/world
- * space. {@code anchor} is the world position where the schematic's {@link Schematic#min()} corner
- * sits. Lighting is reported full-bright; biome tint is not applied yet (M4).
+ * Read-only {@link BlockAndTintGetter} over a placed, transformed {@link Schematic}, queried in
+ * camera/world space. {@code anchor} is where the transformed footprint's minimum corner sits.
+ * Lighting is reported full-bright; biome tint is not applied yet.
  */
 public final class SchematicBlockView implements BlockAndTintGetter {
 
@@ -26,24 +27,28 @@ public final class SchematicBlockView implements BlockAndTintGetter {
 
     private final Schematic schematic;
     private final BlockPos anchor;
-    private final int offX;
-    private final int offY;
-    private final int offZ;
+    private final PlacementTransform transform;
 
-    public SchematicBlockView(Schematic schematic, BlockPos anchor) {
+    public SchematicBlockView(Schematic schematic, BlockPos anchor, PlacementTransform transform) {
         this.schematic = schematic;
         this.anchor = anchor.immutable();
-        // world -> authored: authored = world - anchor + schematic.min()
-        this.offX = schematic.min().getX() - anchor.getX();
-        this.offY = schematic.min().getY() - anchor.getY();
-        this.offZ = schematic.min().getZ() - anchor.getZ();
+        this.transform = transform;
     }
 
     @Override
     public BlockState getBlockState(BlockPos worldPos) {
-        int ax = worldPos.getX() + offX;
-        int ay = worldPos.getY() + offY;
-        int az = worldPos.getZ() + offZ;
+        int fx = worldPos.getX() - anchor.getX();
+        int fy = worldPos.getY() - anchor.getY();
+        int fz = worldPos.getZ() - anchor.getZ();
+        if (fx < 0 || fy < 0 || fz < 0
+                || fx >= transform.footprintX() || fy >= transform.footprintY() || fz >= transform.footprintZ()) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        int[] authored = transform.inverse(fx, fy, fz);
+        int ax = authored[0] + schematic.min().getX();
+        int ay = authored[1] + schematic.min().getY();
+        int az = authored[2] + schematic.min().getZ();
+
         for (SchematicRegion region : schematic.regions()) {
             BlockPos min = region.minCorner();
             int lx = ax - min.getX();
@@ -53,7 +58,7 @@ public final class SchematicBlockView implements BlockAndTintGetter {
                     && lx < region.sizeX() && ly < region.sizeY() && lz < region.sizeZ()) {
                 BlockState state = region.getBlockState(lx, ly, lz);
                 if (!state.isAir()) {
-                    return state;
+                    return transform.applyToState(state);
                 }
             }
         }
@@ -97,7 +102,7 @@ public final class SchematicBlockView implements BlockAndTintGetter {
 
     @Override
     public int getHeight() {
-        return Math.max(16, schematic.enclosingSize().getY());
+        return Math.max(16, transform.footprintY());
     }
 
     @Override

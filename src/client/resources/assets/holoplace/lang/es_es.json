@@ -1,5 +1,7 @@
 {
 	"key.category.holoplace.main": "HoloPlace",
 	"key.holoplace.open_picker": "Abrir selector de schematic",
-	"key.holoplace.toggle_grab": "Alternar modo agarrar / colocar"
+	"key.holoplace.toggle_grab": "Alternar modo agarrar / colocar",
+	"key.holoplace.rotate": "Rotar fantasma (Shift: antihorario)",
+	"key.holoplace.mirror": "Espejar fantasma (ciclo)"
 }
