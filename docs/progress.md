@@ -179,8 +179,21 @@ M8 verified in-game 2026-09-03 — "funciona perfecto". Commit `69c0c86` on `mai
   plus an overall placed count. Top 30 rows.
 - Test fixtures extracted to `SchematicFixtures` (shared by reader + material tests).
 
-### Known gaps (M9)
-- Same rough counting as the note says: doors/beds/tall plants count per block state; blocks whose
-  item differs from the placed form aren't special-cased.
+M9 verified in-game 2026-09-03 — "funciona perfecto". Commit `239b0aa`.
 
-## Next — M10: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload
+## M10 — per-world placement persistence 🚧 (written, compiles, **needs in-game check**)
+*(user request: keep the schematic where it was left after relaunching)*
+
+- `WorldPlacements` — `config/holoplace/placements.json` maps a world key → {schematic, x/y/z,
+  rotation, mirror}. Key is `sp/<save-folder>` (singleplayer, via
+  `getSingleplayerServer().getWorldPath(ROOT)`) or `mp/<server-ip>`.
+- Saved on: grab-lock, rotate, mirror, reset, show, and on disconnect (unless mid-drag).
+- Restored on `ClientPlayConnectionEvents.JOIN` — reads the schematic file, sets anchor + rotation +
+  mirror, shows the ghost (does *not* enter grab mode). Skips silently if the file is gone.
+- `/holoplace hide` now also forgets the world's placement; `DISCONNECT` clears session ghost state.
+
+### Known gaps (M10)
+- SP key is the save-folder name — renaming a save loses its placement.
+- No per-world entry for "hidden" — hide = forget. A temporary hide toggle could come later.
+
+## Next — M11: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload

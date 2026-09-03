@@ -217,6 +217,8 @@ public final class HoloPlaceCommand {
     private static int hide(FabricClientCommandSource source) {
         PlacementController.get().stopGrab(false);
         GhostState.get().setVisible(false);
+        GhostState.get().setSchematic(null, null);
+        dev.holoplace.config.WorldPlacements.clearCurrent();
         source.sendFeedback(Component.literal("§7Ghost hidden"));
         return 1;
     }

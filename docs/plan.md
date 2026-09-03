@@ -92,7 +92,11 @@ Componentes:
 - Drag-to-position: modo grab (keybind), ancla por raycast con snap a cara, rueda = distancia,
   Shift+rueda = altura, clic/Enter = fijar, Esc = cancelar. **Reemplaza el menú de coordenadas.**
 - Controles visibles: slider de opacidad, rotar ±90°, ciclo de espejo.
-- Persistencia de la última colocación y preferencias.
+- Persistencia de preferencias.
+- **Persistencia de la colocación por mundo**: al cerrar y volver a entrar a un mundo/servidor,
+  el schematic colocado (archivo + ancla + rotación + espejo) se restaura en el mismo sitio.
+  Clave por carpeta de mundo (singleplayer) o IP (multijugador); se guarda en
+  `config/holoplace/placements.json`. Se limpia al ocultar el fantasma. *(implementado en M10)*
 - Compatibilidad verificada con Sodium (setup del usuario).
 
 **Fuera del MVP (anotado como siguiente iteración):**

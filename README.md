@@ -26,7 +26,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M6 | Mesh cache — no per-frame re-tesselation | 🚧 written, needs in-game check |
 | M7 | See-through / x-ray toggle (draw over walls) | ✅ |
 | M8 | Build-assist — hide blocks already placed | ✅ |
-| M9 | Material list (`/holoplace materials`) | 🚧 written, needs in-game check |
+| M9 | Material list (`/holoplace materials`) | ✅ |
+| M10 | Per-world placement persistence (restored on rejoin) | 🚧 written, needs in-game check |
 
 ## Controls
 
@@ -46,7 +47,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | `H` | Toggle build-assist (hide blocks you've already placed) |
 | `Alt`+wheel | Opacity ±5% |
 
-Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`.
+Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`. Where you
+leave a placed schematic is remembered per world and restored when you rejoin.
 
 ## Target
 

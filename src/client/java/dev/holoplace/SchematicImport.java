@@ -1,5 +1,6 @@
 package dev.holoplace;
 
+import dev.holoplace.config.WorldPlacements;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.LitematicaSchematicReader;
 import dev.holoplace.schematic.Schematic;
@@ -59,6 +60,7 @@ public final class SchematicImport {
             GhostState ghost = GhostState.get();
             ghost.setAnchor(mc.player.blockPosition());
             ghost.setSchematic(schematic, file.getFileName().toString());
+            WorldPlacements.saveCurrent();
             if (enterGrab && !PlacementController.get().isGrabbing()) {
                 PlacementController.get().toggleGrab();
             }

@@ -2,11 +2,13 @@ package dev.holoplace;
 
 import dev.holoplace.command.HoloPlaceCommand;
 import dev.holoplace.config.HoloPlaceConfig;
+import dev.holoplace.config.WorldPlacements;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.render.GhostHud;
 import dev.holoplace.render.GhostPipelines;
 import dev.holoplace.render.GhostRenderer;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,11 @@ public class HoloPlaceClient implements ClientModInitializer {
         HoloPlaceCommand.register();
         GhostRenderer.register();
         GhostHud.register();
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+                client.execute(WorldPlacements::restoreForCurrentWorld));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                WorldPlacements.onDisconnect());
 
         LOGGER.info("HoloPlace ready — schematics folder: {}", SchematicLibrary.primaryDir());
     }

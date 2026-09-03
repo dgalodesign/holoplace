@@ -3,6 +3,7 @@ package dev.holoplace.placement;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.holoplace.GhostState;
 import dev.holoplace.config.HoloPlaceConfig;
+import dev.holoplace.config.WorldPlacements;
 import dev.holoplace.schematic.PlacementTransform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -87,6 +88,7 @@ public final class PlacementController {
         HoloPlaceConfig.get().verticalOffset = this.verticalOffset;
         HoloPlaceConfig.save();
         if (lock) {
+            WorldPlacements.saveCurrent();
             BlockPos a = GhostState.get().anchor();
             actionBar(mc, "§aLocked at §f" + a.getX() + " " + a.getY() + " " + a.getZ());
         }
@@ -135,6 +137,7 @@ public final class PlacementController {
         ghost.setRotation(next);
         HoloPlaceConfig.get().rotation = next.name();
         HoloPlaceConfig.save();
+        WorldPlacements.saveCurrent();
         actionBar(Minecraft.getInstance(), "§bRotation: §f" + label(next));
     }
 
@@ -147,6 +150,7 @@ public final class PlacementController {
         ghost.setMirror(next);
         HoloPlaceConfig.get().mirror = next.name();
         HoloPlaceConfig.save();
+        WorldPlacements.saveCurrent();
         actionBar(Minecraft.getInstance(), "§bMirror: §f" + label(next));
     }
 
@@ -159,6 +163,7 @@ public final class PlacementController {
         HoloPlaceConfig.get().rotation = Rotation.NONE.name();
         HoloPlaceConfig.get().mirror = Mirror.NONE.name();
         HoloPlaceConfig.save();
+        WorldPlacements.saveCurrent();
         actionBar(Minecraft.getInstance(), "§bRotation/mirror reset");
     }
 
