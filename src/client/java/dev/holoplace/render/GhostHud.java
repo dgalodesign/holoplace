@@ -50,9 +50,10 @@ public final class GhostHud {
             int placed = state.matchedBlocks();
             int total = state.totalBlocks();
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
-            lines.add("§7build §a" + placed + "§7/§f" + total + " §8(" + pct + "%)");
+            lines.add("§7build §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
+                    + (state.matchBlockOnly() ? " §8[block]" : ""));
         }
-        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · H build · ⎇wheel opacity");
+        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · H build · K menu");
 
         int pad = 3;
         int lineH = font.lineHeight + 1;

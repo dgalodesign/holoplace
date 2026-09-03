@@ -7,6 +7,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 /** Mutable singleton: which schematic is shown, where, and how. Read by the renderer each frame. */
@@ -21,6 +22,7 @@ public final class GhostState {
     private boolean visible;
     private boolean seeThrough;
     private boolean hideMatched;
+    private boolean matchBlockOnly;
     private Rotation rotation = Rotation.NONE;
     private Mirror mirror = Mirror.NONE;
 
@@ -79,6 +81,19 @@ public final class GhostState {
 
     public void setHideMatched(boolean hideMatched) {
         this.hideMatched = hideMatched;
+    }
+
+    public boolean matchBlockOnly() {
+        return matchBlockOnly;
+    }
+
+    public void setMatchBlockOnly(boolean matchBlockOnly) {
+        this.matchBlockOnly = matchBlockOnly;
+    }
+
+    /** True when the world state at a ghost cell counts as "already built". */
+    public boolean matches(BlockState world, BlockState ghost) {
+        return matchBlockOnly ? world.is(ghost.getBlock()) : world == ghost;
     }
 
     public void setRemainingBlocks(int matchedBlocks, int totalBlocks) {

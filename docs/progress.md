@@ -246,7 +246,20 @@ is a bigger, separate task — deferred unless wanted.
 
 ### Known gaps (M13)
 - Markers use depth-tested lines, so in x-ray mode they're still occluded by walls.
-- BE blocks that *do* have a partial model (bell, decorated pot, campfire) render their model and
-  get no marker — fine.
 
-## Next — M14: real block-entity models (opt-in) · GPU-buffer upload (perf for huge schematics)
+M13 built (not separately verified — user said "continua"). Commit `6f28bbc`.
+
+## M14 — one controls screen + block-only match 🚧 (written, compiles, **needs in-game check**)
+
+- `HoloPlaceScreen` (`K`) replaces the picker: one flat screen with an opacity slider
+  (`AbstractSliderButton`, 5–100 %), checkboxes for see-through / hide-placed / match-block-only,
+  Hide-Show and Reset buttons, and the schematic list (capped at 8). Every change persists.
+- `GhostState.matches(world, ghost)` — exact state `==` or (block-only mode) `world.is(block)`.
+  Used by the renderer (blocks, fluids, BE markers) and `/holoplace materials`. Fixes leaves /
+  redstone / stairs-shape never counting as placed.
+- Old `SchematicPickerScreen` removed.
+
+### Known gaps (M14)
+- Screen has no scroll — schematic list still capped (8 here).
+
+## Next — M15: GPU-buffer upload (perf for huge schematics) · real block-entity models (opt-in)

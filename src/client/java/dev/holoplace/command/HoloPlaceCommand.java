@@ -207,7 +207,7 @@ public final class HoloPlaceCommand {
                         }
                         int[] f = transform.forward(baseX + x, baseY + y, baseZ + z);
                         pos.set(anchor.getX() + f[0], anchor.getY() + f[1], anchor.getZ() + f[2]);
-                        if (level.getBlockState(pos) == transform.applyToState(raw)) {
+                        if (ghost.matches(level.getBlockState(pos), transform.applyToState(raw))) {
                             placed.merge(item, 1, Integer::sum);
                         }
                     }

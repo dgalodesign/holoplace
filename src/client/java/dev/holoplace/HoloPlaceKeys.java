@@ -2,7 +2,7 @@ package dev.holoplace;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.holoplace.placement.PlacementController;
-import dev.holoplace.ui.SchematicPickerScreen;
+import dev.holoplace.ui.HoloPlaceScreen;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
@@ -66,6 +66,6 @@ public final class HoloPlaceKeys {
     }
 
     private static void onOpenPicker(Minecraft client) {
-        client.setScreen(new SchematicPickerScreen(null));
+        client.setScreen(new HoloPlaceScreen());
     }
 }

@@ -22,6 +22,7 @@ public final class HoloPlaceConfig {
     public int verticalOffset = 0;
     public boolean seeThrough = false;
     public boolean hideMatched = false;
+    public boolean matchBlockOnly = false;
     public String rotation = "NONE";
     public String mirror = "NONE";
     public String lastSchematic = "";

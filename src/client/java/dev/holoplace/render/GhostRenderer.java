@@ -96,7 +96,7 @@ public final class GhostRenderer {
             if (hideMatched) {
                 worldPos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i),
                         anchor.getZ() + m.blockZ(i));
-                if (level.getBlockState(worldPos) == m.blockState(i)) {
+                if (state.matches(level.getBlockState(worldPos), m.blockState(i))) {
                     continue;
                 }
             }
@@ -133,7 +133,7 @@ public final class GhostRenderer {
 
         for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
             worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
-            if (hideMatched && level.getBlockState(worldPos) == m.beState(i)) {
+            if (hideMatched && GhostState.get().matches(level.getBlockState(worldPos), m.beState(i))) {
                 continue;
             }
             ShapeRenderer.renderShape(ps, lines, Shapes.block(),
@@ -154,7 +154,7 @@ public final class GhostRenderer {
             worldPos.set(anchor.getX() + m.fluidX(i), anchor.getY() + m.fluidY(i),
                     anchor.getZ() + m.fluidZ(i));
             BlockState state = m.fluidState(i);
-            if (hideMatched && level.getBlockState(worldPos) == state) {
+            if (hideMatched && GhostState.get().matches(level.getBlockState(worldPos), state)) {
                 continue;
             }
             fluidRenderer.tesselate(view, worldPos, output, state, state.getFluidState());

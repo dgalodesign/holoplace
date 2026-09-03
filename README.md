@@ -30,14 +30,15 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M10 | Per-world placement persistence (restored on rejoin) | ✅ |
 | M11 | Biome tint (grass / leaves / water colour) | ✅ |
 | M12 | Fluids (water / lava sources, waterlogged blocks) | ✅ |
-| M13 | Block-entity markers (wire cube where chests/signs go) | 🚧 written, needs in-game check |
+| M13 | Block-entity markers (wire cube where chests/signs go) | ✅ |
+| M14 | One controls screen (opacity slider + toggles + list) · block-only match | 🚧 written, needs in-game check |
 
 ## Controls
 
 | Input | Action |
 |---|---|
 | Drop a `.litematic` on the window | Import it and enter grab mode |
-| `K` | Open the schematic picker |
+| `K` | Open the HoloPlace screen (list + all display controls) |
 | `/holoplace show <file>` | Load a `.litematic` and enter grab mode (tab-completes) |
 | `/holoplace hide` · `/holoplace show` | Stop / resume drawing (placement is kept and still restores on rejoin) |
 | `/holoplace clear` · `/holoplace reset` | Forget the placement · reset rotation & mirror |
