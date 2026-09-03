@@ -25,7 +25,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M5 | Flat picker screen + OS drag-and-drop import + tab-complete | ✅ |
 | M6 | Mesh cache — no per-frame re-tesselation | 🚧 written, needs in-game check |
 | M7 | See-through / x-ray toggle (draw over walls) | ✅ |
-| M8 | Build-assist — hide blocks already placed | 🚧 written, needs in-game check |
+| M8 | Build-assist — hide blocks already placed | ✅ |
+| M9 | Material list (`/holoplace materials`) | 🚧 written, needs in-game check |
 
 ## Controls
 
@@ -35,6 +36,7 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | `K` | Open the schematic picker |
 | `/holoplace show <file>` | Load a `.litematic` and enter grab mode (tab-completes) |
 | `/holoplace hide` · `/holoplace reset` | Clear the ghost · reset rotation & mirror |
+| `/holoplace materials` | List blocks needed (and still missing) for the placed schematic |
 | Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
 | Wheel · `Shift`+wheel (grab mode) | Reach distance · vertical offset |
 | `G` | Toggle grab mode / lock |

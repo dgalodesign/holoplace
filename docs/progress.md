@@ -167,5 +167,20 @@ at runtime. Commits `0d7aba3` (M6) and `2ac665e` (M7) on `main`.
 ## Controls now: G grab · R/⇧R rotate · M mirror · X x-ray · H build-assist · Alt+wheel opacity ·
 wheel/⇧wheel reach/height · K picker · drop a .litematic on the window
 
-## Next — M9: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload ·
-material list (`/holoplace materials`)
+M8 verified in-game 2026-09-03 — "funciona perfecto". Commit `69c0c86` on `main`.
+
+## M9 — material list 🚧 (written, compiles, **needs in-game check**)
+
+- `MaterialList` (in `schematic/`, pure + 3 unit tests) — `totals(schematic)` aggregates blocks by
+  `state.asItem()` (air / no-item blocks dropped), sorted descending; `remaining(schematic, placed)`
+  subtracts an already-satisfied map.
+- `/holoplace materials` — prints the totals, and when a schematic is placed in a world, walks it
+  through the transform + anchor to count blocks already matching and shows `<left>/<total>` per item
+  plus an overall placed count. Top 30 rows.
+- Test fixtures extracted to `SchematicFixtures` (shared by reader + material tests).
+
+### Known gaps (M9)
+- Same rough counting as the note says: doors/beds/tall plants count per block state; blocks whose
+  item differs from the placed form aren't special-cased.
+
+## Next — M10: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload
