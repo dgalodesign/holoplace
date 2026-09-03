@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -105,8 +106,30 @@ public final class GhostRenderer {
             shown++;
         }
 
+        if (m.fluidCount() > 0) {
+            renderFluids(m, anchor, level, mc, buffer, hideMatched);
+        }
+
         ctx.bufferSource().endBatch(renderType);
         state.setRemainingBlocks(hideMatched ? m.blockCount() - shown : -1, m.blockCount());
+    }
+
+    private static void renderFluids(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc,
+                                     VertexConsumer buffer, boolean hideMatched) {
+        SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, m.transform());
+        FluidRenderer fluidRenderer = new FluidRenderer(mc.getModelManager().getFluidStateModelSet());
+        FluidRenderer.Output output = layer -> buffer;
+        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+
+        for (int i = 0, n = m.fluidCount(); i < n; i++) {
+            worldPos.set(anchor.getX() + m.fluidX(i), anchor.getY() + m.fluidY(i),
+                    anchor.getZ() + m.fluidZ(i));
+            BlockState state = m.fluidState(i);
+            if (hideMatched && level.getBlockState(worldPos) == state) {
+                continue;
+            }
+            fluidRenderer.tesselate(view, worldPos, output, state, state.getFluidState());
+        }
     }
 
     /** Per-block tint colour (index 0), recomputed only when the mesh or anchor changes. */

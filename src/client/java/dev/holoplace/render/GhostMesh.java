@@ -40,9 +40,15 @@ final class GhostMesh {
     private final int[] quadStart; // length blockCount + 1
     private final Quad[] quads;
 
+    private final int[] fluidX;
+    private final int[] fluidY;
+    private final int[] fluidZ;
+    private final BlockState[] fluidStates;
+
     private GhostMesh(Schematic schematic, PlacementTransform transform,
                      int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
-                     int[] quadStart, Quad[] quads) {
+                     int[] quadStart, Quad[] quads,
+                     int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates) {
         this.schematic = schematic;
         this.transform = transform;
         this.blockX = blockX;
@@ -51,10 +57,22 @@ final class GhostMesh {
         this.blockStates = blockStates;
         this.quadStart = quadStart;
         this.quads = quads;
+        this.fluidX = fluidX;
+        this.fluidY = fluidY;
+        this.fluidZ = fluidZ;
+        this.fluidStates = fluidStates;
     }
 
     boolean matches(Schematic schematic, PlacementTransform transform) {
         return this.schematic == schematic && this.transform.equals(transform);
+    }
+
+    Schematic schematic() {
+        return schematic;
+    }
+
+    PlacementTransform transform() {
+        return transform;
     }
 
     int blockCount() {
@@ -89,6 +107,26 @@ final class GhostMesh {
         return quads.length;
     }
 
+    int fluidCount() {
+        return fluidX.length;
+    }
+
+    int fluidX(int i) {
+        return fluidX[i];
+    }
+
+    int fluidY(int i) {
+        return fluidY[i];
+    }
+
+    int fluidZ(int i) {
+        return fluidZ[i];
+    }
+
+    BlockState fluidState(int i) {
+        return fluidStates[i];
+    }
+
     static GhostMesh build(Schematic schematic, PlacementTransform transform) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet models = mc.getModelManager().getBlockStateModelSet();
@@ -100,6 +138,8 @@ final class GhostMesh {
         List<BlockState> states = new ArrayList<>();
         List<Integer> starts = new ArrayList<>();
         List<Quad> allQuads = new ArrayList<>();
+        List<int[]> fluidPositions = new ArrayList<>();
+        List<BlockState> fluidStateList = new ArrayList<>();
 
         int schMinX = schematic.min().getX();
         int schMinY = schematic.min().getY();
@@ -122,6 +162,11 @@ final class GhostMesh {
                         int[] f = transform.forward(authoredBaseX + x, authoredBaseY + y, authoredBaseZ + z);
                         fp.set(f[0], f[1], f[2]);
                         BlockState state = transform.applyToState(raw);
+
+                        if (!state.getFluidState().isEmpty()) {
+                            fluidPositions.add(new int[] {f[0], f[1], f[2]});
+                            fluidStateList.add(state);
+                        }
 
                         int before = allQuads.size();
                         collectBlock(allQuads, view, models, random, parts, state, fp);
@@ -151,8 +196,20 @@ final class GhostMesh {
         }
         quadStart[blockCount] = allQuads.size();
 
+        int fluidCount = fluidPositions.size();
+        int[] fx = new int[fluidCount];
+        int[] fy = new int[fluidCount];
+        int[] fz = new int[fluidCount];
+        for (int i = 0; i < fluidCount; i++) {
+            int[] p = fluidPositions.get(i);
+            fx[i] = p[0];
+            fy[i] = p[1];
+            fz[i] = p[2];
+        }
+
         return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
-                allQuads.toArray(new Quad[0]));
+                allQuads.toArray(new Quad[0]),
+                fx, fy, fz, fluidStateList.toArray(new BlockState[0]));
     }
 
     private static void collectBlock(List<Quad> out, SchematicBlockView view, BlockStateModelSet models,

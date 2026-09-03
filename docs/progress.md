@@ -213,4 +213,23 @@ M10 verified in-game 2026-09-03 (hide/clear split too — "revisado y perfecto")
 - Only tint index 0 is cached; blocks with a second tint layer use index 0's colour (rare).
 - Tint recompute on every drag tick — fine at typical sizes, could hitch on a very large schematic.
 
-## Next — M12: fluids (water/lava sources) · block entities (chests/signs) · GPU-buffer upload
+M11 verified in-game 2026-09-04 — "esta perfecto". Commit `4e27e91`.
+
+## M12 — fluids 🚧 (written, compiles, **needs in-game check**)
+
+- `GhostMesh` also collects fluid blocks (`state.getFluidState()` non-empty — plain water/lava and
+  waterlogged blocks): footprint-local position + transformed state.
+- `GhostRenderer.renderFluids` — per fluid block, `FluidRenderer.tesselate(view, worldPos, output,
+  state, fluidState)` writing into the same ghost buffer (`FluidRenderer.Output.getBuilder` takes a
+  `VertexConsumer` directly). Uses a render-anchored `SchematicBlockView` for neighbour/height
+  checks. Respects build-assist.
+- `SchematicBlockView.getBlockTint` now delegates to the real `ClientLevel` (the render-time view is
+  world-anchored) so water takes the biome colour.
+
+### Known gaps (M12)
+- Fluid vertices are written straight into the translucent moving-block render type; if the vertex
+  format disagrees this will look wrong — needs the visual check. Fluid opacity isn't scaled by the
+  ghost opacity slider.
+- Per-frame fluid tesselation (not cached like block quads) — fine unless a schematic is mostly water.
+
+## Next — M13: block entities (chests/signs/beds/skulls render as near-nothing today) · GPU-buffer upload

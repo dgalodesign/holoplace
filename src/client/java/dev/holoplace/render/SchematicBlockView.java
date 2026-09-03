@@ -92,7 +92,10 @@ public final class SchematicBlockView implements BlockAndTintGetter {
 
     @Override
     public int getBlockTint(BlockPos pos, ColorResolver colorResolver) {
-        return -1;
+        // At render time this view is anchored in the world, so pos is a real world position:
+        // sample the real biome so water / fluids take the local colour.
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        return level != null ? level.getBlockTint(pos, colorResolver) : -1;
     }
 
     @Override
