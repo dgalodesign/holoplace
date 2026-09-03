@@ -8,6 +8,7 @@ import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.SchematicImport;
 import dev.holoplace.SchematicLibrary;
 import dev.holoplace.config.HoloPlaceConfig;
+import dev.holoplace.config.WorldPlacements;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.MaterialList;
 import dev.holoplace.schematic.PlacementTransform;
@@ -47,10 +48,12 @@ public final class HoloPlaceCommand {
                                         .suggests(FILE_SUGGESTIONS)
                                         .executes(HoloPlaceCommand::info)))
                         .then(ClientCommands.literal("show")
+                                .executes(ctx -> showAgain(ctx.getSource()))
                                 .then(ClientCommands.argument("file", StringArgumentType.greedyString())
                                         .suggests(FILE_SUGGESTIONS)
                                         .executes(HoloPlaceCommand::show)))
                         .then(ClientCommands.literal("hide").executes(ctx -> hide(ctx.getSource())))
+                        .then(ClientCommands.literal("clear").executes(ctx -> clear(ctx.getSource())))
                         .then(ClientCommands.literal("reset").executes(ctx -> {
                             PlacementController.get().resetTransform();
                             return 1;
@@ -214,12 +217,39 @@ public final class HoloPlaceCommand {
         return placed;
     }
 
+    /** Stop drawing the ghost but keep it placed — {@code /holoplace show} brings it back, and it
+     *  still restores on rejoin. Use {@code /holoplace clear} to forget it entirely. */
     private static int hide(FabricClientCommandSource source) {
+        GhostState ghost = GhostState.get();
+        if (ghost.schematic() == null) {
+            source.sendError(Component.literal("Nothing to hide"));
+            return 0;
+        }
         PlacementController.get().stopGrab(false);
-        GhostState.get().setVisible(false);
+        ghost.setVisible(false);
+        WorldPlacements.saveCurrent();
+        source.sendFeedback(Component.literal("§7Ghost hidden §8(/holoplace show to bring it back)"));
+        return 1;
+    }
+
+    private static int showAgain(FabricClientCommandSource source) {
+        GhostState ghost = GhostState.get();
+        if (ghost.schematic() == null) {
+            return list(source);
+        }
+        ghost.setVisible(true);
+        WorldPlacements.saveCurrent();
+        source.sendFeedback(Component.literal("§aShowing §e" + ghost.sourceName()));
+        return 1;
+    }
+
+    /** Forget the placement entirely: no ghost, nothing restored on rejoin. */
+    private static int clear(FabricClientCommandSource source) {
+        PlacementController.get().stopGrab(false);
         GhostState.get().setSchematic(null, null);
-        dev.holoplace.config.WorldPlacements.clearCurrent();
-        source.sendFeedback(Component.literal("§7Ghost hidden"));
+        GhostState.get().setVisible(false);
+        WorldPlacements.clearCurrent();
+        source.sendFeedback(Component.literal("§7Placement cleared"));
         return 1;
     }
 

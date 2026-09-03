@@ -187,13 +187,15 @@ M9 verified in-game 2026-09-03 — "funciona perfecto". Commit `239b0aa`.
 - `WorldPlacements` — `config/holoplace/placements.json` maps a world key → {schematic, x/y/z,
   rotation, mirror}. Key is `sp/<save-folder>` (singleplayer, via
   `getSingleplayerServer().getWorldPath(ROOT)`) or `mp/<server-ip>`.
-- Saved on: grab-lock, rotate, mirror, reset, show, and on disconnect (unless mid-drag).
+- Saved on: grab-lock, rotate, mirror, reset, show/hide, and on disconnect (unless mid-drag).
 - Restored on `ClientPlayConnectionEvents.JOIN` — reads the schematic file, sets anchor + rotation +
-  mirror, shows the ghost (does *not* enter grab mode). Skips silently if the file is gone.
-- `/holoplace hide` now also forgets the world's placement; `DISCONNECT` clears session ghost state.
+  mirror, and its visible/hidden state. Skips silently if the file is gone.
+- **Hide ≠ clear** (user point): `/holoplace hide` stops drawing but keeps the placement (persisted
+  as hidden, `/holoplace show` with no arg brings it back, still restores on rejoin). `/holoplace
+  clear` forgets it entirely. `DISCONNECT` saves then clears session state.
 
 ### Known gaps (M10)
 - SP key is the save-folder name — renaming a save loses its placement.
-- No per-world entry for "hidden" — hide = forget. A temporary hide toggle could come later.
+- No hide/show keybind yet (commands only).
 
 ## Next — M11: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload

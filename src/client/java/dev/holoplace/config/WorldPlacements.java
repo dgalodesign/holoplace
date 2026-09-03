@@ -39,6 +39,7 @@ public final class WorldPlacements {
         public int z;
         public String rotation = "NONE";
         public String mirror = "NONE";
+        public boolean hidden = false;
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -95,6 +96,7 @@ public final class WorldPlacements {
         r.z = ghost.anchor().getZ();
         r.rotation = ghost.rotation().name();
         r.mirror = ghost.mirror().name();
+        r.hidden = !ghost.isVisible();
         data().put(key, r);
         save();
     }
@@ -129,8 +131,10 @@ public final class WorldPlacements {
             ghost.setMirror(parse(Mirror.values(), r.mirror, Mirror.NONE));
             ghost.setAnchor(new BlockPos(r.x, r.y, r.z));
             ghost.setSchematic(schematic, file.get().getFileName().toString());
+            ghost.setVisible(!r.hidden);
             GhostRenderer.invalidate();
-            HoloPlaceClient.LOGGER.info("Restored {} at {} {} {} in {}", r.schematic, r.x, r.y, r.z, key);
+            HoloPlaceClient.LOGGER.info("Restored {} at {} {} {} in {} ({})",
+                    r.schematic, r.x, r.y, r.z, key, r.hidden ? "hidden" : "visible");
         } catch (Exception e) {
             HoloPlaceClient.LOGGER.error("Could not restore placement for {}", key, e);
         }

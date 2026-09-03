@@ -36,7 +36,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | Drop a `.litematic` on the window | Import it and enter grab mode |
 | `K` | Open the schematic picker |
 | `/holoplace show <file>` | Load a `.litematic` and enter grab mode (tab-completes) |
-| `/holoplace hide` · `/holoplace reset` | Clear the ghost · reset rotation & mirror |
+| `/holoplace hide` · `/holoplace show` | Stop / resume drawing (placement is kept and still restores on rejoin) |
+| `/holoplace clear` · `/holoplace reset` | Forget the placement · reset rotation & mirror |
 | `/holoplace materials` | List blocks needed (and still missing) for the placed schematic |
 | Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
 | Wheel · `Shift`+wheel (grab mode) | Reach distance · vertical offset |
