@@ -27,7 +27,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M7 | See-through / x-ray toggle (draw over walls) | ✅ |
 | M8 | Build-assist — hide blocks already placed | ✅ |
 | M9 | Material list (`/holoplace materials`) | ✅ |
-| M10 | Per-world placement persistence (restored on rejoin) | 🚧 written, needs in-game check |
+| M10 | Per-world placement persistence (restored on rejoin) | ✅ |
+| M11 | Biome tint (grass / leaves / water colour) | 🚧 written, needs in-game check |
 
 ## Controls
 

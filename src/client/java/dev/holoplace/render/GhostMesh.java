@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 final class GhostMesh {
 
     /** Quad plus its block origin in footprint-local space (0..footprint on each axis). */
-    record Quad(float x, float y, float z, BakedQuad quad) {
+    record Quad(float x, float y, float z, BakedQuad quad, boolean tinted) {
     }
 
     private static final Direction[] FACES = Direction.values();
@@ -181,7 +181,7 @@ final class GhostMesh {
 
     private static void addQuads(List<Quad> out, List<BakedQuad> quads, float px, float py, float pz) {
         for (BakedQuad quad : quads) {
-            out.add(new Quad(px, py, pz, quad));
+            out.add(new Quad(px, py, pz, quad, quad.materialInfo().isTinted()));
         }
     }
 }

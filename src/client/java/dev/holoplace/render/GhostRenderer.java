@@ -6,26 +6,33 @@ import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.List;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Draws the current {@link GhostState} schematic as a textured, translucent ghost during
  * {@code AFTER_TRANSLUCENT_TERRAIN}. Geometry is baked once by {@link GhostMesh}; each frame the
  * renderer only walks the baked blocks, optionally skipping any that already match the world
- * (build-assist), and replays their quads with a per-frame translate and colour.
+ * (build-assist), and replays their quads with a per-frame translate and colour. Biome tint
+ * (grass/leaves/water) is resolved against the real world and cached until the anchor moves.
  */
 public final class GhostRenderer {
 
     private static final int FULL_BRIGHT = 0x00F000F0;
+    private static final int NO_TINT = -1;
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
+    private static int @Nullable [] blockTint;
+    private static long tintKey;
 
     private GhostRenderer() {
     }
@@ -36,6 +43,7 @@ public final class GhostRenderer {
 
     public static void invalidate() {
         mesh = null;
+        blockTint = null;
     }
 
     private static void render(LevelRenderContext ctx) {
@@ -55,20 +63,24 @@ public final class GhostRenderer {
         if (mesh == null || !mesh.matches(schematic, transform)) {
             long start = System.nanoTime();
             mesh = GhostMesh.build(schematic, transform);
+            blockTint = null;
             HoloPlaceClient.LOGGER.debug("Rebuilt ghost mesh: {} blocks / {} quads in {} ms",
                     mesh.blockCount(), mesh.totalQuads(), (System.nanoTime() - start) / 1_000_000);
         }
         GhostMesh m = mesh;
 
-        var cam = mc.gameRenderer.getMainCamera().position();
         BlockPos anchor = state.anchor();
+        int[] tint = tintFor(m, anchor, level, mc);
+
+        var cam = mc.gameRenderer.getMainCamera().position();
         float ox = (float) (anchor.getX() - cam.x);
         float oy = (float) (anchor.getY() - cam.y);
         float oz = (float) (anchor.getZ() - cam.z);
+        int alpha = state.opacityAlpha() << 24;
+        int white = alpha | 0x00FFFFFF;
 
         RenderType renderType = GhostPipelines.forGhost(state.seeThrough());
         VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
-        QUAD.setColor((state.opacityAlpha() << 24) | 0x00FFFFFF);
         QUAD.setLightCoords(FULL_BRIGHT);
 
         boolean hideMatched = state.hideMatched();
@@ -83,20 +95,42 @@ public final class GhostRenderer {
                     continue;
                 }
             }
+            int tinted = tint[i] == NO_TINT ? white : alpha | (tint[i] & 0x00FFFFFF);
             int end = m.quadStart(i + 1);
             for (int q = m.quadStart(i); q < end; q++) {
                 GhostMesh.Quad quad = m.quad(q);
+                QUAD.setColor(quad.tinted() ? tinted : white);
                 buffer.putBlockBakedQuad(quad.x() + ox, quad.y() + oy, quad.z() + oz, quad.quad(), QUAD);
             }
             shown++;
         }
 
         ctx.bufferSource().endBatch(renderType);
+        state.setRemainingBlocks(hideMatched ? m.blockCount() - shown : -1, m.blockCount());
+    }
 
-        if (hideMatched) {
-            state.setRemainingBlocks(m.blockCount() - shown, m.blockCount());
-        } else {
-            state.setRemainingBlocks(-1, m.blockCount());
+    /** Per-block tint colour (index 0), recomputed only when the mesh or anchor changes. */
+    private static int[] tintFor(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc) {
+        long key = ((long) System.identityHashCode(m) << 32) ^ anchor.asLong();
+        int[] cached = blockTint;
+        if (cached != null && key == tintKey && cached.length == m.blockCount()) {
+            return cached;
         }
+        int[] tint = new int[m.blockCount()];
+        var colors = mc.getBlockColors();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int i = 0; i < tint.length; i++) {
+            BlockState bs = m.blockState(i);
+            List<BlockTintSource> sources = colors.getTintSources(bs);
+            if (sources.isEmpty()) {
+                tint[i] = NO_TINT;
+                continue;
+            }
+            pos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i), anchor.getZ() + m.blockZ(i));
+            tint[i] = sources.get(0).colorInWorld(bs, level, pos);
+        }
+        blockTint = tint;
+        tintKey = key;
+        return tint;
     }
 }

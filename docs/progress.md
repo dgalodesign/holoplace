@@ -198,4 +198,19 @@ M9 verified in-game 2026-09-03 — "funciona perfecto". Commit `239b0aa`.
 - SP key is the save-folder name — renaming a save loses its placement.
 - No hide/show keybind yet (commands only).
 
-## Next — M11: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload
+M10 verified in-game 2026-09-03 (hide/clear split too — "revisado y perfecto"). Commits `71dbdf7`,
+`a8a9a9d`.
+
+## M11 — biome tint 🚧 (written, compiles, **needs in-game check**)
+
+- `GhostMesh.Quad` gains a `tinted` flag (from `quad.materialInfo().isTinted()`, computed at build).
+- `GhostRenderer` resolves per-block tint (index 0) via `BlockColors.getTintSources(state)` →
+  `BlockTintSource.colorInWorld(state, mc.level, worldPos)` — against the **real** world, so
+  grass/leaves/water/redstone take the local biome colour. Cached per (mesh, anchor); recomputed
+  only when the anchor moves. Untinted quads still render white.
+
+### Known gaps (M11)
+- Only tint index 0 is cached; blocks with a second tint layer use index 0's colour (rare).
+- Tint recompute on every drag tick — fine at typical sizes, could hitch on a very large schematic.
+
+## Next — M12: fluids (water/lava sources) · block entities (chests/signs) · GPU-buffer upload
