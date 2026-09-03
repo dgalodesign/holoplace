@@ -29,7 +29,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M9 | Material list (`/holoplace materials`) | ✅ |
 | M10 | Per-world placement persistence (restored on rejoin) | ✅ |
 | M11 | Biome tint (grass / leaves / water colour) | ✅ |
-| M12 | Fluids (water / lava sources, waterlogged blocks) | 🚧 written, needs in-game check |
+| M12 | Fluids (water / lava sources, waterlogged blocks) | ✅ |
+| M13 | Block-entity markers (wire cube where chests/signs go) | 🚧 written, needs in-game check |
 
 ## Controls
 

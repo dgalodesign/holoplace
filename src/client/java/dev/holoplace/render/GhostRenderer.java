@@ -4,6 +4,7 @@ import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.List;
@@ -12,10 +13,13 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.Shapes;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -109,9 +113,34 @@ public final class GhostRenderer {
         if (m.fluidCount() > 0) {
             renderFluids(m, anchor, level, mc, buffer, hideMatched);
         }
-
         ctx.bufferSource().endBatch(renderType);
+
+        if (m.blockEntityCount() > 0) {
+            renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched);
+        }
+
         state.setRemainingBlocks(hideMatched ? m.blockCount() - shown : -1, m.blockCount());
+    }
+
+    /** Block entities render (almost) nothing as a model, so mark their cells with a wire cube. */
+    private static void renderBlockEntityMarkers(GhostMesh m, BlockPos anchor, ClientLevel level,
+                                                 net.minecraft.world.phys.Vec3 cam,
+                                                 LevelRenderContext ctx, boolean hideMatched) {
+        int color = (GhostState.get().opacityAlpha() << 24) | 0x0055CCFF;
+        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        PoseStack ps = new PoseStack();
+        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+
+        for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
+            worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
+            if (hideMatched && level.getBlockState(worldPos) == m.beState(i)) {
+                continue;
+            }
+            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                    worldPos.getX() - cam.x, worldPos.getY() - cam.y, worldPos.getZ() - cam.z,
+                    color, 2.0f);
+        }
+        ctx.bufferSource().endBatch(RenderTypes.lines());
     }
 
     private static void renderFluids(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc,

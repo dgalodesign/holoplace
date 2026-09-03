@@ -227,9 +227,26 @@ M11 verified in-game 2026-09-04 — "esta perfecto". Commit `4e27e91`.
   world-anchored) so water takes the biome colour.
 
 ### Known gaps (M12)
-- Fluid vertices are written straight into the translucent moving-block render type; if the vertex
-  format disagrees this will look wrong — needs the visual check. Fluid opacity isn't scaled by the
-  ghost opacity slider.
+- Fluid opacity isn't scaled by the ghost opacity slider.
 - Per-frame fluid tesselation (not cached like block quads) — fine unless a schematic is mostly water.
 
-## Next — M13: block entities (chests/signs/beds/skulls render as near-nothing today) · GPU-buffer upload
+M12 verified in-game 2026-09-04 — "listo, revisado". Commit `d451f63`.
+
+## M13 — block-entity markers 🚧 (written, compiles, **needs in-game check**)
+
+Block entities that render (almost) no model — chests, signs, beds, banners, skulls, conduits —
+were invisible in the ghost. `GhostMesh` now also collects "BE block, produced 0 model quads", and
+`GhostRenderer.renderBlockEntityMarkers` draws a translucent **wire cube** at each such cell
+(`ShapeRenderer.renderShape` + `RenderTypes.lines()`), honouring build-assist.
+
+This is a **placeholder** — it shows *where* a chest/sign goes, not the actual chest model. Real
+block-entity rendering (construct `BlockEntity.loadStatic` from the schematic's `TileEntities` NBT,
+run the BER via `BlockEntityRenderDispatcher.tryExtractRenderState` + `submit` in `COLLECT_SUBMITS`)
+is a bigger, separate task — deferred unless wanted.
+
+### Known gaps (M13)
+- Markers use depth-tested lines, so in x-ray mode they're still occluded by walls.
+- BE blocks that *do* have a partial model (bell, decorated pot, campfire) render their model and
+  get no marker — fine.
+
+## Next — M14: real block-entity models (opt-in) · GPU-buffer upload (perf for huge schematics)

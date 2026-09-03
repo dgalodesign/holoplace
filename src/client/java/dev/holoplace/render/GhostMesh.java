@@ -45,10 +45,17 @@ final class GhostMesh {
     private final int[] fluidZ;
     private final BlockState[] fluidStates;
 
+    /** Blocks with a block entity that render (almost) no model — chests, signs, beds, skulls, … */
+    private final int[] beX;
+    private final int[] beY;
+    private final int[] beZ;
+    private final BlockState[] beStates;
+
     private GhostMesh(Schematic schematic, PlacementTransform transform,
                      int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
                      int[] quadStart, Quad[] quads,
-                     int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates) {
+                     int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates,
+                     int[] beX, int[] beY, int[] beZ, BlockState[] beStates) {
         this.schematic = schematic;
         this.transform = transform;
         this.blockX = blockX;
@@ -61,6 +68,10 @@ final class GhostMesh {
         this.fluidY = fluidY;
         this.fluidZ = fluidZ;
         this.fluidStates = fluidStates;
+        this.beX = beX;
+        this.beY = beY;
+        this.beZ = beZ;
+        this.beStates = beStates;
     }
 
     boolean matches(Schematic schematic, PlacementTransform transform) {
@@ -127,6 +138,26 @@ final class GhostMesh {
         return fluidStates[i];
     }
 
+    int blockEntityCount() {
+        return beX.length;
+    }
+
+    int beX(int i) {
+        return beX[i];
+    }
+
+    int beY(int i) {
+        return beY[i];
+    }
+
+    int beZ(int i) {
+        return beZ[i];
+    }
+
+    BlockState beState(int i) {
+        return beStates[i];
+    }
+
     static GhostMesh build(Schematic schematic, PlacementTransform transform) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet models = mc.getModelManager().getBlockStateModelSet();
@@ -140,6 +171,8 @@ final class GhostMesh {
         List<Quad> allQuads = new ArrayList<>();
         List<int[]> fluidPositions = new ArrayList<>();
         List<BlockState> fluidStateList = new ArrayList<>();
+        List<int[]> bePositions = new ArrayList<>();
+        List<BlockState> beStateList = new ArrayList<>();
 
         int schMinX = schematic.min().getX();
         int schMinY = schematic.min().getY();
@@ -170,7 +203,13 @@ final class GhostMesh {
 
                         int before = allQuads.size();
                         collectBlock(allQuads, view, models, random, parts, state, fp);
-                        if (allQuads.size() == before) {
+                        boolean producedQuads = allQuads.size() != before;
+
+                        if (state.hasBlockEntity() && !producedQuads) {
+                            bePositions.add(new int[] {f[0], f[1], f[2]});
+                            beStateList.add(state);
+                        }
+                        if (!producedQuads) {
                             continue;
                         }
                         blockPositions.add(new int[] {f[0], f[1], f[2]});
@@ -196,20 +235,20 @@ final class GhostMesh {
         }
         quadStart[blockCount] = allQuads.size();
 
-        int fluidCount = fluidPositions.size();
-        int[] fx = new int[fluidCount];
-        int[] fy = new int[fluidCount];
-        int[] fz = new int[fluidCount];
-        for (int i = 0; i < fluidCount; i++) {
-            int[] p = fluidPositions.get(i);
-            fx[i] = p[0];
-            fy[i] = p[1];
-            fz[i] = p[2];
-        }
-
         return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
                 allQuads.toArray(new Quad[0]),
-                fx, fy, fz, fluidStateList.toArray(new BlockState[0]));
+                col(fluidPositions, 0), col(fluidPositions, 1), col(fluidPositions, 2),
+                fluidStateList.toArray(new BlockState[0]),
+                col(bePositions, 0), col(bePositions, 1), col(bePositions, 2),
+                beStateList.toArray(new BlockState[0]));
+    }
+
+    private static int[] col(List<int[]> rows, int axis) {
+        int[] out = new int[rows.size()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = rows.get(i)[axis];
+        }
+        return out;
     }
 
     private static void collectBlock(List<Quad> out, SchematicBlockView view, BlockStateModelSet models,
