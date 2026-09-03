@@ -44,8 +44,9 @@ public final class GhostHud {
         lines.add("§7pos §f" + a.getX() + " " + a.getY() + " " + a.getZ()
                 + (t == null ? "" : "  §7size §f" + t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ()));
         lines.add("§7rot §f" + rotLabel(state.rotation()) + "  §7mirror §f" + mirrorLabel(state.mirror())
-                + "  §7opacity §f" + Math.round(state.opacity() * 100) + "%");
-        lines.add("§8G grab · R/⇧R rotate · M mirror · ⎇wheel opacity");
+                + "  §7opacity §f" + Math.round(state.opacity() * 100) + "%"
+                + (state.seeThrough() ? "  §bx-ray" : ""));
+        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · ⎇wheel opacity");
 
         int pad = 3;
         int lineH = font.lineHeight + 1;

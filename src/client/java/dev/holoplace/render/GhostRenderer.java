@@ -11,7 +11,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import org.jspecify.annotations.Nullable;
 
@@ -65,7 +64,7 @@ public final class GhostRenderer {
         float oy = (float) (anchor.getY() - cam.y);
         float oz = (float) (anchor.getZ() - cam.z);
 
-        RenderType renderType = RenderTypes.translucentMovingBlock();
+        RenderType renderType = GhostPipelines.forGhost(state.seeThrough());
         VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
         QUAD.setColor((state.opacityAlpha() << 24) | 0x00FFFFFF);
         QUAD.setLightCoords(FULL_BRIGHT);

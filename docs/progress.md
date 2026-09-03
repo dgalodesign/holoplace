@@ -130,5 +130,20 @@ rebuild. Rebuild time is logged at debug level.
 - Still `List<Quad>` objects (~32 B/quad) + per-frame `putBlockBakedQuad` per quad — much cheaper
   than tesselation, but a GPU-buffer upload would remove the per-frame vertex writes entirely (M7+).
 
-## Next — M7: "see through walls" (custom depth-test-off `RenderPipeline` — feasible:
-`RenderPipelines.register` + `RenderSetup.builder` are public) · biome tint · fluids/BEs
+## M7 — see-through / x-ray 🚧 (written, compiles, **needs in-game check — highest risk so far**)
+
+- `GhostPipelines` — a custom `RenderPipeline` (registered via `RenderPipelines.register` during
+  client init) = the translucent-block pipeline with `DepthStencilState(CompareOp.ALWAYS_PASS, false)`
+  (depth test always passes, no depth write), wrapped in a `RenderType`. `GhostRenderer` uses it when
+  `GhostState.seeThrough()` — the ghost then paints over the player's own blocks.
+- Toggle: `X` key, `/holoplace seethrough`, persisted; shown as `x-ray` in the HUD.
+
+### Risks (M7)
+- The custom pipeline may not compile/load at runtime (registration timing vs the shader manager
+  pre-compile, or the `core/block` shader not liking the setup). If it fails it could render nothing
+  or crash on first use of x-ray mode — normal mode is unaffected.
+- Translucent sorting across the whole schematic with depth off may show back faces through front
+  faces. Acceptable for an x-ray overlay; revisit if it looks bad.
+
+## Next — M8: biome tint (grass/leaves/water colour) · fluids · block entities (chests/signs) ·
+GPU-buffer upload (kill per-frame vertex writes) · "hide blocks already placed" build-assist mode

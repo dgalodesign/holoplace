@@ -21,6 +21,7 @@ public final class HoloPlaceKeys {
     public static final KeyMapping TOGGLE_GRAB = key("toggle_grab", GLFW.GLFW_KEY_G);
     public static final KeyMapping ROTATE = key("rotate", GLFW.GLFW_KEY_R);
     public static final KeyMapping MIRROR = key("mirror", GLFW.GLFW_KEY_M);
+    public static final KeyMapping SEE_THROUGH = key("see_through", GLFW.GLFW_KEY_X);
 
     private HoloPlaceKeys() {
     }
@@ -30,7 +31,7 @@ public final class HoloPlaceKeys {
     }
 
     public static void register() {
-        for (KeyMapping k : new KeyMapping[] {OPEN_PICKER, TOGGLE_GRAB, ROTATE, MIRROR}) {
+        for (KeyMapping k : new KeyMapping[] {OPEN_PICKER, TOGGLE_GRAB, ROTATE, MIRROR, SEE_THROUGH}) {
             KeyMappingHelper.registerKeyMapping(k);
         }
 
@@ -46,6 +47,9 @@ public final class HoloPlaceKeys {
             }
             while (MIRROR.consumeClick()) {
                 PlacementController.get().cycleMirror();
+            }
+            while (SEE_THROUGH.consumeClick()) {
+                PlacementController.get().toggleSeeThrough();
             }
             PlacementController.get().tick();
         });

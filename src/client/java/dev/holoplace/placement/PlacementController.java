@@ -162,6 +162,20 @@ public final class PlacementController {
         actionBar(Minecraft.getInstance(), "§bRotation/mirror reset");
     }
 
+    public void toggleSeeThrough() {
+        if (notReady()) {
+            return;
+        }
+        GhostState ghost = GhostState.get();
+        boolean next = !ghost.seeThrough();
+        ghost.setSeeThrough(next);
+        HoloPlaceConfig.get().seeThrough = next;
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), next
+                ? "§bSee-through §aon §7— ghost drawn over the world"
+                : "§bSee-through §7off");
+    }
+
     public void adjustOpacity(int dir) {
         if (notReady()) {
             return;

@@ -4,6 +4,7 @@ import dev.holoplace.command.HoloPlaceCommand;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.render.GhostHud;
+import dev.holoplace.render.GhostPipelines;
 import dev.holoplace.render.GhostRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.resources.Identifier;
@@ -18,8 +19,11 @@ public class HoloPlaceClient implements ClientModInitializer {
     public void onInitializeClient() {
         SchematicLibrary.ensurePrimaryDir();
 
+        GhostPipelines.bootstrap();
+
         HoloPlaceConfig config = HoloPlaceConfig.get();
         GhostState.get().setOpacity(config.opacity);
+        GhostState.get().setSeeThrough(config.seeThrough);
         PlacementController.get().loadPrefs();
 
         HoloPlaceKeys.register();
