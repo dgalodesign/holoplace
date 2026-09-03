@@ -4,5 +4,6 @@
 	"key.holoplace.toggle_grab": "Toggle grab / place mode",
 	"key.holoplace.rotate": "Rotate ghost (Shift: counter-clockwise)",
 	"key.holoplace.mirror": "Mirror ghost (cycle)",
-	"key.holoplace.see_through": "Toggle see-through (draw over walls)"
+	"key.holoplace.see_through": "Toggle see-through (draw over walls)",
+	"key.holoplace.build_assist": "Toggle build-assist (hide placed blocks)"
 }

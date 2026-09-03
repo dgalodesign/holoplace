@@ -24,7 +24,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M4 | Rotate / mirror / opacity + always-visible HUD panel | ✅ |
 | M5 | Flat picker screen + OS drag-and-drop import + tab-complete | ✅ |
 | M6 | Mesh cache — no per-frame re-tesselation | 🚧 written, needs in-game check |
-| M7 | See-through / x-ray toggle (draw over walls) | 🚧 written, needs in-game check |
+| M7 | See-through / x-ray toggle (draw over walls) | ✅ |
+| M8 | Build-assist — hide blocks already placed | 🚧 written, needs in-game check |
 
 ## Controls
 
@@ -40,6 +41,7 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | `R` · `Shift`+`R` | Rotate 90° CW · CCW |
 | `M` | Cycle mirror (none → front-back → left-right) |
 | `X` | Toggle see-through (draw the ghost over walls) |
+| `H` | Toggle build-assist (hide blocks you've already placed) |
 | `Alt`+wheel | Opacity ±5% |
 
 Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`.

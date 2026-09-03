@@ -145,5 +145,27 @@ rebuild. Rebuild time is logged at debug level.
 - Translucent sorting across the whole schematic with depth off may show back faces through front
   faces. Acceptable for an x-ray overlay; revisit if it looks bad.
 
-## Next — M8: biome tint (grass/leaves/water colour) · fluids · block entities (chests/signs) ·
-GPU-buffer upload (kill per-frame vertex writes) · "hide blocks already placed" build-assist mode
+M7 verified in-game 2026-09-03 — "funcionó perfecto". The custom x-ray pipeline compiles and works
+at runtime. Commits `0d7aba3` (M6) and `2ac665e` (M7) on `main`.
+
+## M8 — build-assist: hide already-placed blocks 🚧 (written, compiles, **needs in-game check**)
+
+- `GhostMesh` restructured to be block-addressable: per source block it keeps the footprint-local
+  position, the transformed `BlockState`, and the slice of `quads[]` it produced (`quadStart[]`).
+  Tesselation still happens once.
+- `GhostRenderer`, when `GhostState.hideMatched()`, walks the baked blocks and skips any whose
+  `level.getBlockState(anchor + local)` is `==` the ghost's state — no re-tesselation, just a
+  world lookup + identity compare per block per frame.
+- HUD shows `build <placed>/<total> (NN%)` progress while on.
+- Toggle: `H` key, `/holoplace buildassist`, persisted.
+
+### Known gaps / risks (M8)
+- Exact-state compare: blocks with properties the player can't reproduce (leaves `distance`,
+  redstone `power`, …) never match and stay visible. A "block-only" compare mode is a later option.
+- Per-frame `getBlockState` per baked block — fine to ~20k blocks, may want throttling for huge ones.
+
+## Controls now: G grab · R/⇧R rotate · M mirror · X x-ray · H build-assist · Alt+wheel opacity ·
+wheel/⇧wheel reach/height · K picker · drop a .litematic on the window
+
+## Next — M9: biome tint (grass/leaves/water) · fluids · block entities · GPU-buffer upload ·
+material list (`/holoplace materials`)

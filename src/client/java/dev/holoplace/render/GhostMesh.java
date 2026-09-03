@@ -16,10 +16,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Baked ghost geometry for one (schematic, rotation, mirror) combination: a flat list of quads with
- * their footprint-local block origins. Built once (model tesselation + face culling happen here),
- * then replayed every frame with a per-frame translation and colour — so dragging the anchor and
- * changing opacity never trigger a rebuild.
+ * Baked ghost geometry for one (schematic, rotation, mirror) combination. Model tesselation and face
+ * culling happen once, in {@link #build}. The result is addressable per source block — a block's
+ * footprint-local position, its transformed {@link BlockState} (for comparing against the real world)
+ * and the slice of {@link #quads} it produced — so the renderer can skip whole blocks each frame
+ * (e.g. build-assist mode) without any re-tesselation.
  */
 final class GhostMesh {
 
@@ -31,11 +32,24 @@ final class GhostMesh {
 
     private final Schematic schematic;
     private final PlacementTransform transform;
-    private final List<Quad> quads;
 
-    private GhostMesh(Schematic schematic, PlacementTransform transform, List<Quad> quads) {
+    private final int[] blockX;
+    private final int[] blockY;
+    private final int[] blockZ;
+    private final BlockState[] blockStates;
+    private final int[] quadStart; // length blockCount + 1
+    private final Quad[] quads;
+
+    private GhostMesh(Schematic schematic, PlacementTransform transform,
+                     int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
+                     int[] quadStart, Quad[] quads) {
         this.schematic = schematic;
         this.transform = transform;
+        this.blockX = blockX;
+        this.blockY = blockY;
+        this.blockZ = blockZ;
+        this.blockStates = blockStates;
+        this.quadStart = quadStart;
         this.quads = quads;
     }
 
@@ -43,8 +57,36 @@ final class GhostMesh {
         return this.schematic == schematic && this.transform.equals(transform);
     }
 
-    List<Quad> quads() {
-        return quads;
+    int blockCount() {
+        return blockX.length;
+    }
+
+    int blockX(int i) {
+        return blockX[i];
+    }
+
+    int blockY(int i) {
+        return blockY[i];
+    }
+
+    int blockZ(int i) {
+        return blockZ[i];
+    }
+
+    BlockState blockState(int i) {
+        return blockStates[i];
+    }
+
+    int quadStart(int i) {
+        return quadStart[i];
+    }
+
+    Quad quad(int q) {
+        return quads[q];
+    }
+
+    int totalQuads() {
+        return quads.length;
     }
 
     static GhostMesh build(Schematic schematic, PlacementTransform transform) {
@@ -53,12 +95,16 @@ final class GhostMesh {
         SchematicBlockView view = new SchematicBlockView(schematic, BlockPos.ZERO, transform);
         RandomSource random = RandomSource.create();
         List<BlockStateModelPart> parts = new ArrayList<>();
-        List<Quad> out = new ArrayList<>();
+
+        List<int[]> blockPositions = new ArrayList<>();
+        List<BlockState> states = new ArrayList<>();
+        List<Integer> starts = new ArrayList<>();
+        List<Quad> allQuads = new ArrayList<>();
 
         int schMinX = schematic.min().getX();
         int schMinY = schematic.min().getY();
         int schMinZ = schematic.min().getZ();
-        BlockPos.MutableBlockPos footprintPos = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos fp = new BlockPos.MutableBlockPos();
 
         for (SchematicRegion region : schematic.regions()) {
             BlockPos origin = region.minCorner();
@@ -74,14 +120,39 @@ final class GhostMesh {
                             continue;
                         }
                         int[] f = transform.forward(authoredBaseX + x, authoredBaseY + y, authoredBaseZ + z);
-                        footprintPos.set(f[0], f[1], f[2]);
+                        fp.set(f[0], f[1], f[2]);
                         BlockState state = transform.applyToState(raw);
-                        collectBlock(out, view, models, random, parts, state, footprintPos);
+
+                        int before = allQuads.size();
+                        collectBlock(allQuads, view, models, random, parts, state, fp);
+                        if (allQuads.size() == before) {
+                            continue;
+                        }
+                        blockPositions.add(new int[] {f[0], f[1], f[2]});
+                        states.add(state);
+                        starts.add(before);
                     }
                 }
             }
         }
-        return new GhostMesh(schematic, transform, out);
+
+        int blockCount = blockPositions.size();
+        int[] bx = new int[blockCount];
+        int[] by = new int[blockCount];
+        int[] bz = new int[blockCount];
+        int[] quadStart = new int[blockCount + 1];
+        BlockState[] stateArr = states.toArray(new BlockState[0]);
+        for (int i = 0; i < blockCount; i++) {
+            int[] p = blockPositions.get(i);
+            bx[i] = p[0];
+            by[i] = p[1];
+            bz[i] = p[2];
+            quadStart[i] = starts.get(i);
+        }
+        quadStart[blockCount] = allQuads.size();
+
+        return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
+                allQuads.toArray(new Quad[0]));
     }
 
     private static void collectBlock(List<Quad> out, SchematicBlockView view, BlockStateModelSet models,

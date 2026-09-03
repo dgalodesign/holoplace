@@ -24,6 +24,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         HoloPlaceConfig config = HoloPlaceConfig.get();
         GhostState.get().setOpacity(config.opacity);
         GhostState.get().setSeeThrough(config.seeThrough);
+        GhostState.get().setHideMatched(config.hideMatched);
         PlacementController.get().loadPrefs();
 
         HoloPlaceKeys.register();

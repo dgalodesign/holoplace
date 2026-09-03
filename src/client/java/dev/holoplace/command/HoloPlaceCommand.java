@@ -53,6 +53,10 @@ public final class HoloPlaceCommand {
                         .then(ClientCommands.literal("seethrough").executes(ctx -> {
                             PlacementController.get().toggleSeeThrough();
                             return 1;
+                        }))
+                        .then(ClientCommands.literal("buildassist").executes(ctx -> {
+                            PlacementController.get().toggleBuildAssist();
+                            return 1;
                         }))));
     }
 

@@ -176,6 +176,20 @@ public final class PlacementController {
                 : "§bSee-through §7off");
     }
 
+    public void toggleBuildAssist() {
+        if (notReady()) {
+            return;
+        }
+        GhostState ghost = GhostState.get();
+        boolean next = !ghost.hideMatched();
+        ghost.setHideMatched(next);
+        HoloPlaceConfig.get().hideMatched = next;
+        HoloPlaceConfig.save();
+        actionBar(Minecraft.getInstance(), next
+                ? "§bBuild-assist §aon §7— placed blocks hidden from the ghost"
+                : "§bBuild-assist §7off");
+    }
+
     public void adjustOpacity(int dir) {
         if (notReady()) {
             return;

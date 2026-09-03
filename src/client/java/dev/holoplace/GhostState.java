@@ -20,8 +20,13 @@ public final class GhostState {
     private float opacity = 0.55f;
     private boolean visible;
     private boolean seeThrough;
+    private boolean hideMatched;
     private Rotation rotation = Rotation.NONE;
     private Mirror mirror = Mirror.NONE;
+
+    /** -1 = not tracking; otherwise blocks already matching the world, out of {@link #totalBlocks}. */
+    private int matchedBlocks = -1;
+    private int totalBlocks;
 
     private GhostState() {
     }
@@ -66,6 +71,28 @@ public final class GhostState {
 
     public void setSeeThrough(boolean seeThrough) {
         this.seeThrough = seeThrough;
+    }
+
+    public boolean hideMatched() {
+        return hideMatched;
+    }
+
+    public void setHideMatched(boolean hideMatched) {
+        this.hideMatched = hideMatched;
+    }
+
+    public void setRemainingBlocks(int matchedBlocks, int totalBlocks) {
+        this.matchedBlocks = matchedBlocks;
+        this.totalBlocks = totalBlocks;
+    }
+
+    /** Blocks already matching the world, or -1 when build-assist is off. */
+    public int matchedBlocks() {
+        return matchedBlocks;
+    }
+
+    public int totalBlocks() {
+        return totalBlocks;
     }
 
     public float opacity() {

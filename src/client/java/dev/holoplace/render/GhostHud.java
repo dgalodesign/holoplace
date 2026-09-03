@@ -46,7 +46,13 @@ public final class GhostHud {
         lines.add("§7rot §f" + rotLabel(state.rotation()) + "  §7mirror §f" + mirrorLabel(state.mirror())
                 + "  §7opacity §f" + Math.round(state.opacity() * 100) + "%"
                 + (state.seeThrough() ? "  §bx-ray" : ""));
-        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · ⎇wheel opacity");
+        if (state.hideMatched() && state.totalBlocks() > 0) {
+            int placed = state.matchedBlocks();
+            int total = state.totalBlocks();
+            int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
+            lines.add("§7build §a" + placed + "§7/§f" + total + " §8(" + pct + "%)");
+        }
+        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · H build · ⎇wheel opacity");
 
         int pad = 3;
         int lineH = font.lineHeight + 1;
