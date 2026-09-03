@@ -22,7 +22,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M2 | Static textured ghost overlay render | ✅ |
 | M3 | Drag-to-position (raycast anchor, wheel distance/height) | ✅ |
 | M4 | Rotate / mirror / opacity + always-visible HUD panel | ✅ |
-| M5 | Flat picker screen + OS drag-and-drop import + tab-complete | 🚧 written, needs in-game check |
+| M5 | Flat picker screen + OS drag-and-drop import + tab-complete | ✅ |
+| M6 | Mesh cache — no per-frame re-tesselation | 🚧 written, needs in-game check |
 
 ## Controls
 

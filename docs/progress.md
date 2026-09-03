@@ -112,9 +112,23 @@ panel all work (HUD renders via the new 26.1 extractor model).
   overflow hint), one click loads. "Open folder" when empty. No folders, no nested menus.
 - `/holoplace show|info` now tab-complete schematic names.
 
-### Known gaps / risks (M5)
-- Picker + drop unverified at runtime. Picker has no scroll (button list capped) — fine for a
-  handful of files, a real scroll list (`ObjectSelectionList` on the new extractor model) is later.
-- Dropping while a screen is open: MC forwards to `screen.onFilesDrop`; we still import.
+M5 verified in-game 2026-09-03 — "funciono perfecto". OS drag-and-drop, picker screen, and
+tab-completion all work. **MVP functionally complete.** Commit `cb78f18` on `main`.
 
-## Next — M6: "see through walls" pipeline · per-section VBO cache (perf) · biome tint · fluids/BEs
+## M6 — mesh cache 🚧 (written, compiles, **needs in-game check**)
+
+The renderer no longer tesselates every block every frame. `GhostMesh.build(schematic, transform)`
+does the model tesselation + face culling once and stores a flat `List<Quad>` of
+`(footprint-local x/y/z, BakedQuad)`. `GhostRenderer` rebuilds it only when the schematic /
+rotation / mirror changes; each frame just replays the list with a per-frame translate
+(`anchor - camera`) and colour. So **dragging the anchor and changing opacity are free** — no
+rebuild. Rebuild time is logged at debug level.
+
+### Known gaps / risks (M6)
+- Unverified visually — must render identical to before, just faster. Watch for a hitch on load /
+  rotate (the one rebuild) on a large schematic.
+- Still `List<Quad>` objects (~32 B/quad) + per-frame `putBlockBakedQuad` per quad — much cheaper
+  than tesselation, but a GPU-buffer upload would remove the per-frame vertex writes entirely (M7+).
+
+## Next — M7: "see through walls" (custom depth-test-off `RenderPipeline` — feasible:
+`RenderPipelines.register` + `RenderSetup.builder` are public) · biome tint · fluids/BEs
