@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "holoplace",
+	"version": "${version}",
+	"name": "HoloPlace",
+	"description": "Modern UX for building from schematics: load a .litematic, see it as a textured ghost overlay, and place it directly on screen with drag-to-position — no nested menus, no manual coordinates.",
+	"authors": [
+		"edgardgalof"
+	],
+	"contact": {
+		"sources": "https://github.com/edgardgalof/holoplace"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.holoplace.HoloPlaceClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "holoplace.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.1",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,28 @@
+# Gradle / Loom
+.gradle/
+build/
+run/
+logs/
+.loom-cache/
+remappedSrc/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+eclipse/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides
+*.local
+local.properties

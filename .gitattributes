@@ -1,0 +1,11 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+
+# Binary
+*.jar binary
+*.png binary
+*.litematic binary
+*.nbt binary
