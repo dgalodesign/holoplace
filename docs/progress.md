@@ -339,4 +339,43 @@ M16 + M17 verified in-game 2026-09-04, with these follow-up fixes:
 ## Status: MVP complete, all milestones verified.
 
 Open item: GPU vertex-buffer upload (removes the per-frame `putBlockBakedQuad` cost; current cap is
-4M quads). Higher risk on the new 26.1 GPU API; deferred until a real need shows up.
+4M quads). Higher risk on the new 26.1 GPU API; deferred to [`docs/backlog.md`](backlog.md).
+
+## M18 — post-MVP UI polish 🚧 (written, compiles, **needs in-game check**)
+
+*(user request: polish the UI, add Spanish, add a look-at tooltip for wrong blocks, and a marker for
+blocks that don't belong to the schematic at all)*
+
+- **Full Spanish translation** — every player-facing string (HUD, tooltip, `/holoplace` command
+  feedback, action-bar messages, the drag-and-drop/import messages, the welcome message, and the
+  `K` screen) now goes through `Component.translatable(...)` with parallel `en_us.json` / `es_es.json`
+  entries, instead of the keybind-only translation that shipped with the MVP. Colour codes (`§`) live
+  inside the translated values, matching the existing HUD convention.
+- **"Extra block" marker** — a new orange wire cube (`GhostRenderer.scanExtraBlocks` /
+  `renderExtraBlocks`) flags a world cell that's non-air where the schematic says air, i.e. a block
+  that doesn't belong to the build at all. Distinct from the existing red "wrong block" cube (world
+  block present but doesn't match what the schematic wants there). Scan is a bounding-box walk over
+  the schematic's footprint, skipped above a 2M-cell volume guard (logged once) to avoid a hitch on a
+  huge or very sparse schematic. `GhostRenderer.renderMarkerSet` was factored out of the old
+  `renderWrongBlocks` so both marker kinds share one draw path.
+- **Look-at tooltip** (`GhostTooltipHud`, new HUD element) — while build-assist is on and the
+  crosshair (`Minecraft.hitResult`, no extra raycast) is on a block inside the schematic's footprint
+  that doesn't match the plan, shows a small icon + label near the crosshair: the game's own item
+  icon (`GuiGraphicsExtractor.fakeItem`) for the correct block plus "Should be: X", or a barrier icon
+  plus "This block doesn't belong here" for an extra block.
+
+### Known gaps (M18)
+- The extra-block scan re-walks the whole footprint on every `placementScan` tick (same 250 ms
+  throttle as the rest of build-assist) rather than being incremental.
+- Tooltip only reacts to the vanilla crosshair hit — no reach-independent lookup, so it respects
+  normal block-interaction distance.
+
+M18 verified in-game 2026-09-04 — "funciona perfecto". Follow-up user request: reduce the render
+cost of wrongly-placed blocks, without changing the default build-assist behaviour.
+
+- **"Hide wrong too"** — new checkbox (`GhostState.hideWrongToo`, persisted), off by default so
+  existing build-assist behaviour is unchanged. When on *and* build-assist is on, a wrongly-placed
+  cell (world has a non-matching, non-air block) also skips the full ghost model — same as an
+  already-correct cell — leaving only the red wire-cube marker to say "fix this". Applies uniformly
+  to regular blocks, fluids, and block-entity markers/models via a shared `isBuiltOrHiddenWrong`
+  check, reusing the existing `wrongBlock[]` scan (no extra world scan needed).

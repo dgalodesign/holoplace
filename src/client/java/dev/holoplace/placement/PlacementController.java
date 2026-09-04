@@ -66,7 +66,7 @@ public final class PlacementController {
         Minecraft mc = Minecraft.getInstance();
         GhostState ghost = GhostState.get();
         if (ghost.schematic() == null) {
-            actionBar(mc, "§e[HoloPlace] no schematic — §f/holoplace show <file>");
+            actionBar(mc, text("holoplace.action.no_schematic"));
             return;
         }
         if (grabbing) {
@@ -74,7 +74,7 @@ public final class PlacementController {
         } else {
             grabbing = true;
             ghost.setVisible(true);
-            actionBar(mc, "§aGrab mode §7— look to position · wheel: distance · Shift+wheel: height · §fG§7 to lock");
+            actionBar(mc, text("holoplace.action.grab_on"));
         }
     }
 
@@ -90,7 +90,7 @@ public final class PlacementController {
         if (lock) {
             WorldPlacements.saveCurrent();
             BlockPos a = GhostState.get().anchor();
-            actionBar(mc, "§aLocked at §f" + a.getX() + " " + a.getY() + " " + a.getZ());
+            actionBar(mc, text("holoplace.action.locked", a.getX(), a.getY(), a.getZ()));
         }
     }
 
@@ -138,7 +138,7 @@ public final class PlacementController {
         HoloPlaceConfig.get().rotation = next.name();
         HoloPlaceConfig.save();
         WorldPlacements.saveCurrent();
-        actionBar(Minecraft.getInstance(), "§bRotation: §f" + label(next));
+        actionBar(Minecraft.getInstance(), text("holoplace.action.rotation", label(next)));
     }
 
     /** Change the transform while keeping the footprint's centre fixed (so a locked ghost doesn't jump). */
@@ -170,7 +170,7 @@ public final class PlacementController {
         HoloPlaceConfig.get().mirror = next.name();
         HoloPlaceConfig.save();
         WorldPlacements.saveCurrent();
-        actionBar(Minecraft.getInstance(), "§bMirror: §f" + label(next));
+        actionBar(Minecraft.getInstance(), text("holoplace.action.mirror", label(next)));
     }
 
     public void moveTo(int x, int y, int z) {
@@ -180,7 +180,7 @@ public final class PlacementController {
         stopGrab(false);
         GhostState.get().setAnchor(new BlockPos(x, y, z));
         WorldPlacements.saveCurrent();
-        actionBar(Minecraft.getInstance(), "§bMoved to §f" + x + " " + y + " " + z);
+        actionBar(Minecraft.getInstance(), text("holoplace.action.moved", x, y, z));
     }
 
     public void nudge(net.minecraft.core.Direction dir, int amount) {
@@ -191,8 +191,7 @@ public final class PlacementController {
         BlockPos a = GhostState.get().anchor().relative(dir, amount);
         GhostState.get().setAnchor(a);
         WorldPlacements.saveCurrent();
-        actionBar(Minecraft.getInstance(),
-                "§bNudged §7→ §f" + a.getX() + " " + a.getY() + " " + a.getZ());
+        actionBar(Minecraft.getInstance(), text("holoplace.action.nudged", a.getX(), a.getY(), a.getZ()));
     }
 
     public void resetTransform() {
@@ -205,7 +204,7 @@ public final class PlacementController {
         HoloPlaceConfig.get().mirror = Mirror.NONE.name();
         HoloPlaceConfig.save();
         WorldPlacements.saveCurrent();
-        actionBar(Minecraft.getInstance(), "§bRotation/mirror reset");
+        actionBar(Minecraft.getInstance(), text("holoplace.action.reset"));
     }
 
     public void toggleSeeThrough() {
@@ -217,9 +216,9 @@ public final class PlacementController {
         ghost.setSeeThrough(next);
         HoloPlaceConfig.get().seeThrough = next;
         HoloPlaceConfig.save();
-        actionBar(Minecraft.getInstance(), next
-                ? "§bSee-through §aon §7— ghost drawn over the world"
-                : "§bSee-through §7off");
+        actionBar(Minecraft.getInstance(), text(next
+                ? "holoplace.action.seethrough_on"
+                : "holoplace.action.seethrough_off"));
     }
 
     public void setLayers(int min, int max) {
@@ -229,14 +228,14 @@ public final class PlacementController {
         GhostState.get().setLayers(min, max);
         persistLayers();
         actionBar(Minecraft.getInstance(), min == max
-                ? "§bLayer §f" + min
-                : "§bLayers §f" + GhostState.get().layerMin() + "–" + GhostState.get().layerMax());
+                ? text("holoplace.action.layer_single", min)
+                : text("holoplace.action.layer_range", GhostState.get().layerMin(), GhostState.get().layerMax()));
     }
 
     public void clearLayers() {
         GhostState.get().clearLayers();
         persistLayers();
-        actionBar(Minecraft.getInstance(), "§bLayers §7— showing all");
+        actionBar(Minecraft.getInstance(), text("holoplace.action.layers_off"));
     }
 
     private void persistLayers() {
@@ -254,9 +253,9 @@ public final class PlacementController {
         ghost.setHideMatched(next);
         HoloPlaceConfig.get().hideMatched = next;
         HoloPlaceConfig.save();
-        actionBar(Minecraft.getInstance(), next
-                ? "§bBuild-assist §aon §7— placed blocks hidden from the ghost"
-                : "§bBuild-assist §7off");
+        actionBar(Minecraft.getInstance(), text(next
+                ? "holoplace.action.buildassist_on"
+                : "holoplace.action.buildassist_off"));
     }
 
     public void adjustOpacity(int dir) {
@@ -267,7 +266,8 @@ public final class PlacementController {
         ghost.setOpacity(ghost.opacity() + dir * 0.05f);
         HoloPlaceConfig.get().opacity = ghost.opacity();
         HoloPlaceConfig.save();
-        actionBar(Minecraft.getInstance(), "§bOpacity: §f" + Math.round(ghost.opacity() * 100) + "%");
+        actionBar(Minecraft.getInstance(),
+                text("holoplace.action.opacity", Math.round(ghost.opacity() * 100)) + "%");
     }
 
     private static boolean notReady() {
@@ -276,19 +276,23 @@ public final class PlacementController {
 
     private static String label(Rotation r) {
         return switch (r) {
-            case NONE -> "0°";
-            case CLOCKWISE_90 -> "90° CW";
-            case CLOCKWISE_180 -> "180°";
-            case COUNTERCLOCKWISE_90 -> "90° CCW";
+            case NONE -> text("holoplace.rotation.0");
+            case CLOCKWISE_90 -> text("holoplace.rotation.90cw");
+            case CLOCKWISE_180 -> text("holoplace.rotation.180");
+            case COUNTERCLOCKWISE_90 -> text("holoplace.rotation.90ccw");
         };
     }
 
     private static String label(Mirror m) {
         return switch (m) {
-            case NONE -> "none";
-            case FRONT_BACK -> "front-back";
-            case LEFT_RIGHT -> "left-right";
+            case NONE -> text("holoplace.mirror.none");
+            case FRONT_BACK -> text("holoplace.mirror.front_back");
+            case LEFT_RIGHT -> text("holoplace.mirror.left_right");
         };
+    }
+
+    private static String text(String key, Object... args) {
+        return Component.translatable(key, args).getString();
     }
 
     public void tick() {

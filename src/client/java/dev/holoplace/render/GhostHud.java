@@ -2,6 +2,7 @@ package dev.holoplace.render;
 
 import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
+import dev.holoplace.HoloPlaceKeys;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.PlacementTransform;
 import java.util.ArrayList;
@@ -39,23 +40,25 @@ public final class GhostHud {
         boolean grabbing = PlacementController.get().isGrabbing();
 
         List<String> lines = new ArrayList<>();
-        lines.add("§b❖ HoloPlace" + (grabbing ? "  §e[grab]" : ""));
+        lines.add("§b❖ HoloPlace" + (grabbing ? "  §e[" + text("holoplace.hud.grab") + "]" : ""));
         lines.add("§7" + (state.sourceName() == null ? "?" : state.sourceName()));
-        lines.add("§7pos §f" + a.getX() + " " + a.getY() + " " + a.getZ()
-                + (t == null ? "" : "  §7size §f" + t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ()));
-        lines.add("§7rot §f" + rotLabel(state.rotation()) + "  §7mirror §f" + mirrorLabel(state.mirror())
-                + "  §7opacity §f" + Math.round(state.opacity() * 100) + "%"
-                + (state.seeThrough() ? "  §bx-ray" : ""));
+        lines.add("§7" + text("holoplace.hud.pos") + " §f" + a.getX() + " " + a.getY() + " " + a.getZ()
+                + (t == null ? "" : "  §7" + text("holoplace.hud.size") + " §f"
+                        + t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ()));
+        lines.add("§7" + text("holoplace.hud.rot") + " §f" + rotLabel(state.rotation())
+                + "  §7" + text("holoplace.hud.mirror") + " §f" + mirrorLabel(state.mirror())
+                + "  §7" + text("holoplace.hud.opacity") + " §f" + Math.round(state.opacity() * 100) + "%"
+                + (state.seeThrough() ? "  §b" + text("holoplace.hud.xray") : ""));
         if (state.matchedBlocks() == -2) {
-            lines.add("§cSchematic too large to render");
+            lines.add("§c" + text("holoplace.hud.too_large"));
         } else if (state.hideMatched() && state.totalBlocks() > 0) {
             int placed = state.matchedBlocks();
             int total = state.totalBlocks();
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
-            lines.add("§7build §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
-                    + (state.matchBlockOnly() ? " §8[block]" : ""));
+            lines.add("§7" + text("holoplace.hud.build") + " §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
+                    + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : ""));
         }
-        lines.add("§8G grab · R/⇧R rotate · M mirror · X x-ray · H build · K menu");
+        lines.add("§8" + hint());
 
         int pad = 3;
         int lineH = font.lineHeight + 1;
@@ -70,6 +73,21 @@ public final class GhostHud {
             graphics.text(font, Component.literal(line), x, y, 0xFFFFFFFF, true);
             y += lineH;
         }
+    }
+
+    private static String hint() {
+        return Component.translatable("holoplace.hud.hint",
+                key(HoloPlaceKeys.TOGGLE_GRAB), key(HoloPlaceKeys.ROTATE), key(HoloPlaceKeys.ROTATE),
+                key(HoloPlaceKeys.MIRROR), key(HoloPlaceKeys.SEE_THROUGH), key(HoloPlaceKeys.BUILD_ASSIST),
+                key(HoloPlaceKeys.OPEN_PICKER)).getString();
+    }
+
+    private static String key(net.minecraft.client.KeyMapping mapping) {
+        return mapping.getTranslatedKeyMessage().getString();
+    }
+
+    private static String text(String key) {
+        return Component.translatable(key).getString();
     }
 
     private static String rotLabel(Rotation r) {

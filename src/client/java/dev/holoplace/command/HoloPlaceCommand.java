@@ -113,7 +113,7 @@ public final class HoloPlaceCommand {
     private static int nudge(FabricClientCommandSource source, String dirName, int amount) {
         net.minecraft.core.Direction dir = net.minecraft.core.Direction.byName(dirName.toLowerCase());
         if (dir == null) {
-            source.sendError(Component.literal("Unknown direction '" + dirName + "'"));
+            source.sendError(Component.translatable("holoplace.cmd.unknown_direction", dirName));
             return 0;
         }
         PlacementController.get().nudge(dir, amount);
@@ -121,24 +121,23 @@ public final class HoloPlaceCommand {
     }
 
     private static int help(FabricClientCommandSource source) {
-        source.sendFeedback(Component.literal("§e§lHoloPlace§r §7— place schematics on screen"));
-        source.sendFeedback(Component.literal("§7Drop a §f.litematic§7 on the window, or §fK§7 for the menu."));
-        source.sendFeedback(Component.literal("§fKeys:§7 G grab · R/⇧R rotate · M mirror · X x-ray · H build-assist · ⎇wheel opacity"));
-        source.sendFeedback(Component.literal("§fCommands:§7 show <f> · hide · show · clear · reset · move <x y z> · nudge <dir> [n]"));
-        source.sendFeedback(Component.literal("§7          seethrough · buildassist · materials · layers <min> <max>|off · info <f> · list"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.help.title"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.help.drop"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.help.keys"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.help.commands1"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.help.commands2"));
         return 1;
     }
 
     private static int list(FabricClientCommandSource source) {
         List<Path> files = SchematicLibrary.list();
         if (files.isEmpty()) {
-            source.sendFeedback(Component.literal("No .litematic files found. Put them in "
-                    + SchematicLibrary.primaryDir()));
+            source.sendFeedback(Component.translatable("holoplace.cmd.list.none", SchematicLibrary.primaryDir()));
             return 0;
         }
-        source.sendFeedback(Component.literal("§e" + files.size() + " schematic(s):"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.list.count", files.size()));
         for (Path p : files) {
-            source.sendFeedback(Component.literal(" §7- §f" + p.getFileName()));
+            source.sendFeedback(Component.translatable("holoplace.cmd.list.entry", p.getFileName()));
         }
         return files.size();
     }
@@ -148,28 +147,31 @@ public final class HoloPlaceCommand {
         String name = StringArgumentType.getString(ctx, "file");
         Optional<Path> path = SchematicLibrary.resolve(name);
         if (path.isEmpty()) {
-            source.sendError(Component.literal("No schematic named '" + name + "'"));
+            source.sendError(Component.translatable("holoplace.cmd.no_schematic", name));
             return 0;
         }
         try {
             Schematic schem = LitematicaSchematicReader.read(path.get());
             Vec3i size = schem.enclosingSize();
             source.sendFeedback(Component.literal("§e" + schem.name() + "§r "
-                    + (schem.author().isBlank() ? "" : "§7by " + schem.author())));
+                    + (schem.author().isBlank() ? "" : "§7" + text("holoplace.cmd.info.by", schem.author()))));
             source.sendFeedback(Component.literal(String.format(
-                    " §7size §f%d×%d×%d  §7regions §f%d  §7blocks §f%,d§7/§f%,d  §7mcver §f%d  §7fmt §fv%d",
-                    size.getX(), size.getY(), size.getZ(),
-                    schem.regions().size(), schem.totalNonAirBlocks(), schem.totalVolume(),
-                    schem.minecraftDataVersion(), schem.schematicVersion())));
+                    " §7%s §f%d×%d×%d  §7%s §f%d  §7%s §f%s§7/§f%s  §7%s §f%d  §7%s §fv%d",
+                    text("holoplace.cmd.info.size"), size.getX(), size.getY(), size.getZ(),
+                    text("holoplace.cmd.info.regions"), schem.regions().size(),
+                    text("holoplace.cmd.info.blocks"),
+                    String.format("%,d", schem.totalNonAirBlocks()), String.format("%,d", schem.totalVolume()),
+                    text("holoplace.cmd.info.mcver"), schem.minecraftDataVersion(),
+                    text("holoplace.cmd.info.fmt"), schem.schematicVersion())));
             if (!schem.missingBlocks().isEmpty()) {
-                source.sendFeedback(Component.literal("  §c" + schem.missingBlocks().size()
-                        + " unknown block id(s): §7" + firstFew(schem.missingBlocks())));
+                source.sendFeedback(Component.translatable("holoplace.cmd.info.unknown_blocks",
+                        schem.missingBlocks().size(), firstFew(schem.missingBlocks())));
             }
             HoloPlaceClient.LOGGER.info("Inspected {}: {} regions, {} non-air blocks",
                     path.get().getFileName(), schem.regions().size(), schem.totalNonAirBlocks());
             return 1;
         } catch (Exception e) {
-            source.sendError(Component.literal("Failed to read: " + e.getMessage()));
+            source.sendError(Component.translatable("holoplace.cmd.info.failed", e.getMessage()));
             HoloPlaceClient.LOGGER.error("Failed to read {}", path.get(), e);
             return 0;
         }
@@ -180,7 +182,7 @@ public final class HoloPlaceCommand {
         String name = StringArgumentType.getString(ctx, "file");
         Optional<Path> path = SchematicLibrary.resolve(name);
         if (path.isEmpty()) {
-            source.sendError(Component.literal("No schematic named '" + name + "'"));
+            source.sendError(Component.translatable("holoplace.cmd.no_schematic", name));
             return 0;
         }
         HoloPlaceConfig.get().lastSchematic = path.get().getFileName().toString();
@@ -200,7 +202,7 @@ public final class HoloPlaceCommand {
         GhostState ghost = GhostState.get();
         Schematic schematic = ghost.schematic();
         if (schematic == null) {
-            source.sendError(Component.literal("No schematic loaded — /holoplace show <file>"));
+            source.sendError(Component.translatable("holoplace.cmd.materials.none"));
             return 0;
         }
 
@@ -213,9 +215,10 @@ public final class HoloPlaceCommand {
         int totalBlocks = totals.stream().mapToInt(MaterialList.Entry::count).sum();
         int leftBlocks = remaining.stream().mapToInt(MaterialList.Entry::count).sum();
         source.sendFeedback(Component.literal("§e" + schematic.name() + " §7— §f"
-                + totals.size() + "§7 item types, §f" + String.format("%,d", totalBlocks) + "§7 blocks"
+                + totals.size() + text("holoplace.cmd.materials.item_types") + ", §f"
+                + String.format("%,d", totalBlocks) + text("holoplace.cmd.materials.blocks")
                 + (placed == null ? "" : "  §a" + String.format("%,d", totalBlocks - leftBlocks)
-                        + "§7/§f" + String.format("%,d", totalBlocks) + "§7 placed")));
+                        + "§7/§f" + String.format("%,d", totalBlocks) + text("holoplace.cmd.materials.placed"))));
 
         Map<net.minecraft.world.item.Item, Integer> totalByItem = new HashMap<>();
         totals.forEach(e -> totalByItem.put(e.item(), e.count()));
@@ -226,15 +229,16 @@ public final class HoloPlaceCommand {
             MaterialList.Entry e = rows.get(i);
             String name = new net.minecraft.world.item.ItemStack(e.item()).getHoverName().getString();
             if (placed == null) {
-                source.sendFeedback(Component.literal(" §f" + String.format("%,d", e.count()) + "§7× §f" + name));
+                source.sendFeedback(Component.translatable("holoplace.cmd.materials.row_need",
+                        String.format("%,d", e.count()), name));
             } else {
                 int total = totalByItem.getOrDefault(e.item(), e.count());
-                source.sendFeedback(Component.literal(" §c" + String.format("%,d", e.count())
-                        + "§7 left §8/ " + String.format("%,d", total) + " §7 §f" + name));
+                source.sendFeedback(Component.translatable("holoplace.cmd.materials.row_left",
+                        String.format("%,d", e.count()), String.format("%,d", total), name));
             }
         }
         if (rows.size() > shown) {
-            source.sendFeedback(Component.literal(" §8… " + (rows.size() - shown) + " more"));
+            source.sendFeedback(Component.translatable("holoplace.cmd.materials.more", rows.size() - shown));
         }
         return 1;
     }
@@ -282,13 +286,13 @@ public final class HoloPlaceCommand {
     private static int hide(FabricClientCommandSource source) {
         GhostState ghost = GhostState.get();
         if (ghost.schematic() == null) {
-            source.sendError(Component.literal("Nothing to hide"));
+            source.sendError(Component.translatable("holoplace.cmd.hide.nothing"));
             return 0;
         }
         PlacementController.get().stopGrab(false);
         ghost.setVisible(false);
         WorldPlacements.saveCurrent();
-        source.sendFeedback(Component.literal("§7Ghost hidden §8(/holoplace show to bring it back)"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.hide.done"));
         return 1;
     }
 
@@ -299,7 +303,7 @@ public final class HoloPlaceCommand {
         }
         ghost.setVisible(true);
         WorldPlacements.saveCurrent();
-        source.sendFeedback(Component.literal("§aShowing §e" + ghost.sourceName()));
+        source.sendFeedback(Component.translatable("holoplace.cmd.show.done", ghost.sourceName()));
         return 1;
     }
 
@@ -309,8 +313,12 @@ public final class HoloPlaceCommand {
         GhostState.get().setSchematic(null, null);
         GhostState.get().setVisible(false);
         WorldPlacements.clearCurrent();
-        source.sendFeedback(Component.literal("§7Placement cleared"));
+        source.sendFeedback(Component.translatable("holoplace.cmd.clear.done"));
         return 1;
+    }
+
+    private static String text(String key, Object... args) {
+        return Component.translatable(key, args).getString();
     }
 
     private static String firstFew(Iterable<Identifier> ids) {

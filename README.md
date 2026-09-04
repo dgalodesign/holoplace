@@ -35,9 +35,10 @@ for the plan and [`docs/progress.md`](docs/progress.md) for the milestone histor
 | M15 | Perf hardening (throttled build-assist scan, tint freeze on drag, size guard) | ✅ |
 | M16 | Real block-entity models (chests, signs, beds…), opacity-aware | ✅ |
 | M17 | help/welcome · rotate-around-centre · move/nudge · layer sliders · wrong-block red · face shading · paged list | ✅ |
+| M18 | Spanish translation · extra-block marker (orange) · look-at tooltip with item icon | ✅ |
 
 Not done: GPU vertex-buffer upload (a perf win for very large schematics — the current
-per-frame vertex submit is capped at 4M quads).
+per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/backlog.md).
 
 ## Controls
 
@@ -62,10 +63,17 @@ per-frame vertex submit is capped at 4M quads).
 
 The `K` screen has the opacity slider, every toggle (with its key), X/Y/Z fields, and
 two "layer" sliders to view the schematic one floor at a time. With build-assist on,
-blocks you've placed wrong show a red outline.
+blocks you've placed wrong show a red outline, and blocks that don't belong to the
+build at all (world has a block, schematic wants air there) show an orange outline.
+Looking at either while build-assist is on shows a tooltip near the crosshair with the
+game's own item icon for the correct block. "Hide wrong too" (off by default) also hides
+the full ghost model for wrongly-placed blocks, leaving just the red outline — less to render.
 
 Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`. Where you
 leave a placed schematic is remembered per world and restored when you rejoin.
+
+Fully localized in English and Spanish (`en_us` / `es_es`) — HUD, tooltip, commands, and the
+`K` screen all follow Minecraft's language setting.
 
 ## Target
 

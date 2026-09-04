@@ -7,6 +7,7 @@ import dev.holoplace.placement.PlacementController;
 import dev.holoplace.render.GhostHud;
 import dev.holoplace.render.GhostPipelines;
 import dev.holoplace.render.GhostRenderer;
+import dev.holoplace.render.GhostTooltipHud;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.resources.Identifier;
@@ -27,6 +28,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostState.get().setOpacity(config.opacity);
         GhostState.get().setSeeThrough(config.seeThrough);
         GhostState.get().setHideMatched(config.hideMatched);
+        GhostState.get().setHideWrongToo(config.hideWrongToo);
         GhostState.get().setMatchBlockOnly(config.matchBlockOnly);
         GhostState.get().setBlockEntityModels(config.blockEntityModels);
         GhostState.get().setShade(config.ambientOcclusion);
@@ -39,6 +41,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         HoloPlaceCommand.register();
         GhostRenderer.register();
         GhostHud.register();
+        GhostTooltipHud.register();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> {
             WorldPlacements.restoreForCurrentWorld();
@@ -57,9 +60,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         }
         config.seenIntro = true;
         HoloPlaceConfig.save();
-        client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                "§e[HoloPlace]§r Drop a §f.litematic§r on the window, or press §fK§r. "
-                        + "§7Type §f/holoplace help§7 for controls."));
+        client.player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("holoplace.welcome"));
     }
 
     public static Identifier id(String path) {

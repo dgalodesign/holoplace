@@ -41,6 +41,9 @@ public final class GhostRenderer {
     private static final int NO_TINT = -1;
     private static final int MAX_QUADS = 4_000_000;
     private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
+    private static final long EXTRA_SCAN_VOLUME_LIMIT = 2_000_000L;
+    private static final int WRONG_COLOR = 0xC0FF3030;
+    private static final int EXTRA_COLOR = 0xC0FF9933;
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
@@ -49,10 +52,14 @@ public final class GhostRenderer {
 
     private static boolean @Nullable [] needsPlacing;
     private static boolean @Nullable [] wrongBlock;
+    private static int @Nullable [] extraX;
+    private static int @Nullable [] extraY;
+    private static int @Nullable [] extraZ;
     private static long scanKey;
     private static long lastScanNanos;
     private static int placedCount;
     private static boolean warnedTooLarge;
+    private static boolean warnedExtrasTooLarge;
     private static @Nullable GhostMesh loggedBeMesh;
 
     private GhostRenderer() {
@@ -68,7 +75,11 @@ public final class GhostRenderer {
         blockTint = null;
         needsPlacing = null;
         wrongBlock = null;
+        extraX = null;
+        extraY = null;
+        extraZ = null;
         warnedTooLarge = false;
+        warnedExtrasTooLarge = false;
     }
 
     private static void render(LevelRenderContext ctx) {
@@ -91,7 +102,9 @@ public final class GhostRenderer {
             blockTint = null;
             needsPlacing = null;
             wrongBlock = null;
+            extraX = null;
             warnedTooLarge = false;
+            warnedExtrasTooLarge = false;
             HoloPlaceClient.LOGGER.debug("Rebuilt ghost mesh: {} blocks / {} quads in {} ms",
                     mesh.blockCount(), mesh.totalQuads(), (System.nanoTime() - start) / 1_000_000);
         }
@@ -110,7 +123,9 @@ public final class GhostRenderer {
         BlockPos anchor = state.anchor();
         int[] tint = tintFor(m, anchor, level, mc);
         boolean hideMatched = state.hideMatched();
-        boolean[] needs = hideMatched ? placementScan(m, anchor, level, state) : null;
+        boolean[] needs = hideMatched ? placementScan(m, transform, anchor, level, state) : null;
+        boolean hideWrongToo = hideMatched && state.hideWrongToo();
+        boolean[] wrong = wrongBlock;
         boolean layerClip = state.layerClip();
 
         var cam = mc.gameRenderer.getMainCamera().position();
@@ -129,6 +144,9 @@ public final class GhostRenderer {
             if (needs != null && !needs[i]) {
                 continue;
             }
+            if (hideWrongToo && wrong != null && wrong.length == blocks && wrong[i]) {
+                continue;
+            }
             if (layerClip && !state.layerVisible(m.blockY(i))) {
                 continue;
             }
@@ -143,40 +161,72 @@ public final class GhostRenderer {
         }
 
         if (m.fluidCount() > 0) {
-            renderFluids(m, anchor, cam, level, mc, buffer, hideMatched);
+            renderFluids(m, anchor, cam, level, mc, buffer, hideMatched, hideWrongToo);
         }
         ctx.bufferSource().endBatch(renderType);
 
         if (m.blockEntityCount() > 0) {
-            renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched);
+            renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched, hideWrongToo);
         }
-        if (hideMatched && wrongBlock != null) {
-            renderWrongBlocks(m, anchor, cam, ctx, state);
+        if (hideMatched) {
+            renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
+                    anchor, cam, ctx, state, WRONG_COLOR);
+            renderExtraBlocks(anchor, cam, ctx, state);
         }
 
         state.setRemainingBlocks(hideMatched ? placedCount : -1, m.blockCount());
     }
 
-    /** Red wire cube where the world has a different (non-air) block than the schematic. */
-    private static void renderWrongBlocks(GhostMesh m, BlockPos anchor, Vec3 cam,
-                                          LevelRenderContext ctx, GhostState state) {
-        boolean[] wrong = wrongBlock;
-        if (wrong == null || wrong.length != m.blockCount()) {
+    private interface IntLookup {
+        int get(int index);
+    }
+
+    /** Wire cube for every flagged index, using the given per-index footprint-local coordinates. */
+    private static void renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
+                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
+                                        GhostState state, int color) {
+        if (flags == null || flags.length != count) {
             return;
         }
         boolean layerClip = state.layerClip();
         VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
         PoseStack ps = new PoseStack();
         boolean any = false;
-        for (int i = 0; i < wrong.length; i++) {
-            if (!wrong[i] || (layerClip && !state.layerVisible(m.blockY(i)))) {
+        for (int i = 0; i < count; i++) {
+            if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
                 continue;
             }
             ShapeRenderer.renderShape(ps, lines, Shapes.block(),
-                    anchor.getX() + m.blockX(i) - cam.x,
-                    anchor.getY() + m.blockY(i) - cam.y,
-                    anchor.getZ() + m.blockZ(i) - cam.z,
-                    0xC0FF3030, 2.5f);
+                    anchor.getX() + x.get(i) - cam.x,
+                    anchor.getY() + y.get(i) - cam.y,
+                    anchor.getZ() + z.get(i) - cam.z,
+                    color, 2.5f);
+            any = true;
+        }
+        if (any) {
+            ctx.bufferSource().endBatch(RenderTypes.lines());
+        }
+    }
+
+    /** Orange wire cube where the world has a block but the schematic calls for nothing there. */
+    private static void renderExtraBlocks(BlockPos anchor, Vec3 cam, LevelRenderContext ctx, GhostState state) {
+        int[] xs = extraX;
+        int[] ys = extraY;
+        int[] zs = extraZ;
+        if (xs == null || ys == null || zs == null || xs.length == 0) {
+            return;
+        }
+        boolean layerClip = state.layerClip();
+        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        PoseStack ps = new PoseStack();
+        boolean any = false;
+        for (int i = 0; i < xs.length; i++) {
+            if (layerClip && !state.layerVisible(ys[i])) {
+                continue;
+            }
+            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                    anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y, anchor.getZ() + zs[i] - cam.z,
+                    EXTRA_COLOR, 2.5f);
             any = true;
         }
         if (any) {
@@ -187,9 +237,11 @@ public final class GhostRenderer {
     /**
      * Per-block "still needs placing" flags for build-assist, rescanned against the world at most
      * every {@value #SCAN_INTERVAL_NANOS} ns (or immediately when the mesh / anchor / match mode
-     * changes) instead of every frame.
+     * changes) instead of every frame. Also refreshes the "extra block" list (world has something
+     * where the schematic calls for nothing) over the footprint's bounding volume.
      */
-    private static boolean[] placementScan(GhostMesh m, BlockPos anchor, ClientLevel level, GhostState state) {
+    private static boolean[] placementScan(GhostMesh m, PlacementTransform transform, BlockPos anchor,
+                                           ClientLevel level, GhostState state) {
         long key = ((long) System.identityHashCode(m) << 20) ^ anchor.asLong()
                 ^ (state.matchBlockOnly() ? 0x5555_5555L : 0L);
         long now = System.nanoTime();
@@ -217,12 +269,67 @@ public final class GhostRenderer {
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
+        scanExtraBlocks(m, transform, anchor, level);
         return out;
+    }
+
+    /**
+     * Cells inside the schematic's bounding box where the schematic is air but the world isn't —
+     * blocks that don't belong to the build. Skipped above {@value #EXTRA_SCAN_VOLUME_LIMIT} cells to
+     * avoid a hitch on a very large or very sparse schematic.
+     */
+    private static void scanExtraBlocks(GhostMesh m, PlacementTransform transform, BlockPos anchor,
+                                        ClientLevel level) {
+        int fx = transform.footprintX();
+        int fy = transform.footprintY();
+        int fz = transform.footprintZ();
+        long volume = (long) fx * fy * fz;
+        if (volume > EXTRA_SCAN_VOLUME_LIMIT) {
+            if (!warnedExtrasTooLarge) {
+                warnedExtrasTooLarge = true;
+                HoloPlaceClient.LOGGER.info(
+                        "Skipping extra-block scan for '{}': bounding volume {} exceeds {}",
+                        m.schematic().name(), volume, EXTRA_SCAN_VOLUME_LIMIT);
+            }
+            extraX = new int[0];
+            extraY = new int[0];
+            extraZ = new int[0];
+            return;
+        }
+
+        SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, transform);
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        java.util.List<int[]> found = new java.util.ArrayList<>();
+        for (int y = 0; y < fy; y++) {
+            for (int z = 0; z < fz; z++) {
+                for (int x = 0; x < fx; x++) {
+                    pos.set(anchor.getX() + x, anchor.getY() + y, anchor.getZ() + z);
+                    if (!view.getBlockState(pos).isAir() || level.getBlockState(pos).isAir()) {
+                        continue;
+                    }
+                    found.add(new int[] {x, y, z});
+                }
+            }
+        }
+        int n = found.size();
+        int[] xs = new int[n];
+        int[] ys = new int[n];
+        int[] zs = new int[n];
+        for (int i = 0; i < n; i++) {
+            int[] p = found.get(i);
+            xs[i] = p[0];
+            ys[i] = p[1];
+            zs[i] = p[2];
+        }
+        extraX = xs;
+        extraY = ys;
+        extraZ = zs;
     }
 
     /** Wire cube for block entities we can't (or are told not to) render as a real model. */
     private static void renderBlockEntityMarkers(GhostMesh m, BlockPos anchor, ClientLevel level,
-                                                 Vec3 cam, LevelRenderContext ctx, boolean hideMatched) {
+                                                 Vec3 cam, LevelRenderContext ctx, boolean hideMatched,
+                                                 boolean hideWrongToo) {
         GhostState state = GhostState.get();
         boolean models = state.blockEntityModels();
         int color = (state.opacityAlpha() << 24) | 0x0055CCFF;
@@ -240,7 +347,7 @@ public final class GhostRenderer {
                 continue;
             }
             worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
-            if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
+            if (hideMatched && isBuiltOrHiddenWrong(level.getBlockState(worldPos), m.beState(i), state, hideWrongToo)) {
                 continue;
             }
             ShapeRenderer.renderShape(ps, lines, Shapes.block(),
@@ -251,6 +358,16 @@ public final class GhostRenderer {
         if (any) {
             ctx.bufferSource().endBatch(RenderTypes.lines());
         }
+    }
+
+    /** True when build-assist should skip drawing this cell: it's already built, or it's wrongly
+     *  built and {@code hideWrongToo} says to hide those too. */
+    private static boolean isBuiltOrHiddenWrong(BlockState world, BlockState ghost, GhostState state,
+                                                boolean hideWrongToo) {
+        if (state.matches(world, ghost)) {
+            return true;
+        }
+        return hideWrongToo && !world.isAir();
     }
 
     /**
@@ -278,6 +395,7 @@ public final class GhostRenderer {
                 ctx.submitNodeCollector(), state.opacity());
         BlockPos anchor = state.anchor();
         boolean hideMatched = state.hideMatched();
+        boolean hideWrongToo = hideMatched && state.hideWrongToo();
         boolean layerClip = state.layerClip();
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
@@ -292,7 +410,7 @@ public final class GhostRenderer {
             int wy = anchor.getY() + m.beY(i);
             int wz = anchor.getZ() + m.beZ(i);
             worldPos.set(wx, wy, wz);
-            if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
+            if (hideMatched && isBuiltOrHiddenWrong(level.getBlockState(worldPos), m.beState(i), state, hideWrongToo)) {
                 continue;
             }
             try {
@@ -337,7 +455,8 @@ public final class GhostRenderer {
     }
 
     private static void renderFluids(GhostMesh m, BlockPos anchor, Vec3 cam, ClientLevel level,
-                                     Minecraft mc, VertexConsumer buffer, boolean hideMatched) {
+                                     Minecraft mc, VertexConsumer buffer, boolean hideMatched,
+                                     boolean hideWrongToo) {
         SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, m.transform());
         FluidRenderer fluidRenderer = new FluidRenderer(mc.getModelManager().getFluidStateModelSet());
         // FluidRenderer emits vertices in section-local space (pos & 15); shift each back to
@@ -357,7 +476,7 @@ public final class GhostRenderer {
             int wz = anchor.getZ() + m.fluidZ(i);
             worldPos.set(wx, wy, wz);
             BlockState state = m.fluidState(i);
-            if (hideMatched && g.matches(level.getBlockState(worldPos), state)) {
+            if (hideMatched && isBuiltOrHiddenWrong(level.getBlockState(worldPos), state, g, hideWrongToo)) {
                 continue;
             }
             offset.setOffset((wx & ~15) - cam.x, (wy & ~15) - cam.y, (wz & ~15) - cam.z);

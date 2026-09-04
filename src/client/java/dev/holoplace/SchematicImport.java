@@ -40,7 +40,7 @@ public final class SchematicImport {
                 }
             } catch (Exception e) {
                 HoloPlaceClient.LOGGER.error("Failed to import dropped schematic {}", file, e);
-                message("§cCould not import " + file.getFileName());
+                message(text("holoplace.import.failed", file.getFileName()));
             }
         }
         if (firstImported != null) {
@@ -52,7 +52,7 @@ public final class SchematicImport {
     public static void show(Path file, boolean enterGrab) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
-            message("§cJoin a world first");
+            message(text("holoplace.import.join_world"));
             return;
         }
         try {
@@ -64,22 +64,26 @@ public final class SchematicImport {
             if (enterGrab && !PlacementController.get().isGrabbing()) {
                 PlacementController.get().toggleGrab();
             }
-            message("§aShowing §e" + schematic.name() + " §7— look to position, §fG§7 to lock");
+            message(text("holoplace.import.showing", schematic.name()));
             if (!schematic.missingBlocks().isEmpty()) {
-                message("  §c" + schematic.missingBlocks().size() + " unknown block id(s) will be invisible");
+                message(text("holoplace.import.unknown_blocks", schematic.missingBlocks().size()));
             }
         } catch (Exception e) {
             HoloPlaceClient.LOGGER.error("Failed to read {}", file, e);
-            message("§cFailed to read " + file.getFileName() + ": " + e.getMessage());
+            message(text("holoplace.import.read_failed", file.getFileName(), e.getMessage()));
         }
     }
 
-    private static void message(String text) {
+    private static void message(String message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            mc.player.sendSystemMessage(Component.literal(text));
+            mc.player.sendSystemMessage(Component.literal(message));
         } else {
-            HoloPlaceClient.LOGGER.info(text);
+            HoloPlaceClient.LOGGER.info(message);
         }
+    }
+
+    private static String text(String key, Object... args) {
+        return Component.translatable(key, args).getString();
     }
 }

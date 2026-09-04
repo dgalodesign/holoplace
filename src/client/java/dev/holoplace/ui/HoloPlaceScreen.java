@@ -50,30 +50,35 @@ public final class HoloPlaceScreen extends Screen {
         root.addChild(new OpacitySlider(ROW_WIDTH));
 
         LinearLayout t1 = LinearLayout.horizontal().spacing(8);
-        t1.addChild(check(withKey("See-through", HoloPlaceKeys.SEE_THROUGH), g::seeThrough, v -> {
+        t1.addChild(check(withKey(text("holoplace.ui.see_through"), HoloPlaceKeys.SEE_THROUGH), g::seeThrough, v -> {
             g.setSeeThrough(v);
             HoloPlaceConfig.get().seeThrough = v;
             HoloPlaceConfig.save();
         }));
-        t1.addChild(check(withKey("Hide placed", HoloPlaceKeys.BUILD_ASSIST), g::hideMatched, v -> {
+        t1.addChild(check(withKey(text("holoplace.ui.hide_placed"), HoloPlaceKeys.BUILD_ASSIST), g::hideMatched, v -> {
             g.setHideMatched(v);
             HoloPlaceConfig.get().hideMatched = v;
             HoloPlaceConfig.save();
         }));
-        t1.addChild(check("Match block only", g::matchBlockOnly, v -> {
+        t1.addChild(check(text("holoplace.ui.match_block_only"), g::matchBlockOnly, v -> {
             g.setMatchBlockOnly(v);
             HoloPlaceConfig.get().matchBlockOnly = v;
+            HoloPlaceConfig.save();
+        }));
+        t1.addChild(check(text("holoplace.ui.hide_wrong_too"), g::hideWrongToo, v -> {
+            g.setHideWrongToo(v);
+            HoloPlaceConfig.get().hideWrongToo = v;
             HoloPlaceConfig.save();
         }));
         root.addChild(t1);
 
         LinearLayout t2 = LinearLayout.horizontal().spacing(8);
-        t2.addChild(check("Block entity models", g::blockEntityModels, v -> {
+        t2.addChild(check(text("holoplace.ui.block_entity_models"), g::blockEntityModels, v -> {
             g.setBlockEntityModels(v);
             HoloPlaceConfig.get().blockEntityModels = v;
             HoloPlaceConfig.save();
         }));
-        t2.addChild(check("Shading", g::shade, v -> {
+        t2.addChild(check(text("holoplace.ui.shading"), g::shade, v -> {
             g.setShade(v);
             HoloPlaceConfig.get().ambientOcclusion = v;
             HoloPlaceConfig.save();
@@ -85,15 +90,16 @@ public final class HoloPlaceScreen extends Screen {
 
         LinearLayout actions = LinearLayout.horizontal().spacing(6);
         boolean loaded = g.schematic() != null;
-        actions.addChild(Button.builder(Component.literal(g.isVisible() ? "Hide" : "Show"), b -> {
+        actions.addChild(Button.builder(
+                Component.translatable(g.isVisible() ? "holoplace.ui.hide" : "holoplace.ui.show"), b -> {
             g.setVisible(!g.isVisible());
             onClose();
         }).width(80).build()).active = loaded;
-        actions.addChild(Button.builder(Component.literal("Reset rot/mirror"),
+        actions.addChild(Button.builder(Component.translatable("holoplace.ui.reset_transform"),
                 b -> PlacementController.get().resetTransform()).width(130).build()).active = loaded;
         root.addChild(actions);
 
-        root.addChild(new StringWidget(ROW_WIDTH, 9, Component.literal("§7Schematics"), this.font));
+        root.addChild(new StringWidget(ROW_WIDTH, 9, Component.translatable("holoplace.ui.schematics"), this.font));
         addSchematicList(root);
 
         root.addChild(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).width(120).build());
@@ -113,7 +119,7 @@ public final class HoloPlaceScreen extends Screen {
         row.addChild(x);
         row.addChild(y);
         row.addChild(z);
-        row.addChild(Button.builder(Component.literal("Move"), b -> {
+        row.addChild(Button.builder(Component.translatable("holoplace.ui.move"), b -> {
             Integer ix = parseInt(x.getValue());
             Integer iy = parseInt(y.getValue());
             Integer iz = parseInt(z.getValue());
@@ -131,7 +137,7 @@ public final class HoloPlaceScreen extends Screen {
 
         if (layers <= 1) {
             col.addChild(new StringWidget(ROW_WIDTH, 9,
-                    Component.literal("§7Layers: §8single layer"), this.font));
+                    Component.translatable("holoplace.ui.layer_single"), this.font));
             return col;
         }
 
@@ -142,7 +148,7 @@ public final class HoloPlaceScreen extends Screen {
         LinearLayout header = LinearLayout.horizontal().spacing(6);
         StringWidget label = new StringWidget(230, 12, layerLabel(lo, hi, layers), this.font);
         header.addChild(label);
-        header.addChild(Button.builder(Component.literal("All"),
+        header.addChild(Button.builder(Component.translatable("holoplace.ui.all"),
                 b -> PlacementController.get().clearLayers()).width(40).build());
         col.addChild(header);
 
@@ -151,11 +157,11 @@ public final class HoloPlaceScreen extends Screen {
             label.setMessage(layerLabel(range[0], range[1], layers));
             PlacementController.get().setLayers(range[0], range[1]);
         };
-        col.addChild(new LayerSlider("From", layers - 1, range[0], v -> {
+        col.addChild(new LayerSlider(text("holoplace.ui.layer_from"), layers - 1, range[0], v -> {
             range[0] = Math.min(v, range[1]);
             apply.run();
         }));
-        col.addChild(new LayerSlider("To", layers - 1, range[1], v -> {
+        col.addChild(new LayerSlider(text("holoplace.ui.layer_to"), layers - 1, range[1], v -> {
             range[1] = Math.max(v, range[0]);
             apply.run();
         }));
@@ -163,14 +169,16 @@ public final class HoloPlaceScreen extends Screen {
     }
 
     private static Component layerLabel(int lo, int hi, int total) {
-        String span = lo == hi ? "layer " + lo : "layers " + lo + "–" + hi;
-        return Component.literal("§7" + span + " §8of " + total);
+        String span = lo == hi
+                ? text("holoplace.ui.layer_one", lo)
+                : text("holoplace.ui.layer_range", lo, hi);
+        return Component.translatable("holoplace.ui.layer_of", span, total);
     }
 
     private void addSchematicList(LinearLayout root) {
         List<Path> files = SchematicLibrary.list();
         if (files.isEmpty()) {
-            root.addChild(Button.builder(Component.literal("Open schematics folder"),
+            root.addChild(Button.builder(Component.translatable("holoplace.ui.open_folder"),
                             b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()))
                     .width(ROW_WIDTH).build());
             return;
@@ -193,7 +201,7 @@ public final class HoloPlaceScreen extends Screen {
                 rebuildWidgets();
             }).width(40).build()).active = page > 0;
             pager.addChild(new StringWidget(90, 18,
-                    Component.literal("§7page " + (page + 1) + "/" + pages), this.font));
+                    Component.translatable("holoplace.ui.page", page + 1, pages), this.font));
             pager.addChild(Button.builder(Component.literal(">"), b -> {
                 page++;
                 rebuildWidgets();
@@ -212,6 +220,10 @@ public final class HoloPlaceScreen extends Screen {
     private static String withKey(String base, KeyMapping key) {
         return key.isUnbound() ? base
                 : base + " (" + key.getTranslatedKeyMessage().getString() + ")";
+    }
+
+    private static String text(String key, Object... args) {
+        return Component.translatable(key, args).getString();
     }
 
     private Checkbox check(String label, BooleanSupplier get, Consumer<Boolean> set) {
@@ -278,7 +290,8 @@ public final class HoloPlaceScreen extends Screen {
 
         @Override
         protected void updateMessage() {
-            setMessage(Component.literal("Opacity: " + Math.round(GhostState.get().opacity() * 100) + "%"));
+            setMessage(Component.literal(
+                    text("holoplace.ui.opacity", Math.round(GhostState.get().opacity() * 100)) + "%"));
         }
 
         @Override

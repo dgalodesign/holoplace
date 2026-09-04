@@ -22,6 +22,7 @@ public final class HoloPlaceConfig {
     public int verticalOffset = 0;
     public boolean seeThrough = false;
     public boolean hideMatched = false;
+    public boolean hideWrongToo = false;
     public boolean matchBlockOnly = false;
     public boolean blockEntityModels = true;
     public boolean ambientOcclusion = true;

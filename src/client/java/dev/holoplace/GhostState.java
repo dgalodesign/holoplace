@@ -22,6 +22,7 @@ public final class GhostState {
     private boolean visible;
     private boolean seeThrough;
     private boolean hideMatched;
+    private boolean hideWrongToo;
     private boolean matchBlockOnly;
     private boolean blockEntityModels = true;
     private boolean shade = true;
@@ -85,6 +86,17 @@ public final class GhostState {
 
     public void setHideMatched(boolean hideMatched) {
         this.hideMatched = hideMatched;
+    }
+
+    /** When build-assist is on, also skip rendering the full ghost model for a wrongly-placed
+     *  block (world has a non-matching, non-air block there) — only the wrong-block marker shows.
+     *  Has no effect unless {@link #hideMatched()} is on. */
+    public boolean hideWrongToo() {
+        return hideWrongToo;
+    }
+
+    public void setHideWrongToo(boolean hideWrongToo) {
+        this.hideWrongToo = hideWrongToo;
     }
 
     public boolean matchBlockOnly() {
