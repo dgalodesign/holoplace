@@ -46,7 +46,9 @@ public final class GhostHud {
         lines.add("§7rot §f" + rotLabel(state.rotation()) + "  §7mirror §f" + mirrorLabel(state.mirror())
                 + "  §7opacity §f" + Math.round(state.opacity() * 100) + "%"
                 + (state.seeThrough() ? "  §bx-ray" : ""));
-        if (state.hideMatched() && state.totalBlocks() > 0) {
+        if (state.matchedBlocks() == -2) {
+            lines.add("§cSchematic too large to render");
+        } else if (state.hideMatched() && state.totalBlocks() > 0) {
             int placed = state.matchedBlocks();
             int total = state.totalBlocks();
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);

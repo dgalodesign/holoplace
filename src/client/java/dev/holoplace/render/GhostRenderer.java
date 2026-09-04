@@ -2,6 +2,7 @@ package dev.holoplace.render;
 
 import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
+import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -33,11 +34,19 @@ public final class GhostRenderer {
 
     private static final int FULL_BRIGHT = 0x00F000F0;
     private static final int NO_TINT = -1;
+    private static final int MAX_QUADS = 4_000_000;
+    private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
     private static int @Nullable [] blockTint;
     private static long tintKey;
+
+    private static boolean @Nullable [] needsPlacing;
+    private static long scanKey;
+    private static long lastScanNanos;
+    private static int placedCount;
+    private static boolean warnedTooLarge;
 
     private GhostRenderer() {
     }
@@ -49,6 +58,8 @@ public final class GhostRenderer {
     public static void invalidate() {
         mesh = null;
         blockTint = null;
+        needsPlacing = null;
+        warnedTooLarge = false;
     }
 
     private static void render(LevelRenderContext ctx) {
@@ -69,13 +80,27 @@ public final class GhostRenderer {
             long start = System.nanoTime();
             mesh = GhostMesh.build(schematic, transform);
             blockTint = null;
+            needsPlacing = null;
+            warnedTooLarge = false;
             HoloPlaceClient.LOGGER.debug("Rebuilt ghost mesh: {} blocks / {} quads in {} ms",
                     mesh.blockCount(), mesh.totalQuads(), (System.nanoTime() - start) / 1_000_000);
         }
         GhostMesh m = mesh;
 
+        if (m.totalQuads() > MAX_QUADS) {
+            if (!warnedTooLarge) {
+                HoloPlaceClient.LOGGER.warn("Schematic '{}' is too large to render ({} quads)",
+                        state.sourceName(), m.totalQuads());
+                warnedTooLarge = true;
+            }
+            state.setRemainingBlocks(-2, m.blockCount());
+            return;
+        }
+
         BlockPos anchor = state.anchor();
         int[] tint = tintFor(m, anchor, level, mc);
+        boolean hideMatched = state.hideMatched();
+        boolean[] needs = hideMatched ? placementScan(m, anchor, level, state) : null;
 
         var cam = mc.gameRenderer.getMainCamera().position();
         float ox = (float) (anchor.getX() - cam.x);
@@ -88,17 +113,9 @@ public final class GhostRenderer {
         VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
         QUAD.setLightCoords(FULL_BRIGHT);
 
-        boolean hideMatched = state.hideMatched();
-        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
-        int shown = 0;
-
         for (int i = 0, blocks = m.blockCount(); i < blocks; i++) {
-            if (hideMatched) {
-                worldPos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i),
-                        anchor.getZ() + m.blockZ(i));
-                if (state.matches(level.getBlockState(worldPos), m.blockState(i))) {
-                    continue;
-                }
+            if (needs != null && !needs[i]) {
+                continue;
             }
             int tinted = tint[i] == NO_TINT ? white : alpha | (tint[i] & 0x00FFFFFF);
             int end = m.quadStart(i + 1);
@@ -107,7 +124,6 @@ public final class GhostRenderer {
                 QUAD.setColor(quad.tinted() ? tinted : white);
                 buffer.putBlockBakedQuad(quad.x() + ox, quad.y() + oy, quad.z() + oz, quad.quad(), QUAD);
             }
-            shown++;
         }
 
         if (m.fluidCount() > 0) {
@@ -119,7 +135,39 @@ public final class GhostRenderer {
             renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched);
         }
 
-        state.setRemainingBlocks(hideMatched ? m.blockCount() - shown : -1, m.blockCount());
+        state.setRemainingBlocks(hideMatched ? placedCount : -1, m.blockCount());
+    }
+
+    /**
+     * Per-block "still needs placing" flags for build-assist, rescanned against the world at most
+     * every {@value #SCAN_INTERVAL_NANOS} ns (or immediately when the mesh / anchor / match mode
+     * changes) instead of every frame.
+     */
+    private static boolean[] placementScan(GhostMesh m, BlockPos anchor, ClientLevel level, GhostState state) {
+        long key = ((long) System.identityHashCode(m) << 20) ^ anchor.asLong()
+                ^ (state.matchBlockOnly() ? 0x5555_5555L : 0L);
+        long now = System.nanoTime();
+        boolean[] cached = needsPlacing;
+        if (cached != null && cached.length == m.blockCount() && key == scanKey
+                && now - lastScanNanos < SCAN_INTERVAL_NANOS) {
+            return cached;
+        }
+        boolean[] out = new boolean[m.blockCount()];
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int placed = 0;
+        for (int i = 0; i < out.length; i++) {
+            pos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i), anchor.getZ() + m.blockZ(i));
+            boolean built = state.matches(level.getBlockState(pos), m.blockState(i));
+            out[i] = !built;
+            if (built) {
+                placed++;
+            }
+        }
+        needsPlacing = out;
+        scanKey = key;
+        lastScanNanos = now;
+        placedCount = placed;
+        return out;
     }
 
     /** Block entities render (almost) nothing as a model, so mark their cells with a wire cube. */
@@ -165,7 +213,8 @@ public final class GhostRenderer {
     private static int[] tintFor(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc) {
         long key = ((long) System.identityHashCode(m) << 32) ^ anchor.asLong();
         int[] cached = blockTint;
-        if (cached != null && key == tintKey && cached.length == m.blockCount()) {
+        boolean haveUsable = cached != null && cached.length == m.blockCount();
+        if (haveUsable && (key == tintKey || PlacementController.get().isGrabbing())) {
             return cached;
         }
         int[] tint = new int[m.blockCount()];

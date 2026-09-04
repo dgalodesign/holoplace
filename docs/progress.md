@@ -262,4 +262,20 @@ M13 built (not separately verified — user said "continua"). Commit `6f28bbc`.
 ### Known gaps (M14)
 - Screen has no scroll — schematic list still capped (8 here).
 
-## Next — M15: GPU-buffer upload (perf for huge schematics) · real block-entity models (opt-in)
+M14 verified in-game 2026-09-04 — "funciona todo".
+
+## M15 — perf hardening 🚧 (written, compiles, **needs in-game check**)
+
+Not the GPU-buffer rewrite — lower-risk throttling on the paths that scaled with block count:
+
+- **Build-assist world scan** was `getBlockState` per baked block *every frame*. Now cached as a
+  `boolean[] needsPlacing`, rescanned at most every 250 ms (or immediately on mesh / anchor /
+  match-mode change). `placedCount` comes from the same pass.
+- **Biome tint** is frozen while grab mode is active (dragging) — recomputed once on drop.
+- **Guard**: a schematic over 4M quads is not rendered; the HUD says "too large" instead of freezing.
+
+### Known gaps (M15)
+- The per-quad `putBlockBakedQuad` in the frame buffer is still O(quads) every frame — that's the
+  one a real GPU-vertex-buffer upload would remove (deferred; higher risk on the new 26.1 GPU API).
+
+## Next — M16: GPU-buffer upload · real block-entity models (opt-in)
