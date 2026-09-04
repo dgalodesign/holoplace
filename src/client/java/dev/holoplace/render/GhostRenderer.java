@@ -54,6 +54,7 @@ public final class GhostRenderer {
     private static long lastScanNanos;
     private static int placedCount;
     private static boolean warnedTooLarge;
+    private static @Nullable GhostMesh loggedBeMesh;
 
     private GhostRenderer() {
     }
@@ -290,9 +291,8 @@ public final class GhostRenderer {
                 continue;
             }
             try {
-                BlockEntityRenderState s = dispatcher.tryExtractRenderState(be, partialTick, null);
+                BlockEntityRenderState s = extractState(dispatcher, be, partialTick, worldPos.immutable());
                 if (s != null) {
-                    s.blockPos = worldPos.immutable();
                     out.add(s);
                     submitted++;
                 }
@@ -300,10 +300,31 @@ public final class GhostRenderer {
                 HoloPlaceClient.LOGGER.debug("Block entity extract failed for {}", m.beState(i), e);
             }
         }
-        if (submitted != m.blockEntityCount()) {
-            HoloPlaceClient.LOGGER.debug("Ghost block entities: {} of {} submitted",
+        if (loggedBeMesh != m) {
+            loggedBeMesh = m;
+            HoloPlaceClient.LOGGER.info("Ghost block entities: {} of {} added to render list",
                     submitted, m.blockEntityCount());
         }
+    }
+
+    /**
+     * Extract a render state directly (bypassing {@code tryExtractRenderState}'s distance cull, which
+     * would drop the ghost's block entities because their built position is near the origin).
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static @Nullable BlockEntityRenderState extractState(
+            BlockEntityRenderDispatcher dispatcher, BlockEntity be, float partialTick, BlockPos worldCell) {
+        var renderer = dispatcher.getRenderer(be);
+        if (renderer == null) {
+            return null;
+        }
+        BlockEntityRenderState s = renderer.createRenderState();
+        Vec3 camPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        ((net.minecraft.client.renderer.blockentity.BlockEntityRenderer) renderer)
+                .extractRenderState(be, s, partialTick, camPos, null);
+        s.blockPos = worldCell;
+        s.lightCoords = FULL_BRIGHT;
+        return s;
     }
 
     private static void renderFluids(GhostMesh m, BlockPos anchor, Vec3 cam, ClientLevel level,

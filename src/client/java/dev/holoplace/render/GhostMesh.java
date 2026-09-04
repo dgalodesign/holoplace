@@ -255,6 +255,12 @@ final class GhostMesh {
         }
         quadStart[blockCount] = allQuads.size();
 
+        long beOk = beEntityList.stream().filter(java.util.Objects::nonNull).count();
+        if (!bePositions.isEmpty()) {
+            HoloPlaceClient.LOGGER.info("Ghost mesh: {} block-entity cells, {} constructed",
+                    bePositions.size(), beOk);
+        }
+
         return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
                 allQuads.toArray(new Quad[0]),
                 col(fluidPositions, 0), col(fluidPositions, 1), col(fluidPositions, 2),
