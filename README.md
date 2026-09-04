@@ -12,8 +12,8 @@ on Litematica.
 
 ## Status
 
-Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
-[`docs/progress.md`](docs/progress.md) for what's done.
+MVP complete and verified in-game (Minecraft 26.1.2). See [`docs/plan.md`](docs/plan.md)
+for the plan and [`docs/progress.md`](docs/progress.md) for the milestone history.
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -23,18 +23,21 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M3 | Drag-to-position (raycast anchor, wheel distance/height) | ✅ |
 | M4 | Rotate / mirror / opacity + always-visible HUD panel | ✅ |
 | M5 | Flat picker screen + OS drag-and-drop import + tab-complete | ✅ |
-| M6 | Mesh cache — no per-frame re-tesselation | 🚧 written, needs in-game check |
+| M6 | Mesh cache — no per-frame re-tesselation | ✅ |
 | M7 | See-through / x-ray toggle (draw over walls) | ✅ |
-| M8 | Build-assist — hide blocks already placed | ✅ |
-| M9 | Material list (`/holoplace materials`) | ✅ |
-| M10 | Per-world placement persistence (restored on rejoin) | ✅ |
+| M8 | Build-assist — hide blocks already placed + progress % | ✅ |
+| M9 | Material list (`/holoplace materials`) — total & still missing | ✅ |
+| M10 | Per-world placement persistence; hide ≠ clear | ✅ |
 | M11 | Biome tint (grass / leaves / water colour) | ✅ |
 | M12 | Fluids (water / lava sources, waterlogged blocks) | ✅ |
-| M13 | Block-entity markers (wire cube where chests/signs go) | ✅ |
+| M13 | Block-entity wire markers (fallback) | ✅ |
 | M14 | One controls screen (opacity slider + toggles + list) · block-only match | ✅ |
 | M15 | Perf hardening (throttled build-assist scan, tint freeze on drag, size guard) | ✅ |
-| M16 | Real block-entity models (chests, signs, beds…) | 🚧 written, needs in-game check |
-| M17 | UX batch: help/welcome, rotate-centre, move/nudge, layer clip, wrong-block red, shading, paged list | 🚧 written, needs in-game check |
+| M16 | Real block-entity models (chests, signs, beds…), opacity-aware | ✅ |
+| M17 | help/welcome · rotate-around-centre · move/nudge · layer sliders · wrong-block red · face shading · paged list | ✅ |
+
+Not done: GPU vertex-buffer upload (a perf win for very large schematics — the current
+per-frame vertex submit is capped at 4M quads).
 
 ## Controls
 
@@ -56,6 +59,10 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | `X` | Toggle see-through (draw the ghost over walls) |
 | `H` | Toggle build-assist (hide blocks you've already placed) |
 | `Alt`+wheel | Opacity ±5% |
+
+The `K` screen has the opacity slider, every toggle (with its key), X/Y/Z fields, and
+two "layer" sliders to view the schematic one floor at a time. With build-assist on,
+blocks you've placed wrong show a red outline.
 
 Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`. Where you
 leave a placed schematic is remembered per world and restored when you rejoin.

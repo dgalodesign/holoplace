@@ -322,7 +322,21 @@ User picked all evaluated improvements except inventory-aware materials:
 - **G — paged schematic list**: 10 per page with `< page n/m >` instead of a hard cap of 8.
 
 ### Known gaps (M17)
-- Layers are footprint-local Y (0 = bottom); no keybind/scroll to sweep the layer window yet.
-- Shading is per-quad, not true per-vertex AO.
+- Shading is per-quad directional darkening, not true per-vertex AO.
 
-## Next — verify M16 + M17 in-game; GPU buffer still open
+M16 + M17 verified in-game 2026-09-04, with these follow-up fixes:
+- `d321e05` — fluids rendered far above the ghost (`FluidRenderer` emits section-local coords);
+  wrapped the output in `OffsetVertexConsumer`. Also litematica strips the BE `id` from its NBT →
+  build via `EntityBlock.newBlockEntity` + `loadWithComponents`. Layer control → two sliders +
+  count. Key hints on the screen checkboxes.
+- `0bd0876` — block entities were all culled: `tryExtractRenderState` distance-checks
+  `be.getBlockPos()`, which is near the origin for a ghost BE. Extract the render state directly.
+- `1814140` / `6ca6b6b` — block-entity models ignored the opacity slider (their render types don't
+  blend). `GhostSubmitCollector` wraps the submit collector, multiplies the ghost alpha into every
+  colour, and — for non-blending render types — reflectively reads the type's texture and swaps in
+  `RenderTypes.entityTranslucent`. Verified: chests/signs now fade with the slider.
+
+## Status: MVP complete, all milestones verified.
+
+Open item: GPU vertex-buffer upload (removes the per-frame `putBlockBakedQuad` cost; current cap is
+4M quads). Higher risk on the new 26.1 GPU API; deferred until a real need shows up.
