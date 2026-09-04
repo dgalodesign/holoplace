@@ -14,7 +14,9 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.network.chat.Component;
@@ -45,6 +47,15 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
         return ARGB.multiplyAlpha(color == -1 ? 0xFFFFFFFF : color, alpha);
     }
 
+    /** Swap an opaque render type for a translucent one on the same texture, so the tint can blend. */
+    private RenderType blendable(RenderType renderType) {
+        if (alpha >= 0.995f || renderType.hasBlending()) {
+            return renderType;
+        }
+        Identifier texture = RenderTypeTextures.of(renderType);
+        return texture == null ? renderType : RenderTypes.entityTranslucent(texture);
+    }
+
     private int[] tint(int[] colors) {
         int[] out = new int[colors.length];
         for (int i = 0; i < colors.length; i++) {
@@ -63,7 +74,7 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
                                 int lightCoords, int overlayCoords, int tintedColor,
                                 @Nullable TextureAtlasSprite sprite, int outlineColor,
                                 ModelFeatureRenderer.@Nullable CrumblingOverlay crumblingOverlay) {
-        delegate.submitModel(model, state, poseStack, renderType, lightCoords, overlayCoords,
+        delegate.submitModel(model, state, poseStack, blendable(renderType), lightCoords, overlayCoords,
                 tint(tintedColor), sprite, outlineColor, crumblingOverlay);
     }
 
@@ -72,14 +83,14 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
                                 int lightCoords, int overlayCoords, @Nullable TextureAtlasSprite sprite,
                                 boolean sheeted, boolean hasFoil, int tintedColor,
                                 ModelFeatureRenderer.@Nullable CrumblingOverlay crumblingOverlay, int outlineColor) {
-        delegate.submitModelPart(modelPart, poseStack, renderType, lightCoords, overlayCoords, sprite,
-                sheeted, hasFoil, tint(tintedColor), crumblingOverlay, outlineColor);
+        delegate.submitModelPart(modelPart, poseStack, blendable(renderType), lightCoords, overlayCoords,
+                sprite, sheeted, hasFoil, tint(tintedColor), crumblingOverlay, outlineColor);
     }
 
     @Override
     public void submitBlockModel(PoseStack poseStack, RenderType renderType, List<BlockStateModelPart> parts,
                                  int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
-        delegate.submitBlockModel(poseStack, renderType, parts, tint(tintLayers),
+        delegate.submitBlockModel(poseStack, blendable(renderType), parts, tint(tintLayers),
                 lightCoords, overlayCoords, outlineColor);
     }
 
