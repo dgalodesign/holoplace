@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.List;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
@@ -61,7 +60,7 @@ public final class GhostRenderer {
 
     public static void register() {
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(GhostRenderer::render);
-        LevelRenderEvents.END_EXTRACTION.register(GhostRenderer::extractBlockEntities);
+        LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::submitBlockEntities);
     }
 
     public static void invalidate() {
@@ -255,11 +254,10 @@ public final class GhostRenderer {
     }
 
     /**
-     * Add real block-entity render states (chests, signs, beds…) into the level's list during the
-     * extraction phase; vanilla's {@code submitBlockEntities} then draws them, translating each by
-     * {@code renderState.blockPos - camera}.
+     * Submit real block-entity models (chests, signs, beds…) during the collect phase, through a
+     * wrapper that fades their colours with the ghost opacity.
      */
-    private static void extractBlockEntities(LevelExtractionContext ctx) {
+    private static void submitBlockEntities(LevelRenderContext ctx) {
         GhostState state = GhostState.get();
         GhostMesh m = mesh;
         if (!state.isVisible() || !state.blockEntityModels() || m == null
@@ -273,11 +271,15 @@ public final class GhostRenderer {
         }
 
         BlockEntityRenderDispatcher dispatcher = mc.getBlockEntityRenderDispatcher();
-        float partialTick = ctx.deltaTracker().getGameTimeDeltaPartialTick(false);
-        List<BlockEntityRenderState> out = ctx.levelState().blockEntityRenderStates;
+        float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        var camState = ctx.levelState().cameraRenderState;
+        Vec3 camPos = camState.pos;
+        GhostSubmitCollector collector = new GhostSubmitCollector(
+                ctx.submitNodeCollector(), state.opacity());
         BlockPos anchor = state.anchor();
         boolean hideMatched = state.hideMatched();
         boolean layerClip = state.layerClip();
+        PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
         int submitted = 0;
 
@@ -286,23 +288,30 @@ public final class GhostRenderer {
             if (be == null || (layerClip && !state.layerVisible(m.beY(i)))) {
                 continue;
             }
-            worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
+            int wx = anchor.getX() + m.beX(i);
+            int wy = anchor.getY() + m.beY(i);
+            int wz = anchor.getZ() + m.beZ(i);
+            worldPos.set(wx, wy, wz);
             if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
                 continue;
             }
             try {
                 BlockEntityRenderState s = extractState(dispatcher, be, partialTick, worldPos.immutable());
-                if (s != null) {
-                    out.add(s);
-                    submitted++;
+                if (s == null) {
+                    continue;
                 }
+                ps.pushPose();
+                ps.translate(wx - camPos.x, wy - camPos.y, wz - camPos.z);
+                dispatcher.submit(s, ps, collector, camState);
+                ps.popPose();
+                submitted++;
             } catch (Exception e) {
-                HoloPlaceClient.LOGGER.debug("Block entity extract failed for {}", m.beState(i), e);
+                HoloPlaceClient.LOGGER.debug("Block entity submit failed for {}", m.beState(i), e);
             }
         }
         if (loggedBeMesh != m) {
             loggedBeMesh = m;
-            HoloPlaceClient.LOGGER.info("Ghost block entities: {} of {} added to render list",
+            HoloPlaceClient.LOGGER.info("Ghost block entities: {} of {} submitted",
                     submitted, m.blockEntityCount());
         }
     }
