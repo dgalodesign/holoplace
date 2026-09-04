@@ -14,10 +14,14 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -263,19 +267,37 @@ final class GhostMesh {
     private static @Nullable BlockEntity makeBlockEntity(
             HolderLookup.@Nullable Provider registries,
             BlockPos footprintPos, BlockState state, @Nullable CompoundTag nbt) {
-        if (registries == null || nbt == null) {
+        if (registries == null || !(state.getBlock() instanceof EntityBlock entityBlock)) {
             return null;
         }
+        BlockEntity be;
         try {
-            BlockEntity be = BlockEntity.loadStatic(footprintPos, state, nbt, registries);
-            if (be != null) {
-                be.setLevel(Minecraft.getInstance().level);
-            }
-            return be;
+            be = entityBlock.newBlockEntity(footprintPos, state);
         } catch (Exception e) {
-            HoloPlaceClient.LOGGER.debug("Could not build block entity {} at {}", state, footprintPos, e);
             return null;
         }
+        if (be == null) {
+            return null;
+        }
+        be.setLevel(Minecraft.getInstance().level);
+
+        // Litematica strips the vanilla id/x/y/z from block-entity NBT; re-derive the id and load
+        // whatever data (chest contents, sign text, banner patterns…) is present.
+        if (nbt != null && !nbt.isEmpty()) {
+            try {
+                CompoundTag data = nbt.copy();
+                data.remove("x");
+                data.remove("y");
+                data.remove("z");
+                data.putString("id",
+                        BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()).toString());
+                be.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, registries, data));
+            } catch (Exception e) {
+                HoloPlaceClient.LOGGER.debug("Block entity data load failed for {} at {}",
+                        state, footprintPos, e);
+            }
+        }
+        return be;
     }
 
     private static int[] col(List<int[]> rows, int axis) {

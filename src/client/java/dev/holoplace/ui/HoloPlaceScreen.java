@@ -1,14 +1,18 @@
 package dev.holoplace.ui;
 
 import dev.holoplace.GhostState;
+import dev.holoplace.HoloPlaceKeys;
 import dev.holoplace.SchematicImport;
 import dev.holoplace.SchematicLibrary;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
+import dev.holoplace.schematic.PlacementTransform;
+import net.minecraft.client.KeyMapping;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
@@ -46,12 +50,12 @@ public final class HoloPlaceScreen extends Screen {
         root.addChild(new OpacitySlider(ROW_WIDTH));
 
         LinearLayout t1 = LinearLayout.horizontal().spacing(8);
-        t1.addChild(check("See-through", g::seeThrough, v -> {
+        t1.addChild(check(withKey("See-through", HoloPlaceKeys.SEE_THROUGH), g::seeThrough, v -> {
             g.setSeeThrough(v);
             HoloPlaceConfig.get().seeThrough = v;
             HoloPlaceConfig.save();
         }));
-        t1.addChild(check("Hide placed", g::hideMatched, v -> {
+        t1.addChild(check(withKey("Hide placed", HoloPlaceKeys.BUILD_ASSIST), g::hideMatched, v -> {
             g.setHideMatched(v);
             HoloPlaceConfig.get().hideMatched = v;
             HoloPlaceConfig.save();
@@ -120,24 +124,47 @@ public final class HoloPlaceScreen extends Screen {
         return row;
     }
 
-    private LinearLayout layerRow(GhostState g) {
-        LinearLayout row = LinearLayout.horizontal().spacing(4);
-        EditBox min = intBox(g.layerClip() ? String.valueOf(g.layerMin()) : "");
-        EditBox max = intBox(g.layerClip() && g.layerMax() != Integer.MAX_VALUE
-                ? String.valueOf(g.layerMax()) : "");
-        row.addChild(new StringWidget(40, 18, Component.literal("§7layers"), this.font));
-        row.addChild(min);
-        row.addChild(max);
-        row.addChild(Button.builder(Component.literal("Set"), b -> {
-            Integer lo = parseInt(min.getValue());
-            Integer hi = parseInt(max.getValue());
-            if (lo != null) {
-                PlacementController.get().setLayers(lo, hi != null ? hi : lo);
-            }
-        }).width(40).build()).active = g.schematic() != null;
-        row.addChild(Button.builder(Component.literal("All"),
+    private net.minecraft.client.gui.layouts.LayoutElement layerRow(GhostState g) {
+        PlacementTransform t = g.transform();
+        int layers = t == null ? 0 : t.footprintY();
+        LinearLayout col = LinearLayout.vertical().spacing(2);
+
+        if (layers <= 1) {
+            col.addChild(new StringWidget(ROW_WIDTH, 9,
+                    Component.literal("§7Layers: §8single layer"), this.font));
+            return col;
+        }
+
+        int hi = g.layerClip() && g.layerMax() != Integer.MAX_VALUE
+                ? Math.min(g.layerMax(), layers - 1) : layers - 1;
+        int lo = g.layerClip() ? Math.min(g.layerMin(), hi) : 0;
+
+        LinearLayout header = LinearLayout.horizontal().spacing(6);
+        StringWidget label = new StringWidget(230, 12, layerLabel(lo, hi, layers), this.font);
+        header.addChild(label);
+        header.addChild(Button.builder(Component.literal("All"),
                 b -> PlacementController.get().clearLayers()).width(40).build());
-        return row;
+        col.addChild(header);
+
+        int[] range = {lo, hi};
+        Runnable apply = () -> {
+            label.setMessage(layerLabel(range[0], range[1], layers));
+            PlacementController.get().setLayers(range[0], range[1]);
+        };
+        col.addChild(new LayerSlider("From", layers - 1, range[0], v -> {
+            range[0] = Math.min(v, range[1]);
+            apply.run();
+        }));
+        col.addChild(new LayerSlider("To", layers - 1, range[1], v -> {
+            range[1] = Math.max(v, range[0]);
+            apply.run();
+        }));
+        return col;
+    }
+
+    private static Component layerLabel(int lo, int hi, int total) {
+        String span = lo == hi ? "layer " + lo : "layers " + lo + "–" + hi;
+        return Component.literal("§7" + span + " §8of " + total);
     }
 
     private void addSchematicList(LinearLayout root) {
@@ -182,6 +209,11 @@ public final class HoloPlaceScreen extends Screen {
         return box;
     }
 
+    private static String withKey(String base, KeyMapping key) {
+        return key.isUnbound() ? base
+                : base + " (" + key.getTranslatedKeyMessage().getString() + ")";
+    }
+
     private Checkbox check(String label, BooleanSupplier get, Consumer<Boolean> set) {
         return Checkbox.builder(Component.literal(label), this.font)
                 .selected(get.getAsBoolean())
@@ -205,6 +237,36 @@ public final class HoloPlaceScreen extends Screen {
     private static String bareName(Path file) {
         String name = file.getFileName().toString();
         return name.toLowerCase().endsWith(".litematic") ? name.substring(0, name.length() - 10) : name;
+    }
+
+    private final class LayerSlider extends AbstractSliderButton {
+        private final String name;
+        private final int max;
+        private final IntConsumer onChange;
+
+        LayerSlider(String name, int max, int initial, IntConsumer onChange) {
+            super(0, 0, ROW_WIDTH, 18, Component.empty(),
+                    max == 0 ? 0.0 : Mth.clamp((double) initial / max, 0.0, 1.0));
+            this.name = name;
+            this.max = max;
+            this.onChange = onChange;
+            updateMessage();
+        }
+
+        private int current() {
+            return (int) Math.round(this.value * max);
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.literal(name + ": " + current()));
+        }
+
+        @Override
+        protected void applyValue() {
+            onChange.accept(current());
+            updateMessage();
+        }
     }
 
     private final class OpacitySlider extends AbstractSliderButton {

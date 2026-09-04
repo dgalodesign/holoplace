@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.List;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
@@ -20,7 +21,6 @@ import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -60,7 +60,7 @@ public final class GhostRenderer {
 
     public static void register() {
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(GhostRenderer::render);
-        LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::collectBlockEntities);
+        LevelRenderEvents.END_EXTRACTION.register(GhostRenderer::extractBlockEntities);
     }
 
     public static void invalidate() {
@@ -143,7 +143,7 @@ public final class GhostRenderer {
         }
 
         if (m.fluidCount() > 0) {
-            renderFluids(m, anchor, level, mc, buffer, hideMatched);
+            renderFluids(m, anchor, cam, level, mc, buffer, hideMatched);
         }
         ctx.bufferSource().endBatch(renderType);
 
@@ -253,8 +253,12 @@ public final class GhostRenderer {
         }
     }
 
-    /** Submit real block-entity models (chests, signs, beds, …) during the collect phase. */
-    private static void collectBlockEntities(LevelRenderContext ctx) {
+    /**
+     * Add real block-entity render states (chests, signs, beds…) into the level's list during the
+     * extraction phase; vanilla's {@code submitBlockEntities} then draws them, translating each by
+     * {@code renderState.blockPos - camera}.
+     */
+    private static void extractBlockEntities(LevelExtractionContext ctx) {
         GhostState state = GhostState.get();
         GhostMesh m = mesh;
         if (!state.isVisible() || !state.blockEntityModels() || m == null
@@ -268,48 +272,48 @@ public final class GhostRenderer {
         }
 
         BlockEntityRenderDispatcher dispatcher = mc.getBlockEntityRenderDispatcher();
-        float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        CameraRenderState camState = ctx.levelState().cameraRenderState;
-        Vec3 camPos = camState.pos;
+        float partialTick = ctx.deltaTracker().getGameTimeDeltaPartialTick(false);
+        List<BlockEntityRenderState> out = ctx.levelState().blockEntityRenderStates;
         BlockPos anchor = state.anchor();
         boolean hideMatched = state.hideMatched();
-        PoseStack ps = new PoseStack();
-        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
-
         boolean layerClip = state.layerClip();
+        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+        int submitted = 0;
+
         for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
             BlockEntity be = m.blockEntity(i);
             if (be == null || (layerClip && !state.layerVisible(m.beY(i)))) {
                 continue;
             }
-            int wx = anchor.getX() + m.beX(i);
-            int wy = anchor.getY() + m.beY(i);
-            int wz = anchor.getZ() + m.beZ(i);
-            worldPos.set(wx, wy, wz);
+            worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
             if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
                 continue;
             }
-            BlockEntityRenderState beState = dispatcher.tryExtractRenderState(be, partialTick, null);
-            if (beState == null) {
-                continue;
-            }
-            beState.blockPos = worldPos.immutable();
-            ps.pushPose();
-            ps.translate(wx - camPos.x, wy - camPos.y, wz - camPos.z);
             try {
-                dispatcher.submit(beState, ps, ctx.submitNodeCollector(), camState);
+                BlockEntityRenderState s = dispatcher.tryExtractRenderState(be, partialTick, null);
+                if (s != null) {
+                    s.blockPos = worldPos.immutable();
+                    out.add(s);
+                    submitted++;
+                }
             } catch (Exception e) {
-                HoloPlaceClient.LOGGER.debug("Block entity submit failed for {}", m.beState(i), e);
+                HoloPlaceClient.LOGGER.debug("Block entity extract failed for {}", m.beState(i), e);
             }
-            ps.popPose();
+        }
+        if (submitted != m.blockEntityCount()) {
+            HoloPlaceClient.LOGGER.debug("Ghost block entities: {} of {} submitted",
+                    submitted, m.blockEntityCount());
         }
     }
 
-    private static void renderFluids(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc,
-                                     VertexConsumer buffer, boolean hideMatched) {
+    private static void renderFluids(GhostMesh m, BlockPos anchor, Vec3 cam, ClientLevel level,
+                                     Minecraft mc, VertexConsumer buffer, boolean hideMatched) {
         SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, m.transform());
         FluidRenderer fluidRenderer = new FluidRenderer(mc.getModelManager().getFluidStateModelSet());
-        FluidRenderer.Output output = layer -> buffer;
+        // FluidRenderer emits vertices in section-local space (pos & 15); shift each back to
+        // camera-relative space via the section origin.
+        OffsetVertexConsumer offset = new OffsetVertexConsumer(buffer);
+        FluidRenderer.Output output = layer -> offset;
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
 
         GhostState g = GhostState.get();
@@ -318,12 +322,15 @@ public final class GhostRenderer {
             if (layerClip && !g.layerVisible(m.fluidY(i))) {
                 continue;
             }
-            worldPos.set(anchor.getX() + m.fluidX(i), anchor.getY() + m.fluidY(i),
-                    anchor.getZ() + m.fluidZ(i));
+            int wx = anchor.getX() + m.fluidX(i);
+            int wy = anchor.getY() + m.fluidY(i);
+            int wz = anchor.getZ() + m.fluidZ(i);
+            worldPos.set(wx, wy, wz);
             BlockState state = m.fluidState(i);
             if (hideMatched && g.matches(level.getBlockState(worldPos), state)) {
                 continue;
             }
+            offset.setOffset((wx & ~15) - cam.x, (wy & ~15) - cam.y, (wz & ~15) - cam.z);
             fluidRenderer.tesselate(view, worldPos, output, state, state.getFluidState());
         }
     }
