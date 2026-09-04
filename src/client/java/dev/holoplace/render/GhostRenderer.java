@@ -15,11 +15,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.ShapeRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import org.jspecify.annotations.Nullable;
 
@@ -53,6 +58,7 @@ public final class GhostRenderer {
 
     public static void register() {
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(GhostRenderer::render);
+        LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::collectBlockEntities);
     }
 
     public static void invalidate() {
@@ -170,25 +176,84 @@ public final class GhostRenderer {
         return out;
     }
 
-    /** Block entities render (almost) nothing as a model, so mark their cells with a wire cube. */
+    /** Wire cube for block entities we can't (or are told not to) render as a real model. */
     private static void renderBlockEntityMarkers(GhostMesh m, BlockPos anchor, ClientLevel level,
-                                                 net.minecraft.world.phys.Vec3 cam,
-                                                 LevelRenderContext ctx, boolean hideMatched) {
-        int color = (GhostState.get().opacityAlpha() << 24) | 0x0055CCFF;
+                                                 Vec3 cam, LevelRenderContext ctx, boolean hideMatched) {
+        GhostState state = GhostState.get();
+        boolean models = state.blockEntityModels();
+        int color = (state.opacityAlpha() << 24) | 0x0055CCFF;
         VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+        boolean any = false;
 
         for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
+            if (models && m.blockEntity(i) != null) {
+                continue;
+            }
             worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
-            if (hideMatched && GhostState.get().matches(level.getBlockState(worldPos), m.beState(i))) {
+            if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
                 continue;
             }
             ShapeRenderer.renderShape(ps, lines, Shapes.block(),
                     worldPos.getX() - cam.x, worldPos.getY() - cam.y, worldPos.getZ() - cam.z,
                     color, 2.0f);
+            any = true;
         }
-        ctx.bufferSource().endBatch(RenderTypes.lines());
+        if (any) {
+            ctx.bufferSource().endBatch(RenderTypes.lines());
+        }
+    }
+
+    /** Submit real block-entity models (chests, signs, beds, …) during the collect phase. */
+    private static void collectBlockEntities(LevelRenderContext ctx) {
+        GhostState state = GhostState.get();
+        GhostMesh m = mesh;
+        if (!state.isVisible() || !state.blockEntityModels() || m == null
+                || m.blockEntityCount() == 0 || m.totalQuads() > MAX_QUADS) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel level = mc.level;
+        if (level == null || m.schematic() != state.schematic()) {
+            return;
+        }
+
+        BlockEntityRenderDispatcher dispatcher = mc.getBlockEntityRenderDispatcher();
+        float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        CameraRenderState camState = ctx.levelState().cameraRenderState;
+        Vec3 camPos = camState.pos;
+        BlockPos anchor = state.anchor();
+        boolean hideMatched = state.hideMatched();
+        PoseStack ps = new PoseStack();
+        BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
+
+        for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
+            BlockEntity be = m.blockEntity(i);
+            if (be == null) {
+                continue;
+            }
+            int wx = anchor.getX() + m.beX(i);
+            int wy = anchor.getY() + m.beY(i);
+            int wz = anchor.getZ() + m.beZ(i);
+            worldPos.set(wx, wy, wz);
+            if (hideMatched && state.matches(level.getBlockState(worldPos), m.beState(i))) {
+                continue;
+            }
+            BlockEntityRenderState beState = dispatcher.tryExtractRenderState(be, partialTick, null);
+            if (beState == null) {
+                continue;
+            }
+            beState.blockPos = worldPos.immutable();
+            ps.pushPose();
+            ps.translate(wx - camPos.x, wy - camPos.y, wz - camPos.z);
+            try {
+                dispatcher.submit(beState, ps, ctx.submitNodeCollector(), camState);
+            } catch (Exception e) {
+                HoloPlaceClient.LOGGER.debug("Block entity submit failed for {}", m.beState(i), e);
+            }
+            ps.popPose();
+        }
     }
 
     private static void renderFluids(GhostMesh m, BlockPos anchor, ClientLevel level, Minecraft mc,

@@ -275,7 +275,30 @@ Not the GPU-buffer rewrite — lower-risk throttling on the paths that scaled wi
 - **Guard**: a schematic over 4M quads is not rendered; the HUD says "too large" instead of freezing.
 
 ### Known gaps (M15)
-- The per-quad `putBlockBakedQuad` in the frame buffer is still O(quads) every frame — that's the
-  one a real GPU-vertex-buffer upload would remove (deferred; higher risk on the new 26.1 GPU API).
+- The per-quad `putBlockBakedQuad` in the frame buffer is still O(quads) every frame — a real
+  GPU-vertex-buffer upload would remove it (deferred; higher risk on the new 26.1 GPU API).
 
-## Next — M16: GPU-buffer upload · real block-entity models (opt-in)
+M15 verified in-game 2026-09-04. Commit `dea7c7c`.
+
+## M16 — real block-entity models 🚧 (written, compiles, **needs in-game check — high risk**)
+
+- `SchematicRegion.blockEntityNbt(x,y,z)` maps the region's `TileEntities` list by local pos.
+- `GhostMesh.build` constructs a `BlockEntity` per BE block via `BlockEntity.loadStatic(footprintPos,
+  transformedState, nbt, registryAccess)` + `setLevel(mc.level)`; cached in the mesh.
+- `GhostRenderer.collectBlockEntities` runs on `LevelRenderEvents.COLLECT_SUBMITS`:
+  `dispatcher.tryExtractRenderState(be, partial, null)` → set `blockPos` to the world cell →
+  `poseStack.translate(cell - camera)` → `dispatcher.submit(state, ps, submitNodeCollector,
+  cameraRenderState)`. Honours build-assist. Falls back to the wire cube when a BE has no state.
+- Toggle: "Block entity models" checkbox (default on), persisted. Off → wire cubes.
+
+### Known gaps / risks (M16)
+- **High runtime risk** — submit-model integration, whether `COLLECT_SUBMITS` is flushed with vanilla
+  BEs, the `blockPos`-reassign + pose-translate combo. If it renders wrong/crashes, the checkbox
+  turns it off.
+- BEs render **opaque** (submit model gives no alpha) — a chest won't fade with the opacity slider.
+- Chest openness/brightness `combine()` queries `mc.level` at the ghost cell, not the schematic;
+  facing + single/double come from the block state so geometry is right, but a real chest sitting
+  where the ghost is could confuse it.
+- Sign text, banner patterns etc. come straight from the schematic NBT.
+
+## Next — evaluate UX / ease-of-use / player-assistance improvements (user request)

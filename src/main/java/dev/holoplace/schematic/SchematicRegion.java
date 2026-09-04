@@ -1,11 +1,14 @@
 package dev.holoplace.schematic;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
 
 /**
  * One sub-region of a {@code .litematic}. Coordinates are normalised so that local {@code (0,0,0)} is
@@ -22,6 +25,7 @@ public final class SchematicRegion {
     private final LitematicaBitArray blocks;
     private final List<CompoundTag> blockEntities;
     private final List<CompoundTag> entities;
+    private final Map<Long, CompoundTag> blockEntityByLocalPos;
 
     public SchematicRegion(String name, BlockPos minCorner, int sizeX, int sizeY, int sizeZ,
                            BlockState[] palette, LitematicaBitArray blocks,
@@ -35,6 +39,21 @@ public final class SchematicRegion {
         this.blocks = blocks;
         this.blockEntities = List.copyOf(blockEntities);
         this.entities = List.copyOf(entities);
+
+        this.blockEntityByLocalPos = new HashMap<>();
+        for (CompoundTag te : this.blockEntities) {
+            this.blockEntityByLocalPos.put(
+                    key(te.getIntOr("x", 0), te.getIntOr("y", 0), te.getIntOr("z", 0)), te);
+        }
+    }
+
+    private static long key(int x, int y, int z) {
+        return BlockPos.asLong(x, y, z);
+    }
+
+    /** Raw block-entity NBT at normalised local coords, or {@code null}. */
+    public @Nullable CompoundTag blockEntityNbt(int x, int y, int z) {
+        return blockEntityByLocalPos.get(key(x, y, z));
     }
 
     public String name() {

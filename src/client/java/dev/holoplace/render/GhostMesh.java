@@ -1,5 +1,6 @@
 package dev.holoplace.render;
 
+import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.schematic.PlacementTransform;
 import dev.holoplace.schematic.Schematic;
 import dev.holoplace.schematic.SchematicRegion;
@@ -12,8 +13,12 @@ import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Baked ghost geometry for one (schematic, rotation, mirror) combination. Model tesselation and face
@@ -45,17 +50,19 @@ final class GhostMesh {
     private final int[] fluidZ;
     private final BlockState[] fluidStates;
 
-    /** Blocks with a block entity that render (almost) no model — chests, signs, beds, skulls, … */
+    /** Blocks with a block entity (chests, signs, beds, skulls, …). */
     private final int[] beX;
     private final int[] beY;
     private final int[] beZ;
     private final BlockState[] beStates;
+    private final @Nullable BlockEntity[] beEntities;
 
     private GhostMesh(Schematic schematic, PlacementTransform transform,
                      int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
                      int[] quadStart, Quad[] quads,
                      int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates,
-                     int[] beX, int[] beY, int[] beZ, BlockState[] beStates) {
+                     int[] beX, int[] beY, int[] beZ, BlockState[] beStates,
+                     @Nullable BlockEntity[] beEntities) {
         this.schematic = schematic;
         this.transform = transform;
         this.blockX = blockX;
@@ -72,6 +79,7 @@ final class GhostMesh {
         this.beY = beY;
         this.beZ = beZ;
         this.beStates = beStates;
+        this.beEntities = beEntities;
     }
 
     boolean matches(Schematic schematic, PlacementTransform transform) {
@@ -158,6 +166,10 @@ final class GhostMesh {
         return beStates[i];
     }
 
+    @Nullable BlockEntity blockEntity(int i) {
+        return beEntities[i];
+    }
+
     static GhostMesh build(Schematic schematic, PlacementTransform transform) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet models = mc.getModelManager().getBlockStateModelSet();
@@ -173,6 +185,8 @@ final class GhostMesh {
         List<BlockState> fluidStateList = new ArrayList<>();
         List<int[]> bePositions = new ArrayList<>();
         List<BlockState> beStateList = new ArrayList<>();
+        List<BlockEntity> beEntityList = new ArrayList<>();
+        var registries = mc.level != null ? mc.level.registryAccess() : null;
 
         int schMinX = schematic.min().getX();
         int schMinY = schematic.min().getY();
@@ -205,9 +219,11 @@ final class GhostMesh {
                         collectBlock(allQuads, view, models, random, parts, state, fp);
                         boolean producedQuads = allQuads.size() != before;
 
-                        if (state.hasBlockEntity() && !producedQuads) {
+                        if (state.hasBlockEntity()) {
                             bePositions.add(new int[] {f[0], f[1], f[2]});
                             beStateList.add(state);
+                            beEntityList.add(makeBlockEntity(registries, fp.immutable(), state,
+                                    region.blockEntityNbt(x, y, z)));
                         }
                         if (!producedQuads) {
                             continue;
@@ -240,7 +256,26 @@ final class GhostMesh {
                 col(fluidPositions, 0), col(fluidPositions, 1), col(fluidPositions, 2),
                 fluidStateList.toArray(new BlockState[0]),
                 col(bePositions, 0), col(bePositions, 1), col(bePositions, 2),
-                beStateList.toArray(new BlockState[0]));
+                beStateList.toArray(new BlockState[0]),
+                beEntityList.toArray(new BlockEntity[0]));
+    }
+
+    private static @Nullable BlockEntity makeBlockEntity(
+            HolderLookup.@Nullable Provider registries,
+            BlockPos footprintPos, BlockState state, @Nullable CompoundTag nbt) {
+        if (registries == null || nbt == null) {
+            return null;
+        }
+        try {
+            BlockEntity be = BlockEntity.loadStatic(footprintPos, state, nbt, registries);
+            if (be != null) {
+                be.setLevel(Minecraft.getInstance().level);
+            }
+            return be;
+        } catch (Exception e) {
+            HoloPlaceClient.LOGGER.debug("Could not build block entity {} at {}", state, footprintPos, e);
+            return null;
+        }
     }
 
     private static int[] col(List<int[]> rows, int axis) {

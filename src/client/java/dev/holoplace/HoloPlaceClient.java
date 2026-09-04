@@ -28,6 +28,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostState.get().setSeeThrough(config.seeThrough);
         GhostState.get().setHideMatched(config.hideMatched);
         GhostState.get().setMatchBlockOnly(config.matchBlockOnly);
+        GhostState.get().setBlockEntityModels(config.blockEntityModels);
         PlacementController.get().loadPrefs();
 
         HoloPlaceKeys.register();

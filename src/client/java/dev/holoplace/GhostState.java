@@ -23,6 +23,7 @@ public final class GhostState {
     private boolean seeThrough;
     private boolean hideMatched;
     private boolean matchBlockOnly;
+    private boolean blockEntityModels = true;
     private Rotation rotation = Rotation.NONE;
     private Mirror mirror = Mirror.NONE;
 
@@ -89,6 +90,14 @@ public final class GhostState {
 
     public void setMatchBlockOnly(boolean matchBlockOnly) {
         this.matchBlockOnly = matchBlockOnly;
+    }
+
+    public boolean blockEntityModels() {
+        return blockEntityModels;
+    }
+
+    public void setBlockEntityModels(boolean blockEntityModels) {
+        this.blockEntityModels = blockEntityModels;
     }
 
     /** True when the world state at a ghost cell counts as "already built". */

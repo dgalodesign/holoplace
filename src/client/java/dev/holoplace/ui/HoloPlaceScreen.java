@@ -59,6 +59,13 @@ public final class HoloPlaceScreen extends Screen {
         }));
         layout.addChild(toggles);
 
+        layout.addChild(toggle("Block entity models (chests, signs…)",
+                GhostState.get()::blockEntityModels, v -> {
+                    GhostState.get().setBlockEntityModels(v);
+                    HoloPlaceConfig.get().blockEntityModels = v;
+                    HoloPlaceConfig.save();
+                }));
+
         LinearLayout actions = LinearLayout.horizontal().spacing(6);
         boolean loaded = GhostState.get().schematic() != null;
         actions.addChild(Button.builder(

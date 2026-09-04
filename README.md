@@ -32,7 +32,8 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M12 | Fluids (water / lava sources, waterlogged blocks) | ✅ |
 | M13 | Block-entity markers (wire cube where chests/signs go) | ✅ |
 | M14 | One controls screen (opacity slider + toggles + list) · block-only match | ✅ |
-| M15 | Perf hardening (throttled build-assist scan, tint freeze on drag, size guard) | 🚧 written, needs in-game check |
+| M15 | Perf hardening (throttled build-assist scan, tint freeze on drag, size guard) | ✅ |
+| M16 | Real block-entity models (chests, signs, beds…) | 🚧 written, needs in-game check |
 
 ## Controls
 
