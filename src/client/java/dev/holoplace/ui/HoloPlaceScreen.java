@@ -12,23 +12,27 @@ import java.util.function.Consumer;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 
 /**
- * One flat screen for everything: the schematic list plus every display control (opacity, x-ray,
- * build-assist). No folders, no nested menus.
+ * One flat screen for everything: the schematic list plus every display control. No folders, no
+ * nested menus.
  */
 public final class HoloPlaceScreen extends Screen {
 
-    private static final int MAX_BUTTONS = 8;
-    private static final int ROW_WIDTH = 320;
+    private static final int PAGE_SIZE = 10;
+    private static final int ROW_WIDTH = 330;
+
+    private static int page;
 
     public HoloPlaceScreen() {
         super(Component.literal("HoloPlace"));
@@ -36,81 +40,161 @@ public final class HoloPlaceScreen extends Screen {
 
     @Override
     protected void init() {
-        LinearLayout layout = LinearLayout.vertical().spacing(4);
-        layout.addChild(new StringWidget(getTitle(), this.font));
+        GhostState g = GhostState.get();
+        LinearLayout root = LinearLayout.vertical().spacing(3);
+        root.addChild(new StringWidget(getTitle(), this.font));
+        root.addChild(new OpacitySlider(ROW_WIDTH));
 
-        layout.addChild(new OpacitySlider(0, 0, ROW_WIDTH));
-
-        LinearLayout toggles = LinearLayout.horizontal().spacing(10);
-        toggles.addChild(toggle("See-through", GhostState.get()::seeThrough, v -> {
-            GhostState.get().setSeeThrough(v);
+        LinearLayout t1 = LinearLayout.horizontal().spacing(8);
+        t1.addChild(check("See-through", g::seeThrough, v -> {
+            g.setSeeThrough(v);
             HoloPlaceConfig.get().seeThrough = v;
             HoloPlaceConfig.save();
         }));
-        toggles.addChild(toggle("Hide placed", GhostState.get()::hideMatched, v -> {
-            GhostState.get().setHideMatched(v);
+        t1.addChild(check("Hide placed", g::hideMatched, v -> {
+            g.setHideMatched(v);
             HoloPlaceConfig.get().hideMatched = v;
             HoloPlaceConfig.save();
         }));
-        toggles.addChild(toggle("Match block only", GhostState.get()::matchBlockOnly, v -> {
-            GhostState.get().setMatchBlockOnly(v);
+        t1.addChild(check("Match block only", g::matchBlockOnly, v -> {
+            g.setMatchBlockOnly(v);
             HoloPlaceConfig.get().matchBlockOnly = v;
             HoloPlaceConfig.save();
         }));
-        layout.addChild(toggles);
+        root.addChild(t1);
 
-        layout.addChild(toggle("Block entity models (chests, signs…)",
-                GhostState.get()::blockEntityModels, v -> {
-                    GhostState.get().setBlockEntityModels(v);
-                    HoloPlaceConfig.get().blockEntityModels = v;
-                    HoloPlaceConfig.save();
-                }));
+        LinearLayout t2 = LinearLayout.horizontal().spacing(8);
+        t2.addChild(check("Block entity models", g::blockEntityModels, v -> {
+            g.setBlockEntityModels(v);
+            HoloPlaceConfig.get().blockEntityModels = v;
+            HoloPlaceConfig.save();
+        }));
+        t2.addChild(check("Shading", g::shade, v -> {
+            g.setShade(v);
+            HoloPlaceConfig.get().ambientOcclusion = v;
+            HoloPlaceConfig.save();
+        }));
+        root.addChild(t2);
+
+        root.addChild(coordRow(g));
+        root.addChild(layerRow(g));
 
         LinearLayout actions = LinearLayout.horizontal().spacing(6);
-        boolean loaded = GhostState.get().schematic() != null;
-        actions.addChild(Button.builder(
-                Component.literal(GhostState.get().isVisible() ? "Hide" : "Show"), b -> {
-                    GhostState g = GhostState.get();
-                    g.setVisible(!g.isVisible());
-                    onClose();
-                }).width(90).build()).active = loaded;
+        boolean loaded = g.schematic() != null;
+        actions.addChild(Button.builder(Component.literal(g.isVisible() ? "Hide" : "Show"), b -> {
+            g.setVisible(!g.isVisible());
+            onClose();
+        }).width(80).build()).active = loaded;
         actions.addChild(Button.builder(Component.literal("Reset rot/mirror"),
-                b -> PlacementController.get().resetTransform()).width(140).build()).active = loaded;
-        layout.addChild(actions);
+                b -> PlacementController.get().resetTransform()).width(130).build()).active = loaded;
+        root.addChild(actions);
 
-        layout.addChild(new StringWidget(ROW_WIDTH, 9, Component.literal("§7Schematics"), this.font));
-        List<Path> files = SchematicLibrary.list();
-        if (files.isEmpty()) {
-            layout.addChild(Button.builder(Component.literal("Open schematics folder"),
-                            b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()))
-                    .width(ROW_WIDTH).build());
-        } else {
-            int shown = Math.min(files.size(), MAX_BUTTONS);
-            for (int i = 0; i < shown; i++) {
-                Path file = files.get(i);
-                layout.addChild(Button.builder(Component.literal(bareName(file)), b -> {
-                    onClose();
-                    SchematicImport.show(file, true);
-                }).width(ROW_WIDTH).build());
-            }
-            if (files.size() > shown) {
-                layout.addChild(new StringWidget(ROW_WIDTH, 9, Component.literal(
-                        "§8… " + (files.size() - shown) + " more — /holoplace show <name>"), this.font));
-            }
-        }
+        root.addChild(new StringWidget(ROW_WIDTH, 9, Component.literal("§7Schematics"), this.font));
+        addSchematicList(root);
 
-        layout.addChild(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).width(120).build());
+        root.addChild(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).width(120).build());
 
-        layout.arrangeElements();
-        FrameLayout.centerInRectangle(layout, 0, 0, this.width, this.height);
-        layout.visitWidgets(this::addRenderableWidget);
+        root.arrangeElements();
+        FrameLayout.centerInRectangle(root, 0, 0, this.width, this.height);
+        root.visitWidgets(this::addRenderableWidget);
     }
 
-    private Checkbox toggle(String label, BooleanSupplier get, Consumer<Boolean> set) {
+    private LinearLayout coordRow(GhostState g) {
+        LinearLayout row = LinearLayout.horizontal().spacing(4);
+        BlockPos a = g.anchor();
+        EditBox x = intBox(String.valueOf(a.getX()));
+        EditBox y = intBox(String.valueOf(a.getY()));
+        EditBox z = intBox(String.valueOf(a.getZ()));
+        row.addChild(new StringWidget(14, 18, Component.literal("§7xyz"), this.font));
+        row.addChild(x);
+        row.addChild(y);
+        row.addChild(z);
+        row.addChild(Button.builder(Component.literal("Move"), b -> {
+            Integer ix = parseInt(x.getValue());
+            Integer iy = parseInt(y.getValue());
+            Integer iz = parseInt(z.getValue());
+            if (ix != null && iy != null && iz != null) {
+                PlacementController.get().moveTo(ix, iy, iz);
+            }
+        }).width(50).build()).active = g.schematic() != null;
+        return row;
+    }
+
+    private LinearLayout layerRow(GhostState g) {
+        LinearLayout row = LinearLayout.horizontal().spacing(4);
+        EditBox min = intBox(g.layerClip() ? String.valueOf(g.layerMin()) : "");
+        EditBox max = intBox(g.layerClip() && g.layerMax() != Integer.MAX_VALUE
+                ? String.valueOf(g.layerMax()) : "");
+        row.addChild(new StringWidget(40, 18, Component.literal("§7layers"), this.font));
+        row.addChild(min);
+        row.addChild(max);
+        row.addChild(Button.builder(Component.literal("Set"), b -> {
+            Integer lo = parseInt(min.getValue());
+            Integer hi = parseInt(max.getValue());
+            if (lo != null) {
+                PlacementController.get().setLayers(lo, hi != null ? hi : lo);
+            }
+        }).width(40).build()).active = g.schematic() != null;
+        row.addChild(Button.builder(Component.literal("All"),
+                b -> PlacementController.get().clearLayers()).width(40).build());
+        return row;
+    }
+
+    private void addSchematicList(LinearLayout root) {
+        List<Path> files = SchematicLibrary.list();
+        if (files.isEmpty()) {
+            root.addChild(Button.builder(Component.literal("Open schematics folder"),
+                            b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()))
+                    .width(ROW_WIDTH).build());
+            return;
+        }
+        int pages = (files.size() + PAGE_SIZE - 1) / PAGE_SIZE;
+        page = Mth.clamp(page, 0, pages - 1);
+        int from = page * PAGE_SIZE;
+        int to = Math.min(files.size(), from + PAGE_SIZE);
+        for (int i = from; i < to; i++) {
+            Path file = files.get(i);
+            root.addChild(Button.builder(Component.literal(bareName(file)), b -> {
+                onClose();
+                SchematicImport.show(file, true);
+            }).width(ROW_WIDTH).build());
+        }
+        if (pages > 1) {
+            LinearLayout pager = LinearLayout.horizontal().spacing(6);
+            pager.addChild(Button.builder(Component.literal("<"), b -> {
+                page--;
+                rebuildWidgets();
+            }).width(40).build()).active = page > 0;
+            pager.addChild(new StringWidget(90, 18,
+                    Component.literal("§7page " + (page + 1) + "/" + pages), this.font));
+            pager.addChild(Button.builder(Component.literal(">"), b -> {
+                page++;
+                rebuildWidgets();
+            }).width(40).build()).active = page < pages - 1;
+            root.addChild(pager);
+        }
+    }
+
+    private EditBox intBox(String value) {
+        EditBox box = new EditBox(this.font, 46, 18, Component.empty());
+        box.setMaxLength(8);
+        box.setValue(value);
+        return box;
+    }
+
+    private Checkbox check(String label, BooleanSupplier get, Consumer<Boolean> set) {
         return Checkbox.builder(Component.literal(label), this.font)
                 .selected(get.getAsBoolean())
                 .onValueChange((checkbox, selected) -> set.accept(selected))
                 .build();
+    }
+
+    private static Integer parseInt(String s) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -123,14 +207,11 @@ public final class HoloPlaceScreen extends Screen {
         return name.toLowerCase().endsWith(".litematic") ? name.substring(0, name.length() - 10) : name;
     }
 
-    private static final class OpacitySlider extends AbstractSliderButton {
-        OpacitySlider(int x, int y, int width) {
-            super(x, y, width, 20, Component.empty(), toSlider(GhostState.get().opacity()));
+    private final class OpacitySlider extends AbstractSliderButton {
+        OpacitySlider(int width) {
+            super(0, 0, width, 20, Component.empty(),
+                    Mth.clamp((GhostState.get().opacity() - 0.05) / 0.95, 0.0, 1.0));
             updateMessage();
-        }
-
-        private static double toSlider(float opacity) {
-            return Mth.clamp((opacity - 0.05) / 0.95, 0.0, 1.0);
         }
 
         @Override
@@ -140,8 +221,7 @@ public final class HoloPlaceScreen extends Screen {
 
         @Override
         protected void applyValue() {
-            float opacity = (float) (0.05 + this.value * 0.95);
-            GhostState.get().setOpacity(opacity);
+            GhostState.get().setOpacity((float) (0.05 + this.value * 0.95));
             HoloPlaceConfig.get().opacity = GhostState.get().opacity();
             HoloPlaceConfig.save();
         }

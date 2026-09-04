@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -48,6 +49,7 @@ public final class GhostRenderer {
     private static long tintKey;
 
     private static boolean @Nullable [] needsPlacing;
+    private static boolean @Nullable [] wrongBlock;
     private static long scanKey;
     private static long lastScanNanos;
     private static int placedCount;
@@ -65,6 +67,7 @@ public final class GhostRenderer {
         mesh = null;
         blockTint = null;
         needsPlacing = null;
+        wrongBlock = null;
         warnedTooLarge = false;
     }
 
@@ -87,6 +90,7 @@ public final class GhostRenderer {
             mesh = GhostMesh.build(schematic, transform);
             blockTint = null;
             needsPlacing = null;
+            wrongBlock = null;
             warnedTooLarge = false;
             HoloPlaceClient.LOGGER.debug("Rebuilt ghost mesh: {} blocks / {} quads in {} ms",
                     mesh.blockCount(), mesh.totalQuads(), (System.nanoTime() - start) / 1_000_000);
@@ -107,6 +111,7 @@ public final class GhostRenderer {
         int[] tint = tintFor(m, anchor, level, mc);
         boolean hideMatched = state.hideMatched();
         boolean[] needs = hideMatched ? placementScan(m, anchor, level, state) : null;
+        boolean layerClip = state.layerClip();
 
         var cam = mc.gameRenderer.getMainCamera().position();
         float ox = (float) (anchor.getX() - cam.x);
@@ -118,16 +123,21 @@ public final class GhostRenderer {
         RenderType renderType = GhostPipelines.forGhost(state.seeThrough());
         VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
         QUAD.setLightCoords(FULL_BRIGHT);
+        boolean shade = state.shade();
 
         for (int i = 0, blocks = m.blockCount(); i < blocks; i++) {
             if (needs != null && !needs[i]) {
                 continue;
             }
-            int tinted = tint[i] == NO_TINT ? white : alpha | (tint[i] & 0x00FFFFFF);
+            if (layerClip && !state.layerVisible(m.blockY(i))) {
+                continue;
+            }
+            int baseRgb = tint[i] == NO_TINT ? 0x00FFFFFF : (tint[i] & 0x00FFFFFF);
             int end = m.quadStart(i + 1);
             for (int q = m.quadStart(i); q < end; q++) {
                 GhostMesh.Quad quad = m.quad(q);
-                QUAD.setColor(quad.tinted() ? tinted : white);
+                int rgb = quad.tinted() ? baseRgb : 0x00FFFFFF;
+                QUAD.setColor(shade ? alpha | shadeRgb(rgb, quad.quad()) : alpha | rgb);
                 buffer.putBlockBakedQuad(quad.x() + ox, quad.y() + oy, quad.z() + oz, quad.quad(), QUAD);
             }
         }
@@ -140,8 +150,38 @@ public final class GhostRenderer {
         if (m.blockEntityCount() > 0) {
             renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched);
         }
+        if (hideMatched && wrongBlock != null) {
+            renderWrongBlocks(m, anchor, cam, ctx, state);
+        }
 
         state.setRemainingBlocks(hideMatched ? placedCount : -1, m.blockCount());
+    }
+
+    /** Red wire cube where the world has a different (non-air) block than the schematic. */
+    private static void renderWrongBlocks(GhostMesh m, BlockPos anchor, Vec3 cam,
+                                          LevelRenderContext ctx, GhostState state) {
+        boolean[] wrong = wrongBlock;
+        if (wrong == null || wrong.length != m.blockCount()) {
+            return;
+        }
+        boolean layerClip = state.layerClip();
+        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        PoseStack ps = new PoseStack();
+        boolean any = false;
+        for (int i = 0; i < wrong.length; i++) {
+            if (!wrong[i] || (layerClip && !state.layerVisible(m.blockY(i)))) {
+                continue;
+            }
+            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                    anchor.getX() + m.blockX(i) - cam.x,
+                    anchor.getY() + m.blockY(i) - cam.y,
+                    anchor.getZ() + m.blockZ(i) - cam.z,
+                    0xC0FF3030, 2.5f);
+            any = true;
+        }
+        if (any) {
+            ctx.bufferSource().endBatch(RenderTypes.lines());
+        }
     }
 
     /**
@@ -159,17 +199,21 @@ public final class GhostRenderer {
             return cached;
         }
         boolean[] out = new boolean[m.blockCount()];
+        boolean[] wrong = new boolean[m.blockCount()];
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         int placed = 0;
         for (int i = 0; i < out.length; i++) {
             pos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i), anchor.getZ() + m.blockZ(i));
-            boolean built = state.matches(level.getBlockState(pos), m.blockState(i));
+            BlockState world = level.getBlockState(pos);
+            boolean built = state.matches(world, m.blockState(i));
             out[i] = !built;
+            wrong[i] = !built && !world.isAir();
             if (built) {
                 placed++;
             }
         }
         needsPlacing = out;
+        wrongBlock = wrong;
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
@@ -187,8 +231,12 @@ public final class GhostRenderer {
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
         boolean any = false;
 
+        boolean layerClip = state.layerClip();
         for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
             if (models && m.blockEntity(i) != null) {
+                continue;
+            }
+            if (layerClip && !state.layerVisible(m.beY(i))) {
                 continue;
             }
             worldPos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
@@ -228,9 +276,10 @@ public final class GhostRenderer {
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
 
+        boolean layerClip = state.layerClip();
         for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
             BlockEntity be = m.blockEntity(i);
-            if (be == null) {
+            if (be == null || (layerClip && !state.layerVisible(m.beY(i)))) {
                 continue;
             }
             int wx = anchor.getX() + m.beX(i);
@@ -263,15 +312,32 @@ public final class GhostRenderer {
         FluidRenderer.Output output = layer -> buffer;
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
 
+        GhostState g = GhostState.get();
+        boolean layerClip = g.layerClip();
         for (int i = 0, n = m.fluidCount(); i < n; i++) {
+            if (layerClip && !g.layerVisible(m.fluidY(i))) {
+                continue;
+            }
             worldPos.set(anchor.getX() + m.fluidX(i), anchor.getY() + m.fluidY(i),
                     anchor.getZ() + m.fluidZ(i));
             BlockState state = m.fluidState(i);
-            if (hideMatched && GhostState.get().matches(level.getBlockState(worldPos), state)) {
+            if (hideMatched && g.matches(level.getBlockState(worldPos), state)) {
                 continue;
             }
             fluidRenderer.tesselate(view, worldPos, output, state, state.getFluidState());
         }
+    }
+
+    /** Classic Minecraft per-face darkening (top bright, bottom dim), applied per quad. */
+    private static int shadeRgb(int rgb, net.minecraft.client.resources.model.geometry.BakedQuad quad) {
+        if (!quad.materialInfo().shade()) {
+            return rgb;
+        }
+        float f = CardinalLighting.DEFAULT.byFace(quad.direction());
+        int r = Math.round(((rgb >> 16) & 0xFF) * f);
+        int g = Math.round(((rgb >> 8) & 0xFF) * f);
+        int b = Math.round((rgb & 0xFF) * f);
+        return (r << 16) | (g << 8) | b;
     }
 
     /** Per-block tint colour (index 0), recomputed only when the mesh or anchor changes. */

@@ -134,11 +134,30 @@ public final class PlacementController {
         Rotation next = clockwise
                 ? PlacementTransform.rotateCw(ghost.rotation())
                 : PlacementTransform.rotateCcw(ghost.rotation());
-        ghost.setRotation(next);
+        keepFootprintCentre(ghost, () -> ghost.setRotation(next));
         HoloPlaceConfig.get().rotation = next.name();
         HoloPlaceConfig.save();
         WorldPlacements.saveCurrent();
         actionBar(Minecraft.getInstance(), "§bRotation: §f" + label(next));
+    }
+
+    /** Change the transform while keeping the footprint's centre fixed (so a locked ghost doesn't jump). */
+    private void keepFootprintCentre(GhostState ghost, Runnable change) {
+        PlacementTransform before = ghost.transform();
+        if (grabbing || before == null) {
+            change.run();
+            return;
+        }
+        BlockPos anchor = ghost.anchor();
+        double cx = anchor.getX() + before.footprintX() / 2.0;
+        double cz = anchor.getZ() + before.footprintZ() / 2.0;
+        change.run();
+        PlacementTransform after = ghost.transform();
+        if (after != null) {
+            int ax = Mth.floor(cx - after.footprintX() / 2.0);
+            int az = Mth.floor(cz - after.footprintZ() / 2.0);
+            ghost.setAnchor(new BlockPos(ax, anchor.getY(), az));
+        }
     }
 
     public void cycleMirror() {
@@ -152,6 +171,28 @@ public final class PlacementController {
         HoloPlaceConfig.save();
         WorldPlacements.saveCurrent();
         actionBar(Minecraft.getInstance(), "§bMirror: §f" + label(next));
+    }
+
+    public void moveTo(int x, int y, int z) {
+        if (notReady()) {
+            return;
+        }
+        stopGrab(false);
+        GhostState.get().setAnchor(new BlockPos(x, y, z));
+        WorldPlacements.saveCurrent();
+        actionBar(Minecraft.getInstance(), "§bMoved to §f" + x + " " + y + " " + z);
+    }
+
+    public void nudge(net.minecraft.core.Direction dir, int amount) {
+        if (notReady()) {
+            return;
+        }
+        stopGrab(false);
+        BlockPos a = GhostState.get().anchor().relative(dir, amount);
+        GhostState.get().setAnchor(a);
+        WorldPlacements.saveCurrent();
+        actionBar(Minecraft.getInstance(),
+                "§bNudged §7→ §f" + a.getX() + " " + a.getY() + " " + a.getZ());
     }
 
     public void resetTransform() {
@@ -179,6 +220,29 @@ public final class PlacementController {
         actionBar(Minecraft.getInstance(), next
                 ? "§bSee-through §aon §7— ghost drawn over the world"
                 : "§bSee-through §7off");
+    }
+
+    public void setLayers(int min, int max) {
+        if (notReady()) {
+            return;
+        }
+        GhostState.get().setLayers(min, max);
+        persistLayers();
+        actionBar(Minecraft.getInstance(), min == max
+                ? "§bLayer §f" + min
+                : "§bLayers §f" + GhostState.get().layerMin() + "–" + GhostState.get().layerMax());
+    }
+
+    public void clearLayers() {
+        GhostState.get().clearLayers();
+        persistLayers();
+        actionBar(Minecraft.getInstance(), "§bLayers §7— showing all");
+    }
+
+    private void persistLayers() {
+        HoloPlaceConfig.get().layerMin = GhostState.get().layerMin();
+        HoloPlaceConfig.get().layerMax = GhostState.get().layerMax();
+        HoloPlaceConfig.save();
     }
 
     public void toggleBuildAssist() {

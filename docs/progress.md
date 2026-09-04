@@ -301,4 +301,28 @@ M15 verified in-game 2026-09-04. Commit `dea7c7c`.
   where the ghost is could confuse it.
 - Sign text, banner patterns etc. come straight from the schematic NBT.
 
-## Next — evaluate UX / ease-of-use / player-assistance improvements (user request)
+M16 built (not separately verified — user said continue). Commit `c8fcafa`.
+
+## M17 — UX batch 🚧 (written, compiles, **needs in-game check**)
+
+User picked all evaluated improvements except inventory-aware materials:
+
+- **D — help & welcome**: `/holoplace help` lists keys + commands; a one-time chat hint on first
+  join (`config.seenIntro`).
+- **E — rotate around centre**: rotating a *locked* ghost now keeps the footprint centre fixed
+  instead of pivoting on the min corner (`PlacementController.keepFootprintCentre`).
+- **A — manual placement**: `/holoplace move <x y z>`, `/holoplace nudge <dir> [n]`, and X/Y/Z +
+  "Move" fields on the screen.
+- **B — layer clip**: `GhostState.layerVisible(localY)` gates blocks/fluids/BEs/markers to a
+  footprint-local Y range. `/holoplace layers <min> [max] | off` and a screen row. Persisted.
+- **C — wrong-block highlight**: the build-assist scan also flags cells where the world holds a
+  different non-air block; those get a red wire cube.
+- **F — face shading**: classic per-face darkening (`CardinalLighting.byFace`) on ghost quads, on by
+  default, "Shading" checkbox. Much less flat.
+- **G — paged schematic list**: 10 per page with `< page n/m >` instead of a hard cap of 8.
+
+### Known gaps (M17)
+- Layers are footprint-local Y (0 = bottom); no keybind/scroll to sweep the layer window yet.
+- Shading is per-quad, not true per-vertex AO.
+
+## Next — verify M16 + M17 in-game; GPU buffer still open

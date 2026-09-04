@@ -24,6 +24,10 @@ public final class HoloPlaceConfig {
     public boolean hideMatched = false;
     public boolean matchBlockOnly = false;
     public boolean blockEntityModels = true;
+    public boolean ambientOcclusion = true;
+    public int layerMin = 0;
+    public int layerMax = Integer.MAX_VALUE;
+    public boolean seenIntro = false;
     public String rotation = "NONE";
     public String mirror = "NONE";
     public String lastSchematic = "";

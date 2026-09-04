@@ -24,6 +24,9 @@ public final class GhostState {
     private boolean hideMatched;
     private boolean matchBlockOnly;
     private boolean blockEntityModels = true;
+    private boolean shade = true;
+    private int layerMin = 0;
+    private int layerMax = Integer.MAX_VALUE;
     private Rotation rotation = Rotation.NONE;
     private Mirror mirror = Mirror.NONE;
 
@@ -98,6 +101,41 @@ public final class GhostState {
 
     public void setBlockEntityModels(boolean blockEntityModels) {
         this.blockEntityModels = blockEntityModels;
+    }
+
+    public boolean shade() {
+        return shade;
+    }
+
+    public void setShade(boolean shade) {
+        this.shade = shade;
+    }
+
+    public boolean layerClip() {
+        return layerMin > 0 || layerMax != Integer.MAX_VALUE;
+    }
+
+    public int layerMin() {
+        return layerMin;
+    }
+
+    public int layerMax() {
+        return layerMax;
+    }
+
+    /** Clip the ghost to footprint-local Y in {@code [min, max]} (0 = bottom layer). */
+    public void setLayers(int min, int max) {
+        this.layerMin = Math.max(0, Math.min(min, max));
+        this.layerMax = Math.max(min, max);
+    }
+
+    public void clearLayers() {
+        this.layerMin = 0;
+        this.layerMax = Integer.MAX_VALUE;
+    }
+
+    public boolean layerVisible(int localY) {
+        return localY >= layerMin && localY <= layerMax;
     }
 
     /** True when the world state at a ghost cell counts as "already built". */

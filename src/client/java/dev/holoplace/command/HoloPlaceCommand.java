@@ -1,5 +1,6 @@
 package dev.holoplace.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -66,7 +67,66 @@ public final class HoloPlaceCommand {
                             PlacementController.get().toggleBuildAssist();
                             return 1;
                         }))
-                        .then(ClientCommands.literal("materials").executes(ctx -> materials(ctx.getSource())))));
+                        .then(ClientCommands.literal("materials").executes(ctx -> materials(ctx.getSource())))
+                        .then(ClientCommands.literal("move")
+                                .then(ClientCommands.argument("x", IntegerArgumentType.integer())
+                                        .then(ClientCommands.argument("y", IntegerArgumentType.integer())
+                                                .then(ClientCommands.argument("z", IntegerArgumentType.integer())
+                                                        .executes(ctx -> {
+                                                            PlacementController.get().moveTo(
+                                                                    IntegerArgumentType.getInteger(ctx, "x"),
+                                                                    IntegerArgumentType.getInteger(ctx, "y"),
+                                                                    IntegerArgumentType.getInteger(ctx, "z"));
+                                                            return 1;
+                                                        })))))
+                        .then(ClientCommands.literal("nudge")
+                                .then(ClientCommands.argument("dir", StringArgumentType.word())
+                                        .suggests((c, b) -> SharedSuggestionProvider.suggest(
+                                                new String[] {"north", "south", "east", "west", "up", "down"}, b))
+                                        .executes(ctx -> nudge(ctx.getSource(),
+                                                StringArgumentType.getString(ctx, "dir"), 1))
+                                        .then(ClientCommands.argument("amount", IntegerArgumentType.integer(1, 256))
+                                                .executes(ctx -> nudge(ctx.getSource(),
+                                                        StringArgumentType.getString(ctx, "dir"),
+                                                        IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))
+                        .then(ClientCommands.literal("layers")
+                                .then(ClientCommands.literal("off").executes(ctx -> {
+                                    PlacementController.get().clearLayers();
+                                    return 1;
+                                }))
+                                .then(ClientCommands.argument("min", IntegerArgumentType.integer(0))
+                                        .executes(ctx -> {
+                                            int v = IntegerArgumentType.getInteger(ctx, "min");
+                                            PlacementController.get().setLayers(v, v);
+                                            return 1;
+                                        })
+                                        .then(ClientCommands.argument("max", IntegerArgumentType.integer(0))
+                                                .executes(ctx -> {
+                                                    PlacementController.get().setLayers(
+                                                            IntegerArgumentType.getInteger(ctx, "min"),
+                                                            IntegerArgumentType.getInteger(ctx, "max"));
+                                                    return 1;
+                                                }))))));
+    }
+
+    private static int nudge(FabricClientCommandSource source, String dirName, int amount) {
+        net.minecraft.core.Direction dir = net.minecraft.core.Direction.byName(dirName.toLowerCase());
+        if (dir == null) {
+            source.sendError(Component.literal("Unknown direction '" + dirName + "'"));
+            return 0;
+        }
+        PlacementController.get().nudge(dir, amount);
+        return 1;
+    }
+
+    private static int help(FabricClientCommandSource source) {
+        source.sendFeedback(Component.literal("§e§lHoloPlace§r §7— place schematics on screen"));
+        source.sendFeedback(Component.literal("§7Drop a §f.litematic§7 on the window, or §fK§7 for the menu."));
+        source.sendFeedback(Component.literal("§fKeys:§7 G grab · R/⇧R rotate · M mirror · X x-ray · H build-assist · ⎇wheel opacity"));
+        source.sendFeedback(Component.literal("§fCommands:§7 show <f> · hide · show · clear · reset · move <x y z> · nudge <dir> [n]"));
+        source.sendFeedback(Component.literal("§7          seethrough · buildassist · materials · layers <min> <max>|off · info <f> · list"));
+        return 1;
     }
 
     private static int list(FabricClientCommandSource source) {

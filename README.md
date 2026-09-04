@@ -34,6 +34,7 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | M14 | One controls screen (opacity slider + toggles + list) · block-only match | ✅ |
 | M15 | Perf hardening (throttled build-assist scan, tint freeze on drag, size guard) | ✅ |
 | M16 | Real block-entity models (chests, signs, beds…) | 🚧 written, needs in-game check |
+| M17 | UX batch: help/welcome, rotate-centre, move/nudge, layer clip, wrong-block red, shading, paged list | 🚧 written, needs in-game check |
 
 ## Controls
 
@@ -44,7 +45,9 @@ Early development. See [`docs/plan.md`](docs/plan.md) for the full plan and
 | `/holoplace show <file>` | Load a `.litematic` and enter grab mode (tab-completes) |
 | `/holoplace hide` · `/holoplace show` | Stop / resume drawing (placement is kept and still restores on rejoin) |
 | `/holoplace clear` · `/holoplace reset` | Forget the placement · reset rotation & mirror |
-| `/holoplace materials` | List blocks needed (and still missing) for the placed schematic |
+| `/holoplace move <x y z>` · `/holoplace nudge <dir> [n]` | Place at exact coords · shift by n blocks |
+| `/holoplace layers <min> [max]` · `/holoplace layers off` | Show only a Y-slice of the ghost |
+| `/holoplace materials` · `/holoplace help` | Blocks needed / still missing · full command + key list |
 | Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
 | Wheel · `Shift`+wheel (grab mode) | Reach distance · vertical offset |
 | `G` | Toggle grab mode / lock |
