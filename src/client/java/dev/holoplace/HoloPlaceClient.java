@@ -1,5 +1,8 @@
 package dev.holoplace;
 
+import dev.holoplace.capture.CaptureController;
+import dev.holoplace.capture.CaptureHud;
+import dev.holoplace.capture.SelectionRenderer;
 import dev.holoplace.command.HoloPlaceCommand;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.config.WorldPlacements;
@@ -42,6 +45,9 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostRenderer.register();
         GhostHud.register();
         GhostTooltipHud.register();
+        CaptureController.register();
+        SelectionRenderer.register();
+        CaptureHud.register();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> {
             WorldPlacements.restoreForCurrentWorld();

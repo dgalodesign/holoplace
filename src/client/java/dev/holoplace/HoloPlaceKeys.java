@@ -1,6 +1,7 @@
 package dev.holoplace;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.holoplace.capture.CaptureController;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.ui.HoloPlaceScreen;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -23,6 +24,7 @@ public final class HoloPlaceKeys {
     public static final KeyMapping MIRROR = key("mirror", GLFW.GLFW_KEY_M);
     public static final KeyMapping SEE_THROUGH = key("see_through", GLFW.GLFW_KEY_X);
     public static final KeyMapping BUILD_ASSIST = key("build_assist", GLFW.GLFW_KEY_H);
+    public static final KeyMapping CAPTURE_SELECT = key("capture_select", GLFW.GLFW_KEY_B);
 
     private HoloPlaceKeys() {
     }
@@ -33,7 +35,7 @@ public final class HoloPlaceKeys {
 
     public static void register() {
         for (KeyMapping k : new KeyMapping[]
-                {OPEN_PICKER, TOGGLE_GRAB, ROTATE, MIRROR, SEE_THROUGH, BUILD_ASSIST}) {
+                {OPEN_PICKER, TOGGLE_GRAB, ROTATE, MIRROR, SEE_THROUGH, BUILD_ASSIST, CAPTURE_SELECT}) {
             KeyMappingHelper.registerKeyMapping(k);
         }
 
@@ -55,6 +57,9 @@ public final class HoloPlaceKeys {
             }
             while (BUILD_ASSIST.consumeClick()) {
                 PlacementController.get().toggleBuildAssist();
+            }
+            while (CAPTURE_SELECT.consumeClick()) {
+                CaptureController.get().toggleSelecting();
             }
             PlacementController.get().tick();
         });

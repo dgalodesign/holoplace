@@ -386,3 +386,27 @@ quad-producing blocks were scanned for wrongness. Added a parallel `wrongBE[]` s
 (`scanWrongBlockEntities`, same throttled pass as the rest of build-assist) and reused the existing
 `renderMarkerSet` helper to draw the same red wire cube over a block entity's cell when the world
 holds the wrong block there.
+
+## M19 — capture: area selection tool 🚧 (written, compiles, 23 tests green, **needs in-game check**)
+
+*(first slice of schematic creation — full plan in [`docs/plan-capture.md`](plan-capture.md))*
+
+- `SelectionState` (in `src/main` so it's unit-testable) — two corners, derives the inclusive
+  min/max box, size and volume regardless of click order. `SelectionStateTest` — 5 cases.
+- `CaptureController` (client singleton) — `B` keybind / `/holoplace capture` toggles "selection
+  mode"; while on, left-click sets corner 1 and right-click sets corner 2 via Fabric's
+  `AttackBlockCallback` / `UseBlockCallback` (consumed only while selecting, so normal play is
+  untouched — no new mixin, per the audit's "prefer events over mixins" note). `/holoplace capture
+  pos1|pos2` sets a corner from the crosshair; `/holoplace capture clear` resets.
+- `SelectionRenderer` — cyan wire box for the full selection, yellow unit cube for a lone first
+  corner. Reuses `ShapeRenderer` + `RenderTypes.lines()` like the ghost markers.
+- `CaptureHud` — top-right panel (opposite corner from `GhostHud`): both corners, size X×Y×Z, cell
+  count, and a red "selection very large" line past ~5M cells.
+- New lang keys (`holoplace.capture.*`, `holoplace.hud.capture_*`, `key.holoplace.capture_select`) in
+  both `en_us` and `es_es`.
+
+### Known gaps (M19)
+- No `.litematic` writing yet — that's M20. `/holoplace capture` with no sub-arg just toggles select
+  mode; there's no `save` yet.
+- The selection box has no upper-bound enforcement, only a HUD warning — the hard cap lands with the
+  writer in M20.

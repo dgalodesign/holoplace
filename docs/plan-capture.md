@@ -68,25 +68,31 @@ Las dos modalidades conviven, elegibles por el jugador **al guardar**, no al emp
 ## Arquitectura nueva
 
 ```
-capture/
-  SelectionState.java      · pos1/pos2 (mundo), normalizados a min/max; tamaño/volumen — un solo
-                             mecanismo de selección, usado por los dos modos
+main/  capture/
+  SelectionState.java      · pos1/pos2 (mundo), normalizados a min/max; tamaño/volumen — lógica pura
+                             en el source set main para poder testearla; un solo mecanismo de
+                             selección, usado por los dos modos                      [M19 ✅]
   ChangeLog.java           · registro de posiciones con historial de cambio (LongOpenHashSet o
-                             similar), alimentado por el mixin, consultado recién al guardar
-  CaptureController.java   · entra/sale de "modo selección"; guardar (completo/automático); cancelar
-  CaptureSnapshot.java     · BlockState[] + BlockEntity NBT por celda, relativo a la esquina mínima
-schematic/
-  LitematicaSchematicWriter.java · CaptureSnapshot → CompoundTag → .litematic (gzip)
-mixin/
+                             similar), alimentado por el mixin, consultado recién al guardar   [M21]
+  CaptureSnapshot.java     · BlockState[] + BlockEntity NBT por celda, relativo a la esquina mínima [M20]
+client/ capture/
+  CaptureController.java   · singleton; alterna "modo selección"; fija esquinas (clic o /cmd);
+                             guardar (completo/automático) [M20/M21]; cancelar             [M19 ✅]
+  SelectionRenderer.java   · caja de alambre de la selección — reusa ShapeRenderer + RenderTypes.lines(),
+                             igual que los marcadores de bloque incorrecto/sobrante       [M19 ✅]
+  CaptureHud.java          · panel arriba a la derecha: esquinas, tamaño, volumen, aviso de tamaño
+                             grande; el selector completo/automático se suma en M21       [M19 ✅]
+client/ schematic/
+  LitematicaSchematicWriter.java · CaptureSnapshot → CompoundTag → .litematic (gzip)          [M20]
+client/ mixin/
   LevelBlockChangeMixin.java · hook al método de bajo nivel que aplica un cambio de estado de bloque;
                                 siempre activo mientras hay un mundo cargado (ver más abajo), solo
-                                agrega una posición a ChangeLog — sin costo de render, sin UI propia
-render/
-  SelectionRenderer.java   · caja de alambre de la selección — reusa ShapeRenderer + RenderTypes.lines(),
-                             igual que los marcadores de bloque incorrecto/sobrante
-  CaptureHud.java          · panel: esquinas, tamaño, volumen, selector completo/automático, aviso de
-                             tamaño grande
+                                agrega una posición a ChangeLog — sin costo de render, sin UI propia [M21]
 ```
+
+Selección M19: keybind `B` (`CAPTURE_SELECT`) alterna el modo; clic izq/der sobre un bloque fija la
+esquina 1 / 2 vía `AttackBlockCallback` / `UseBlockCallback` (consumidos solo mientras el modo está
+activo); `/holoplace capture [pos1|pos2|clear]` como alternativa por comando.
 
 Todo nuevo, sin tocar el camino de lectura/render existente — la captura es un subsistema paralelo
 que solo comparte utilidades (`ShapeRenderer`, `LitematicaBitArray`, la carpeta de schematics). El
@@ -172,10 +178,12 @@ cliente.
 
 ## Milestones
 
-- **M19 — Herramienta de selección**: `CaptureController` (modo selección), caja de alambre, HUD de
-  esquinas/tamaño. Sin escritura a disco todavía. Sirve para los dos modos por igual. Test unitario:
-  normalización de esquinas (min/max sin importar el orden de clic) y cálculo de tamaño/volumen —
-  lógica pura, sin mundo real de por medio.
+- **M19 — Herramienta de selección** ✅ (compilado, `build` verde, sin probar en el juego todavía):
+  `CaptureController` (modo selección, keybind `B` + `/holoplace capture`), `SelectionRenderer` (caja
+  de alambre), `CaptureHud` (panel arriba a la derecha con esquinas/tamaño/volumen y aviso si supera
+  ~5M celdas). Sin escritura a disco todavía. Sirve para los dos modos por igual. 5 tests unitarios
+  nuevos en `SelectionStateTest` (normalización de esquinas sin importar el orden de clic, tamaño
+  inclusivo, volumen en `long`) — 23 tests en total.
 - **M20 — Escritor `.litematic` + captura completa**: `LitematicaSchematicWriter`, comando
   `/holoplace capture save <nombre>` en modo `full`. Test de *round-trip*: escribir una región
   conocida y releerla con `LitematicaSchematicReader`, comparar bloque a bloque — la pieza de

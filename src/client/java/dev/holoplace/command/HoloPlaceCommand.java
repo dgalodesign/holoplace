@@ -89,6 +89,23 @@ public final class HoloPlaceCommand {
                                                 .executes(ctx -> nudge(ctx.getSource(),
                                                         StringArgumentType.getString(ctx, "dir"),
                                                         IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(ClientCommands.literal("capture")
+                                .executes(ctx -> {
+                                    dev.holoplace.capture.CaptureController.get().toggleSelecting();
+                                    return 1;
+                                })
+                                .then(ClientCommands.literal("pos1").executes(ctx -> {
+                                    dev.holoplace.capture.CaptureController.get().setCornerFromLook(true);
+                                    return 1;
+                                }))
+                                .then(ClientCommands.literal("pos2").executes(ctx -> {
+                                    dev.holoplace.capture.CaptureController.get().setCornerFromLook(false);
+                                    return 1;
+                                }))
+                                .then(ClientCommands.literal("clear").executes(ctx -> {
+                                    dev.holoplace.capture.CaptureController.get().clearSelection();
+                                    return 1;
+                                })))
                         .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))
                         .then(ClientCommands.literal("layers")
                                 .then(ClientCommands.literal("off").executes(ctx -> {
