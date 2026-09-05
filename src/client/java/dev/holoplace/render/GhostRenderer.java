@@ -52,6 +52,7 @@ public final class GhostRenderer {
 
     private static boolean @Nullable [] needsPlacing;
     private static boolean @Nullable [] wrongBlock;
+    private static boolean @Nullable [] wrongBE;
     private static int @Nullable [] extraX;
     private static int @Nullable [] extraY;
     private static int @Nullable [] extraZ;
@@ -75,6 +76,7 @@ public final class GhostRenderer {
         blockTint = null;
         needsPlacing = null;
         wrongBlock = null;
+        wrongBE = null;
         extraX = null;
         extraY = null;
         extraZ = null;
@@ -102,6 +104,7 @@ public final class GhostRenderer {
             blockTint = null;
             needsPlacing = null;
             wrongBlock = null;
+            wrongBE = null;
             extraX = null;
             warnedTooLarge = false;
             warnedExtrasTooLarge = false;
@@ -170,6 +173,8 @@ public final class GhostRenderer {
         }
         if (hideMatched) {
             renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
+                    anchor, cam, ctx, state, WRONG_COLOR);
+            renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
                     anchor, cam, ctx, state, WRONG_COLOR);
             renderExtraBlocks(anchor, cam, ctx, state);
         }
@@ -266,11 +271,28 @@ public final class GhostRenderer {
         }
         needsPlacing = out;
         wrongBlock = wrong;
+        wrongBE = scanWrongBlockEntities(m, anchor, level, state, pos);
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
         scanExtraBlocks(m, transform, anchor, level);
         return out;
+    }
+
+    /**
+     * Per-block-entity "wrong block in its place" flags — block entities (chests, signs, …) produce
+     * no model quads of their own, so they're absent from {@link #wrongBlock} entirely; without this,
+     * a wrong block sitting where a chest belongs was never flagged.
+     */
+    private static boolean[] scanWrongBlockEntities(GhostMesh m, BlockPos anchor, ClientLevel level,
+                                                     GhostState state, BlockPos.MutableBlockPos pos) {
+        boolean[] wrong = new boolean[m.blockEntityCount()];
+        for (int i = 0; i < wrong.length; i++) {
+            pos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
+            BlockState world = level.getBlockState(pos);
+            wrong[i] = !state.matches(world, m.beState(i)) && !world.isAir();
+        }
+        return wrong;
     }
 
     /**

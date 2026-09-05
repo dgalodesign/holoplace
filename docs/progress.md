@@ -379,3 +379,10 @@ cost of wrongly-placed blocks, without changing the default build-assist behavio
   already-correct cell — leaving only the red wire-cube marker to say "fix this". Applies uniformly
   to regular blocks, fluids, and block-entity markers/models via a shared `isBuiltOrHiddenWrong`
   check, reusing the existing `wrongBlock[]` scan (no extra world scan needed).
+
+**Bug fix** (user-reported: a wrong block in a chest/sign/etc.'s spot wasn't flagged): block entities
+produce no model quads of their own, so they were never part of `wrongBlock[]` — only regular,
+quad-producing blocks were scanned for wrongness. Added a parallel `wrongBE[]` scan
+(`scanWrongBlockEntities`, same throttled pass as the rest of build-assist) and reused the existing
+`renderMarkerSet` helper to draw the same red wire cube over a block entity's cell when the world
+holds the wrong block there.
