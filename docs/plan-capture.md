@@ -184,10 +184,14 @@ cliente.
   ~5M celdas). Sin escritura a disco todavía. Sirve para los dos modos por igual. 5 tests unitarios
   nuevos en `SelectionStateTest` (normalización de esquinas sin importar el orden de clic, tamaño
   inclusivo, volumen en `long`) — 23 tests en total.
-- **M20 — Escritor `.litematic` + captura completa**: `LitematicaSchematicWriter`, comando
-  `/holoplace capture save <nombre>` en modo `full`. Test de *round-trip*: escribir una región
-  conocida y releerla con `LitematicaSchematicReader`, comparar bloque a bloque — la pieza de
-  verificación más valiosa de todo el plan, y barata de escribir porque ya existen ambos lados.
+- **M20 — Escritor `.litematic` + captura completa** ✅ (compilado, `build` verde, 26 tests, sin
+  probar en el juego todavía): `LitematicaSchematicWriter` (en `src/main`, formato v6, paleta con
+  aire en índice 0, bit-packing por `LitematicaBitArray.set`), `CaptureWriter` (lee la región del
+  mundo del cliente, block entities vía `saveCustomOnly` + x/y/z relativos), `/holoplace capture save
+  [nombre]` (sin nombre → `capture-AAAAMMDD-HHMMSS`), tope de 8M celdas. 3 tests de *round-trip*
+  (`LitematicaSchematicWriterTest`): grilla con bloques con estado → releer con
+  `LitematicaSchematicReader` → comparar celda a celda; selección todo-aire; NBT de block entity por
+  posición local. Falta: entidades (marcos, soportes de armadura…) — se guardan vacías por ahora.
 - **M21 — Modo automático (el diferenciador)**: `ChangeLog` + `LevelBlockChangeMixin`, activo desde
   que se carga el mundo (sin paso de "empezar"); selector completo/automático al guardar; para cada
   celda de la selección, estado actual si está en `ChangeLog`, aire si no. Verificar de entrada, antes

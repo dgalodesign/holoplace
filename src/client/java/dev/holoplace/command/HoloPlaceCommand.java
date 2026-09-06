@@ -105,7 +105,18 @@ public final class HoloPlaceCommand {
                                 .then(ClientCommands.literal("clear").executes(ctx -> {
                                     dev.holoplace.capture.CaptureController.get().clearSelection();
                                     return 1;
-                                })))
+                                }))
+                                .then(ClientCommands.literal("save")
+                                        .executes(ctx -> {
+                                            dev.holoplace.capture.CaptureController.get().save(null);
+                                            return 1;
+                                        })
+                                        .then(ClientCommands.argument("name", StringArgumentType.greedyString())
+                                                .executes(ctx -> {
+                                                    dev.holoplace.capture.CaptureController.get().save(
+                                                            StringArgumentType.getString(ctx, "name"));
+                                                    return 1;
+                                                }))))
                         .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))
                         .then(ClientCommands.literal("layers")
                                 .then(ClientCommands.literal("off").executes(ctx -> {

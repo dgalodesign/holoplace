@@ -417,7 +417,32 @@ its own edge flow) is not flagged.
   both `en_us` and `es_es`.
 
 ### Known gaps (M19)
-- No `.litematic` writing yet — that's M20. `/holoplace capture` with no sub-arg just toggles select
-  mode; there's no `save` yet.
-- The selection box has no upper-bound enforcement, only a HUD warning — the hard cap lands with the
-  writer in M20.
+- The selection box has no upper-bound enforcement, only a HUD warning — the hard save cap is in M20.
+
+M19 follow-up polish (user-requested): corner 1 (left-click) draws a green cube, corner 2 (right-click)
+an orange one — shown once set so which is which stays readable, HUD lines tinted to match — and the
+selection box gained translucent shaded faces (`RenderTypes.debugQuads`, 6 low-alpha quads) on top of
+the wire edges.
+
+## M20 — capture: `.litematic` writer + full capture 🚧 (written, compiles, 26 tests green, **needs in-game check**)
+
+- `LitematicaSchematicWriter` (in `src/main`, so the round-trip is testable) — the inverse of
+  `LitematicaSchematicReader`: single-region, format `Version` 6, palette with air forced to index 0,
+  bit-packing through the (until now unused) `LitematicaBitArray.set`. `write(Path, …)` gzips it;
+  `toNbt(…)` is the seam the test uses. `Region` record carries the dense `BlockState[]` grid plus
+  block entities / entities already in litematica's layout.
+- `CaptureWriter` (client) — walks the selected region of the client world into a `Region`: block
+  states straight from `level.getBlockState`, block entities via `BlockEntity.saveCustomOnly` +
+  region-relative `x`/`y`/`z` ints (litematica's format — no vanilla `id`).
+- `CaptureController.save(name)` + `/holoplace capture save [name]` — no name → `capture-<timestamp>`;
+  writes into the same `config/holoplace/schematics/` folder the picker reads, so a capture shows up
+  there immediately. Name is sanitised; a save over `MAX_SAVE_VOLUME` (8M cells) is refused.
+- `LitematicaSchematicWriterTest` — 3 round-trips: a grid with a stateful block (stairs facing/half)
+  read back cell-by-cell through the real reader; an all-air selection; a block-entity's NBT kept by
+  local position.
+
+### Known gaps (M20)
+- Entities (item frames, armour stands, paintings) aren't captured — `Entities` is written empty.
+- No live progress/feedback for a big capture — it's synchronous on the calling thread (fine under
+  the 8M cap, but a large capture will hitch briefly).
+- The "recording" / diff mode (M21) isn't here yet — `save` always captures everything in the box.
