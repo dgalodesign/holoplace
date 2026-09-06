@@ -47,6 +47,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostHud.register();
         GhostTooltipHud.register();
         CaptureController.register();
+        ChangeTracker.register();
         SelectionRenderer.register();
         CaptureHud.register();
 

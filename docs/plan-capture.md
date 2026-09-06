@@ -126,15 +126,18 @@ tiempo en segundo plano, la otra se activa solo cuando el jugador quiere guardar
    tamaño real a la vista) y guarda en modo **automático**.
 4. Para cada celda dentro de la caja: si está en `ChangeLog` → su estado actual; si no → aire.
 
-**Cómo se detecta "cambió un bloque"**: hookear el método de bajo nivel por el que tanto la
-colocación/rotura predicha localmente por el cliente como los paquetes de actualización del servidor
-terminan pasando (en versiones recientes de MC, algo como `Level#setBlock` /
-`ClientLevel#setBlockAndUpdate` — **nombre y firma exactos a verificar contra el código de 26.1**,
-mismo tipo de investigación que ya hizo falta para `LevelRenderEvents` y el resto del pipeline nuevo).
-Ese método es el punto de unión de *todas* las formas en que un bloque cambia (colocarlo, romperlo,
-un pistón, agua/lava, crecimiento, otro jugador) — un solo hook para todo, sin combinar varios eventos
-de interacción ni perder cambios indirectos (un pistón empujando algo forma parte de lo que el
-jugador construyó tanto como el bloque puesto a mano).
+**Cómo se detecta "cambió un bloque"**: `@Inject` HEAD en `Level.setBlock(BlockPos, BlockState, int,
+int)` — el punto por el que pasan tanto la predicción local del cliente como los paquetes de
+actualización del servidor; la carga masiva de un chunk NO pasa por ahí (llena las secciones directo),
+así que se filtra sola.
+
+**Filtro de "solo lo del jugador"** (agregado tras el primer test en el juego): el hook crudo también
+agarra el post-procesado de generación de chunks y el ruido ambiental (pasto que se expande, hojas
+que decaen, agua que fluye) — y eso pasa justo donde estás construyendo, así que la caja de selección
+NO lo filtra. Solución: una celda solo se registra si el cambio ocurre dentro de ~1,5s de una
+interacción del jugador con un bloque (`AttackBlockCallback` / `UseBlockCallback` /
+`ClientPlayerBlockBreakEvents.AFTER` refrescan la ventana). Eso conserva la colocación y su cascada
+inmediata (redstone, agua, pistón) y descarta el ruido ambiental.
 
 **Por qué ya no hace falta un radio de vigilancia**: como la caja la dibuja el jugador recién al
 final, alrededor de lo que ya construyó, cualquier cambio ajeno que haya quedado registrado en otra

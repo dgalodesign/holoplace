@@ -454,7 +454,12 @@ without any "start recording" step to forget and without declaring the area up f
 - `ChangeLog` (`src/main`, testable) — a `LongOpenHashSet` of touched cell positions, capped at 3M
   (`isFull()` then; the capture warns it may be incomplete).
 - `ChangeTracker` (client) — owns the single `ChangeLog`, always on. Reset on world join / disconnect
-  so each session starts clean (persisting across relogs is M23).
+  so each session starts clean (persisting across relogs is M23). **A change is only logged if it
+  lands within 1.5s of the player interacting with a block** (`AttackBlockCallback` /
+  `UseBlockCallback` / `ClientPlayerBlockBreakEvents.AFTER` refresh the window). First in-game test
+  showed the raw hook also catches worldgen post-processing, grass/leaf/fluid ambient churn, etc. —
+  which happens right where you build, so the selection box doesn't filter it. The window keeps the
+  placement + its immediate redstone/water/piston cascade and drops the ambient noise.
 - `LevelBlockChangeMixin` — `@Inject` at HEAD of `Level.setBlock(BlockPos, BlockState, int, int)`,
   the one method both the client's own predicted placement/break and server block-update packets
   funnel through; bulk chunk streaming fills sections directly and does *not* go through it, so this
@@ -472,8 +477,10 @@ without any "start recording" step to forget and without declaring the area up f
   log sees only real incremental changes.
 - `ChangeLog` is memory-only; a client restart loses it (M23 = persist per world). A build spanning
   sessions must finish and `save changes` before quitting, or fall back to full capture.
-- Anything changed by another player / a piston / mob griefing inside a loaded chunk is also
-  recorded — but the selection box drawn afterward around your own build filters it out.
+- Another player / a piston / mob griefing near your build within the 1.5s interaction window is
+  still recorded (rare overlap); outside the window it's dropped.
+- Ambient change that happens to land in the 1.5s window after one of your interactions slips
+  through (a few stray cells at most).
 - No dimension-change reset — travelling to the Nether and back keeps one log (fine), but stray
   Nether coords that happen to fall in an Overworld selection box would be a near-impossible
   coincidence, currently unhandled.
