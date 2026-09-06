@@ -398,6 +398,10 @@ holds the wrong block there.
   `AttackBlockCallback` / `UseBlockCallback` (consumed only while selecting, so normal play is
   untouched — no new mixin, per the audit's "prefer events over mixins" note). `/holoplace capture
   pos1|pos2` sets a corner from the crosshair; `/holoplace capture clear` resets.
+  - The callbacks return `InteractionResult.FAIL`, not `SUCCESS`, to consume a click — `SUCCESS`
+    still lets Fabric run the prediction and send the action packet, so the server would break /
+    place the block anyway (instantly in creative). `FAIL` cancels outright. (First in-game test
+    caught this: blocks still broke/placed while selecting.)
 - `SelectionRenderer` — cyan wire box for the full selection, yellow unit cube for a lone first
   corner. Reuses `ShapeRenderer` + `RenderTypes.lines()` like the ghost markers.
 - `CaptureHud` — top-right panel (opposite corner from `GhostHud`): both corners, size X×Y×Z, cell

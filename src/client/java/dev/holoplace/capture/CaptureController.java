@@ -30,15 +30,20 @@ public final class CaptureController {
         return INSTANCE;
     }
 
-    /** Registers the block-click hooks. Called once from client init. */
+    /**
+     * Registers the block-click hooks. Called once from client init. Returns {@link
+     * InteractionResult#FAIL} (not {@code SUCCESS}) to consume a click: {@code SUCCESS} would still
+     * let Fabric fire the prediction and send the action packet, and the server would then break /
+     * place the block anyway (instantly, in creative). {@code FAIL} cancels the action outright.
+     */
     public static void register() {
         AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) ->
                 level.isClientSide() && get().onCornerClick(pos, true)
-                        ? InteractionResult.SUCCESS
+                        ? InteractionResult.FAIL
                         : InteractionResult.PASS);
         UseBlockCallback.EVENT.register((player, level, hand, hit) ->
                 level.isClientSide() && get().onCornerClick(hit.getBlockPos(), false)
-                        ? InteractionResult.SUCCESS
+                        ? InteractionResult.FAIL
                         : InteractionResult.PASS);
     }
 
