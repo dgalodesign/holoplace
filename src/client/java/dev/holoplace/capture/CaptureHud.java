@@ -38,8 +38,8 @@ public final class CaptureHud {
         List<String> lines = new ArrayList<>();
         lines.add("§b❖ " + text("holoplace.hud.capture_title")
                 + (cc.isSelecting() ? "  §e[" + text("holoplace.hud.capture_selecting") + "]" : ""));
-        lines.add("§7" + text("holoplace.hud.capture_c1") + " §f" + coord(sel.corner1()));
-        lines.add("§7" + text("holoplace.hud.capture_c2") + " §f" + coord(sel.corner2()));
+        lines.add("§a" + text("holoplace.hud.capture_c1") + " §f" + coord(sel.corner1()));
+        lines.add("§6" + text("holoplace.hud.capture_c2") + " §f" + coord(sel.corner2()));
         if (sel.isComplete()) {
             Vec3i s = sel.size();
             long vol = sel.volume();
