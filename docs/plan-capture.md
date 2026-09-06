@@ -201,9 +201,10 @@ cliente.
   toma un `@Nullable ChangeLog`: si viene, solo las celdas registradas conservan su estado, el resto
   sale aire. `/holoplace capture save changes [nombre]` para el modo automático (sin `changes` sigue
   siendo completo). HUD muestra "N cambios registrados". 4 tests de `ChangeLog` (registrar/consultar
-  por coords, dedupe, clear, tope). **Pendiente de verificar en el juego**: que el hook realmente no
-  dispare en la carga inicial de un chunk (si dispara, hay que distinguir "chunk recién cargado" de
-  "cambio real").
+  por coords, dedupe, clear, tope). Carga de chunk confirmada contra el código de 26.1:
+  `replaceWithPacketData` llena las secciones directo (`section.read`) sin pasar por `Level.setBlock`;
+  el único `setBlock` dentro de `LevelChunk` es `postProcessGeneration(ServerLevel)`, solo-servidor y
+  descartado por el guard `isClientSide()`.
 - **M22 — Pulido + i18n**: strings nuevas en `en_us.json`/`es_es.json` siguiendo el patrón ya
   establecido; integrar controles de captura en la pantalla `K` o una pantalla propia si no entra sin
   amontonar; actualizar `docs/progress.md` y `README.md`.

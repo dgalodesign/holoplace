@@ -466,8 +466,10 @@ without any "start recording" step to forget and without declaring the area up f
   HUD shows "N changes tracked".
 
 ### Known gaps / risks (M21)
-- **Unverified**: that `Level.setBlock` really isn't hit during initial chunk load in 26.1. If it is,
-  the log fills with untouched terrain — needs a "chunk already known" filter.
+- Chunk-load safety: confirmed against 26.1 source — `LevelChunk.replaceWithPacketData` fills sections
+  via `section.read(buffer)` and never calls `Level.setBlock`; the only in-chunk `setBlock` is
+  `postProcessGeneration(ServerLevel)`, server-only and filtered by the `isClientSide()` guard. So the
+  log sees only real incremental changes.
 - `ChangeLog` is memory-only; a client restart loses it (M23 = persist per world). A build spanning
   sessions must finish and `save changes` before quitting, or fall back to full capture.
 - Anything changed by another player / a piston / mob griefing inside a loaded chunk is also
