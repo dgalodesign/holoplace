@@ -2,6 +2,7 @@ package dev.holoplace.capture;
 
 import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.SchematicLibrary;
+import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.schematic.LitematicaSchematicWriter;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -35,6 +36,7 @@ public final class CaptureController {
 
     private final SelectionState selection = new SelectionState();
     private boolean selecting;
+    private boolean changesOnly = HoloPlaceConfig.get().captureChangesOnly;
 
     private CaptureController() {
     }
@@ -68,6 +70,10 @@ public final class CaptureController {
         return selecting;
     }
 
+    public boolean changesOnly() {
+        return changesOnly;
+    }
+
     public long volumeWarnLimit() {
         return VOLUME_WARN_LIMIT;
     }
@@ -75,6 +81,16 @@ public final class CaptureController {
     public void toggleSelecting() {
         selecting = !selecting;
         overlay(Component.translatable(selecting ? "holoplace.capture.select_on" : "holoplace.capture.select_off"));
+    }
+
+    /** {@code null} toggles; otherwise sets the mode. Full = everything in the box; changes = only
+     *  the cells the passive {@link ChangeTracker} recorded this session. */
+    public void setMode(@Nullable Boolean onlyChanges) {
+        changesOnly = onlyChanges == null ? !changesOnly : onlyChanges;
+        HoloPlaceConfig.get().captureChangesOnly = changesOnly;
+        HoloPlaceConfig.save();
+        overlay(Component.translatable(changesOnly
+                ? "holoplace.capture.mode_changes" : "holoplace.capture.mode_full"));
     }
 
     /** @return true if the click was consumed (i.e. selection mode is on and a corner was set). */
@@ -114,11 +130,12 @@ public final class CaptureController {
     }
 
     /**
-     * Write the selection to {@code <name>.litematic}. {@code onlyChanges} → automatic mode: only
-     * cells the passive {@link ChangeTracker} recorded this session keep their block; the rest become
-     * air. Otherwise: full capture, everything in the box as-is.
+     * Write the selection to {@code <name>.litematic}, using the current {@link #changesOnly()} mode:
+     * changes → only cells the passive {@link ChangeTracker} recorded this session keep their block,
+     * the rest become air; full → everything in the box as-is.
      */
-    public void save(@Nullable String rawName, boolean onlyChanges) {
+    public void save(@Nullable String rawName) {
+        boolean onlyChanges = changesOnly;
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null || mc.player == null) {

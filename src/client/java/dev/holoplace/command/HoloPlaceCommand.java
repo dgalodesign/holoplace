@@ -106,26 +106,28 @@ public final class HoloPlaceCommand {
                                     dev.holoplace.capture.CaptureController.get().clearSelection();
                                     return 1;
                                 }))
-                                .then(ClientCommands.literal("save")
+                                .then(ClientCommands.literal("mode")
                                         .executes(ctx -> {
-                                            dev.holoplace.capture.CaptureController.get().save(null, false);
+                                            dev.holoplace.capture.CaptureController.get().setMode(null);
                                             return 1;
                                         })
-                                        .then(ClientCommands.literal("changes")
-                                                .executes(ctx -> {
-                                                    dev.holoplace.capture.CaptureController.get().save(null, true);
-                                                    return 1;
-                                                })
-                                                .then(ClientCommands.argument("name", StringArgumentType.greedyString())
-                                                        .executes(ctx -> {
-                                                            dev.holoplace.capture.CaptureController.get().save(
-                                                                    StringArgumentType.getString(ctx, "name"), true);
-                                                            return 1;
-                                                        })))
+                                        .then(ClientCommands.literal("full").executes(ctx -> {
+                                            dev.holoplace.capture.CaptureController.get().setMode(false);
+                                            return 1;
+                                        }))
+                                        .then(ClientCommands.literal("changes").executes(ctx -> {
+                                            dev.holoplace.capture.CaptureController.get().setMode(true);
+                                            return 1;
+                                        })))
+                                .then(ClientCommands.literal("save")
+                                        .executes(ctx -> {
+                                            dev.holoplace.capture.CaptureController.get().save(null);
+                                            return 1;
+                                        })
                                         .then(ClientCommands.argument("name", StringArgumentType.greedyString())
                                                 .executes(ctx -> {
                                                     dev.holoplace.capture.CaptureController.get().save(
-                                                            StringArgumentType.getString(ctx, "name"), false);
+                                                            StringArgumentType.getString(ctx, "name"));
                                                     return 1;
                                                 }))))
                         .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))

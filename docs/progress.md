@@ -467,8 +467,10 @@ without any "start recording" step to forget and without declaring the area up f
   own calls in singleplayer.
 - `CaptureWriter.capture(…, @Nullable ChangeLog)` — with a log, only recorded cells keep their world
   state, the rest become air (and only recorded cells contribute block entities).
-- `/holoplace capture save changes [name]` → automatic; plain `save [name]` stays full. The capture
-  HUD shows "N changes tracked".
+- Mode is a persisted toggle (`HoloPlaceConfig.captureChangesOnly`), not a `save` sub-arg — the
+  first cut used `/holoplace capture save changes` which brigadier flagged as ambiguous with the
+  schematic-name argument and mis-routed to full mode. Now: `/holoplace capture mode [full|changes]`
+  toggles it, the HUD shows the current mode, and `save [name]` uses it. (K-screen checkbox is M22.)
 
 ### Known gaps / risks (M21)
 - Chunk-load safety: confirmed against 26.1 source — `LevelChunk.replaceWithPacketData` fills sections

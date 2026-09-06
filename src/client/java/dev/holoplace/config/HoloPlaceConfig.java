@@ -29,6 +29,7 @@ public final class HoloPlaceConfig {
     public int layerMin = 0;
     public int layerMax = Integer.MAX_VALUE;
     public boolean seenIntro = false;
+    public boolean captureChangesOnly = false;
     public String rotation = "NONE";
     public String mirror = "NONE";
     public String lastSchematic = "";

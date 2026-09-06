@@ -51,9 +51,13 @@ public final class CaptureHud {
                 lines.add("§c" + text("holoplace.hud.capture_toobig"));
             }
         }
-        int changes = ChangeTracker.log().size();
-        lines.add("§7" + text("holoplace.hud.capture_changes") + " §f" + String.format("%,d", changes)
-                + (ChangeTracker.log().isFull() ? " §c(" + text("holoplace.hud.capture_capped") + ")" : ""));
+        lines.add("§7" + text("holoplace.hud.capture_mode") + " §f"
+                + text(cc.changesOnly() ? "holoplace.hud.capture_mode_changes" : "holoplace.hud.capture_mode_full"));
+        if (cc.changesOnly()) {
+            int changes = ChangeTracker.log().size();
+            lines.add("§7" + text("holoplace.hud.capture_changes") + " §f" + String.format("%,d", changes)
+                    + (ChangeTracker.log().isFull() ? " §c(" + text("holoplace.hud.capture_capped") + ")" : ""));
+        }
         lines.add("§8" + Component.translatable("holoplace.hud.capture_hint",
                 HoloPlaceKeys.CAPTURE_SELECT.getTranslatedKeyMessage().getString()).getString());
 
