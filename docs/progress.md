@@ -387,6 +387,13 @@ quad-producing blocks were scanned for wrongness. Added a parallel `wrongBE[]` s
 `renderMarkerSet` helper to draw the same red wire cube over a block entity's cell when the world
 holds the wrong block there.
 
+**Bug fix** (same root cause, user-reported: a wrong block where *water* should go wasn't flagged):
+a pure water/lava source has no block model either, so it lived only in the mesh's fluid arrays,
+outside `wrongBlock[]`. Added `wrongFluid[]` (`scanWrongFluids`) — flags a fluid cell whose world
+block is a different, non-air, non-same-fluid block. Waterlogged blocks are skipped (their host
+block already covers them via `wrongBlock[]`), and the same fluid at a different level (a source vs.
+its own edge flow) is not flagged.
+
 ## M19 — capture: area selection tool 🚧 (written, compiles, 23 tests green, **needs in-game check**)
 
 *(first slice of schematic creation — full plan in [`docs/plan-capture.md`](plan-capture.md))*

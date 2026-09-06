@@ -53,6 +53,7 @@ public final class GhostRenderer {
     private static boolean @Nullable [] needsPlacing;
     private static boolean @Nullable [] wrongBlock;
     private static boolean @Nullable [] wrongBE;
+    private static boolean @Nullable [] wrongFluid;
     private static int @Nullable [] extraX;
     private static int @Nullable [] extraY;
     private static int @Nullable [] extraZ;
@@ -77,6 +78,7 @@ public final class GhostRenderer {
         needsPlacing = null;
         wrongBlock = null;
         wrongBE = null;
+        wrongFluid = null;
         extraX = null;
         extraY = null;
         extraZ = null;
@@ -105,6 +107,7 @@ public final class GhostRenderer {
             needsPlacing = null;
             wrongBlock = null;
             wrongBE = null;
+            wrongFluid = null;
             extraX = null;
             warnedTooLarge = false;
             warnedExtrasTooLarge = false;
@@ -175,6 +178,8 @@ public final class GhostRenderer {
             renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
                     anchor, cam, ctx, state, WRONG_COLOR);
             renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
+                    anchor, cam, ctx, state, WRONG_COLOR);
+            renderMarkerSet(wrongFluid, m::fluidX, m::fluidY, m::fluidZ, m.fluidCount(),
                     anchor, cam, ctx, state, WRONG_COLOR);
             renderExtraBlocks(anchor, cam, ctx, state);
         }
@@ -272,6 +277,7 @@ public final class GhostRenderer {
         needsPlacing = out;
         wrongBlock = wrong;
         wrongBE = scanWrongBlockEntities(m, anchor, level, state, pos);
+        wrongFluid = scanWrongFluids(m, anchor, level, state, pos);
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
@@ -291,6 +297,31 @@ public final class GhostRenderer {
             pos.set(anchor.getX() + m.beX(i), anchor.getY() + m.beY(i), anchor.getZ() + m.beZ(i));
             BlockState world = level.getBlockState(pos);
             wrong[i] = !state.matches(world, m.beState(i)) && !world.isAir();
+        }
+        return wrong;
+    }
+
+    /**
+     * Per-fluid "wrong block in its place" flags. A pure water/lava source has no block model, so
+     * (like block entities) it never enters {@link #wrongBlock} — a wrong block where water belongs
+     * went unflagged. Waterlogged blocks are skipped here since their host block already covers them
+     * via {@link #wrongBlock}.
+     */
+    private static boolean[] scanWrongFluids(GhostMesh m, BlockPos anchor, ClientLevel level,
+                                             GhostState state, BlockPos.MutableBlockPos pos) {
+        boolean[] wrong = new boolean[m.fluidCount()];
+        for (int i = 0; i < wrong.length; i++) {
+            BlockState ghost = m.fluidState(i);
+            if (!(ghost.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock)) {
+                continue;
+            }
+            pos.set(anchor.getX() + m.fluidX(i), anchor.getY() + m.fluidY(i), anchor.getZ() + m.fluidZ(i));
+            BlockState world = level.getBlockState(pos);
+            // "wrong" = a real different block is in the way; the same fluid at a different level
+            // (a source vs. its own flow at the edges) isn't a mistake worth flagging.
+            boolean sameFluid = !world.getFluidState().isEmpty()
+                    && world.getFluidState().getType().isSame(ghost.getFluidState().getType());
+            wrong[i] = !state.matches(world, ghost) && !world.isAir() && !sameFluid;
         }
         return wrong;
     }
