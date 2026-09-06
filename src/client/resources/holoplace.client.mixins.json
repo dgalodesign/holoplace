@@ -3,6 +3,7 @@
 	"package": "dev.holoplace.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"LevelBlockChangeMixin",
 		"MouseHandlerMixin"
 	],
 	"injectors": {

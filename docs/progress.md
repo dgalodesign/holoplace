@@ -445,4 +445,33 @@ the wire edges.
 - Entities (item frames, armour stands, paintings) aren't captured — `Entities` is written empty.
 - No live progress/feedback for a big capture — it's synchronous on the calling thread (fine under
   the 8M cap, but a large capture will hitch briefly).
-- The "recording" / diff mode (M21) isn't here yet — `save` always captures everything in the box.
+
+## M21 — capture: automatic mode (only what you changed) 🚧 (written, compiles, 30 tests green, **needs in-game check**)
+
+The differentiator from Litematica: capture only the cells the player actually changed this session,
+without any "start recording" step to forget and without declaring the area up front.
+
+- `ChangeLog` (`src/main`, testable) — a `LongOpenHashSet` of touched cell positions, capped at 3M
+  (`isFull()` then; the capture warns it may be incomplete).
+- `ChangeTracker` (client) — owns the single `ChangeLog`, always on. Reset on world join / disconnect
+  so each session starts clean (persisting across relogs is M23).
+- `LevelBlockChangeMixin` — `@Inject` at HEAD of `Level.setBlock(BlockPos, BlockState, int, int)`,
+  the one method both the client's own predicted placement/break and server block-update packets
+  funnel through; bulk chunk streaming fills sections directly and does *not* go through it, so this
+  naturally sees only real incremental changes. `isClientSide()` guard drops the integrated server's
+  own calls in singleplayer.
+- `CaptureWriter.capture(…, @Nullable ChangeLog)` — with a log, only recorded cells keep their world
+  state, the rest become air (and only recorded cells contribute block entities).
+- `/holoplace capture save changes [name]` → automatic; plain `save [name]` stays full. The capture
+  HUD shows "N changes tracked".
+
+### Known gaps / risks (M21)
+- **Unverified**: that `Level.setBlock` really isn't hit during initial chunk load in 26.1. If it is,
+  the log fills with untouched terrain — needs a "chunk already known" filter.
+- `ChangeLog` is memory-only; a client restart loses it (M23 = persist per world). A build spanning
+  sessions must finish and `save changes` before quitting, or fall back to full capture.
+- Anything changed by another player / a piston / mob griefing inside a loaded chunk is also
+  recorded — but the selection box drawn afterward around your own build filters it out.
+- No dimension-change reset — travelling to the Nether and back keeps one log (fine), but stray
+  Nether coords that happen to fall in an Overworld selection box would be a near-impossible
+  coincidence, currently unhandled.

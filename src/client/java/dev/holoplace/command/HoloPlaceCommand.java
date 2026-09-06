@@ -108,13 +108,24 @@ public final class HoloPlaceCommand {
                                 }))
                                 .then(ClientCommands.literal("save")
                                         .executes(ctx -> {
-                                            dev.holoplace.capture.CaptureController.get().save(null);
+                                            dev.holoplace.capture.CaptureController.get().save(null, false);
                                             return 1;
                                         })
+                                        .then(ClientCommands.literal("changes")
+                                                .executes(ctx -> {
+                                                    dev.holoplace.capture.CaptureController.get().save(null, true);
+                                                    return 1;
+                                                })
+                                                .then(ClientCommands.argument("name", StringArgumentType.greedyString())
+                                                        .executes(ctx -> {
+                                                            dev.holoplace.capture.CaptureController.get().save(
+                                                                    StringArgumentType.getString(ctx, "name"), true);
+                                                            return 1;
+                                                        })))
                                         .then(ClientCommands.argument("name", StringArgumentType.greedyString())
                                                 .executes(ctx -> {
                                                     dev.holoplace.capture.CaptureController.get().save(
-                                                            StringArgumentType.getString(ctx, "name"));
+                                                            StringArgumentType.getString(ctx, "name"), false);
                                                     return 1;
                                                 }))))
                         .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))

@@ -192,14 +192,18 @@ cliente.
   (`LitematicaSchematicWriterTest`): grilla con bloques con estado → releer con
   `LitematicaSchematicReader` → comparar celda a celda; selección todo-aire; NBT de block entity por
   posición local. Falta: entidades (marcos, soportes de armadura…) — se guardan vacías por ahora.
-- **M21 — Modo automático (el diferenciador)**: `ChangeLog` + `LevelBlockChangeMixin`, activo desde
-  que se carga el mundo (sin paso de "empezar"); selector completo/automático al guardar; para cada
-  celda de la selección, estado actual si está en `ChangeLog`, aire si no. Verificar de entrada, antes
-  del resto del milestone, cuál es el hook exacto en 26.1 y si distingue de forma natural "cambio
-  real" de "carga masiva de un chunk nuevo" (si no lo hace solo, hay que filtrar explícitamente los
-  cambios que ocurren durante la carga inicial de un chunk). Tope de tamaño de `ChangeLog` con aviso,
-  por si una sesión muy larga acumula demasiadas posiciones. Test unitario de "aplicar ChangeLog sobre
-  una selección" (lógica pura, sin mundo real).
+- **M21 — Modo automático (el diferenciador)** ✅ (compilado, `build` verde, 30 tests, sin probar en
+  el juego todavía): `ChangeLog` (en `src/main`, `LongOpenHashSet` con tope de 3M) + `ChangeTracker`
+  (cliente, singleton, se limpia en join/disconnect) + `LevelBlockChangeMixin` (`@Inject` HEAD en
+  `Level.setBlock(BlockPos, BlockState, int, int)` — el punto por el que pasan tanto la predicción
+  local como los paquetes del servidor; la carga masiva de un chunk NO pasa por ahí, así que se
+  filtra sola; el guard `isClientSide()` descarta el servidor integrado en un jugador). `CaptureWriter`
+  toma un `@Nullable ChangeLog`: si viene, solo las celdas registradas conservan su estado, el resto
+  sale aire. `/holoplace capture save changes [nombre]` para el modo automático (sin `changes` sigue
+  siendo completo). HUD muestra "N cambios registrados". 4 tests de `ChangeLog` (registrar/consultar
+  por coords, dedupe, clear, tope). **Pendiente de verificar en el juego**: que el hook realmente no
+  dispare en la carga inicial de un chunk (si dispara, hay que distinguir "chunk recién cargado" de
+  "cambio real").
 - **M22 — Pulido + i18n**: strings nuevas en `en_us.json`/`es_es.json` siguiendo el patrón ya
   establecido; integrar controles de captura en la pantalla `K` o una pantalla propia si no entra sin
   amontonar; actualizar `docs/progress.md` y `README.md`.

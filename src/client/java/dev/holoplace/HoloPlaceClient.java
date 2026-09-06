@@ -2,6 +2,7 @@ package dev.holoplace;
 
 import dev.holoplace.capture.CaptureController;
 import dev.holoplace.capture.CaptureHud;
+import dev.holoplace.capture.ChangeTracker;
 import dev.holoplace.capture.SelectionRenderer;
 import dev.holoplace.command.HoloPlaceCommand;
 import dev.holoplace.config.HoloPlaceConfig;
@@ -50,11 +51,14 @@ public class HoloPlaceClient implements ClientModInitializer {
         CaptureHud.register();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> {
+            ChangeTracker.reset();
             WorldPlacements.restoreForCurrentWorld();
             maybeShowIntro(client);
         }));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                WorldPlacements.onDisconnect());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ChangeTracker.reset();
+            WorldPlacements.onDisconnect();
+        });
 
         LOGGER.info("HoloPlace ready — schematics folder: {}", SchematicLibrary.primaryDir());
     }
