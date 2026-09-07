@@ -473,7 +473,7 @@ detection isn't possible — you must track changes live or diff against a basel
 
 A scroll/scrollbar on the `K` screen (it's getting tall).
 
-## M23 — render schematic entities in the ghost 🚧 (written, compiles, **needs in-game check**)
+## M23 — render schematic entities in the ghost ✅ (item frame + armour stand verified in-game 2026-09)
 
 *(user request after seeing a captured item frame / armour stand not show up)*
 
@@ -501,6 +501,20 @@ A scroll/scrollbar on the `K` screen (it's getting tall).
   `setDirection(transformedFacing)` recalcs the bounding box. `Rotation.rotate(Direction)` /
   `Mirror.mirror(Direction)` give the transformed facing.
 - Ghost entities render full-bright (`s.lightCoords = FULL_BRIGHT`), like the ghost blocks.
+
+**Second round** (item frame still invisible, then wrong rotation / no fade — `aae74c5`):
+- The frame border bakes into a **fabric-renderer-api `Mesh`** with an empty vanilla `parts` list,
+  submitted through FRAPI's *extended* `submitBlockModel(…, Mesh, …)`. `GhostSubmitCollector` only
+  overrode the vanilla 7-arg method, so FRAPI's default forwarding **dropped the mesh** → nothing
+  drawn. Fix: override the extended overload and forward the mesh to the real collector (stored as an
+  `ExtendedBlockModelSubmit`, drawn by `BlockFeatureRenderer`).
+- Opacity for the mesh: `GhostSubmitCollector.fade` rebuilds it via `Renderer.get().mutableMesh()`
+  with `multiplyColor(opacity<<24 | 0xFFFFFF)` per quad, swaps the opaque render type for a blending
+  one (`blendable`) and flags it translucent so it draws in the translucent feature pass.
+- Frame faced the wrong way after a schematic rotation — `makeEntity` transformed a hanging entity's
+  facing twice (`HangingEntity.mirror()/rotate()` already call `setDirection`, then the code
+  re-applied `mirror`+`rotate`). Now the hanging-entity branch runs *before* those generic calls and
+  computes the facing once from the just-loaded `Facing`. Verified in-game 2026-09.
 
 ### Known gaps (M23)
 - Entities aren't ticked — armour stands / item frames / paintings are fine (static), but a mob shows
