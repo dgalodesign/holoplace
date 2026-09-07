@@ -536,6 +536,35 @@ A scroll/scrollbar on the `K` screen (it's getting tall).
 - Entity `Pos` from third-party (real Litematica) files is assumed region-relative; if some file
   stores it differently the entity will be offset (fixable once seen).
 
+## M24 — UI/GUI pass 🚧 (written, compiles, **needs in-game check**)
+
+Toward the first launch (`0.1.0`), with the "0.2.0" scope pulled in. Norte: ~6 controles visibles,
+el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redesign-m24.md`,
+`docs/assets/k-screen-mockup.html`.
+
+- **`HoloPlaceScreen` reescrito** — manual y-cursor layout en secciones: cabecera de estado
+  (nombre · tamaño · rot · espejo · Ocultar/Mostrar), `§ DISPLAY` (opacidad + fila
+  `Rotar [↺] 90° [↻]  Espejo [LR▸]  Reset` que reusa `PlacementController` + see-through/shading),
+  `§ BUILD ASSIST` (hide-placed + línea de progreso + `Ignorar orientación` / `Ocultar errores`
+  **indentados y deshabilitados** cuando el padre está off + capas), `§ SCHEMATICS`
+  (`ObjectSelectionList` con scroll, la cargada marcada, `●`), `§ CREATE`, y `▸ Avanzado`
+  plegable (coords + modelos BE + entidades). Scroll con rueda si el contenido no cabe
+  (`scrollY` estático, `rebuildWidgets()` on wheel).
+- **Tooltip en cada control no obvio** — `holoplace.tip.*` (ES + EN), 11 claves.
+- **Hover sobre una fila de la lista → metadatos** (`SchematicMeta`, nuevo en `src/main`): lee solo
+  la cabecera NBT en un hilo daemon, cachea por `Path`, muestra tamaño / nº de bloques / regiones /
+  data version en un tooltip. Nunca desempaqueta bloques.
+- **HUD colapsado** (`GhostHud`) — bloqueado: solo `❖ nombre` (+ progreso si build-assist). Agarrando:
+  las 6 líneas completas.
+- 22 claves de lang nuevas (ES/EN, parity 152/152). `build` + `test` verdes.
+
+### Pendiente M24
+- Verificar en el juego (no puedo abrir la GUI aquí): layout, scroll, tooltips, la lista, el hover
+  de metadatos, el HUD colapsado.
+- Claves de lang muertas del diseño viejo (`holoplace.ui.layer_of/layer_one/layer_range/page/
+  capture/schematics`) — dejarlas o limpiarlas.
+- Thumbnail 3D al hover → M27.5 (tras el horneador off-thread de M27).
+
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
 *(from the publish-readiness audit — the [High] finding was: no size cap before allocating memory.)*

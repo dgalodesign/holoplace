@@ -40,25 +40,40 @@ public final class GhostHud {
         boolean grabbing = PlacementController.get().isGrabbing();
 
         List<String> lines = new ArrayList<>();
-        lines.add("§b❖ HoloPlace" + (grabbing ? "  §e[" + text("holoplace.hud.grab") + "]" : ""));
-        lines.add("§7" + (state.sourceName() == null ? "?" : state.sourceName()));
-        lines.add("§7" + text("holoplace.hud.pos") + " §f" + a.getX() + " " + a.getY() + " " + a.getZ()
-                + (t == null ? "" : "  §7" + text("holoplace.hud.size") + " §f"
-                        + t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ()));
-        lines.add("§7" + text("holoplace.hud.rot") + " §f" + rotLabel(state.rotation())
-                + "  §7" + text("holoplace.hud.mirror") + " §f" + mirrorLabel(state.mirror())
-                + "  §7" + text("holoplace.hud.opacity") + " §f" + Math.round(state.opacity() * 100) + "%"
-                + (state.seeThrough() ? "  §b" + text("holoplace.hud.xray") : ""));
+        String name = state.sourceName() == null ? "?" : state.sourceName();
+
+        String progress = null;
         if (state.matchedBlocks() == -2) {
-            lines.add("§c" + text("holoplace.hud.too_large"));
+            progress = "§c" + text("holoplace.hud.too_large");
         } else if (state.hideMatched() && state.totalBlocks() > 0) {
             int placed = state.matchedBlocks();
             int total = state.totalBlocks();
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
-            lines.add("§7" + text("holoplace.hud.build") + " §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
-                    + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : ""));
+            progress = "§7" + text("holoplace.hud.build") + " §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
+                    + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : "");
         }
-        lines.add("§8" + hint());
+
+        if (!grabbing) {
+            // Locked: keep it out of the way — just the name, and progress if build-assist is on.
+            lines.add("§b❖ §f" + name);
+            if (progress != null) {
+                lines.add(progress);
+            }
+        } else {
+            lines.add("§b❖ HoloPlace  §e[" + text("holoplace.hud.grab") + "]");
+            lines.add("§7" + name);
+            lines.add("§7" + text("holoplace.hud.pos") + " §f" + a.getX() + " " + a.getY() + " " + a.getZ()
+                    + (t == null ? "" : "  §7" + text("holoplace.hud.size") + " §f"
+                            + t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ()));
+            lines.add("§7" + text("holoplace.hud.rot") + " §f" + rotLabel(state.rotation())
+                    + "  §7" + text("holoplace.hud.mirror") + " §f" + mirrorLabel(state.mirror())
+                    + "  §7" + text("holoplace.hud.opacity") + " §f" + Math.round(state.opacity() * 100) + "%"
+                    + (state.seeThrough() ? "  §b" + text("holoplace.hud.xray") : ""));
+            if (progress != null) {
+                lines.add(progress);
+            }
+            lines.add("§8" + hint());
+        }
 
         int pad = 3;
         int lineH = font.lineHeight + 1;
