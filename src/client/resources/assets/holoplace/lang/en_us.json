@@ -136,5 +136,9 @@
 	"holoplace.ui.layer_to": "To",
 	"holoplace.ui.all": "All",
 	"holoplace.ui.page": "§7page %s/%s",
-	"holoplace.ui.opacity": "Opacity: %s"
+	"holoplace.ui.opacity": "Opacity: %s",
+	"holoplace.ui.capture": "§7Capture",
+	"holoplace.ui.capture_select": "Select",
+	"holoplace.ui.capture_save": "Save",
+	"holoplace.ui.capture_name_hint": "name"
 }

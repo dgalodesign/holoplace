@@ -491,6 +491,21 @@ without any "start recording" step to forget and without declaring the area up f
 (`captureChangesOnly` defaults off). M22 (K-screen toggle, entity capture) and M23 (persist the log
 across relogs) are not started.
 
+## M22 (partial) — capture in the K screen, entities, mod icon 🚧 (written, compiles, **needs in-game check**)
+
+- **Entity capture** (`CaptureWriter.captureEntities`) — full capture now also picks up entities whose
+  position is inside the box: `entity.save(TagValueOutput…)` + `id`, with `Pos` rewritten
+  region-relative (same convention as the block-entity `x`/`y`/`z`). Client-side data only — item
+  frames, armour stands, paintings and a mob's *visible* state come through; full mob NBT (AI,
+  attributes, inventory) isn't synced to the client so it won't be in the file. Players are skipped.
+- **Capture row in the `K` screen** — `[Área]` (toggles selection mode, closes the screen), a button
+  that cycles the mode (full ⇄ changes only), a name field, and `[Guardar]`.
+- **Mod icon** — `assets/holoplace/icon.png` (128×128, a cyan wire cube on a blueprint grid — a
+  placeholder, replace before a real launch) + the `"icon"` field in `fabric.mod.json`.
+
+Not done in M22: persist the capture change-log across relogs (M23), a scroll/scrollbar on the `K`
+screen (it's getting tall).
+
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
 *(from the publish-readiness audit — the [High] finding was: no size cap before allocating memory.)*

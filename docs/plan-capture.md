@@ -208,9 +208,13 @@ cliente.
   `replaceWithPacketData` llena las secciones directo (`section.read`) sin pasar por `Level.setBlock`;
   el único `setBlock` dentro de `LevelChunk` es `postProcessGeneration(ServerLevel)`, solo-servidor y
   descartado por el guard `isClientSide()`.
-- **M22 — Pulido + i18n**: strings nuevas en `en_us.json`/`es_es.json` siguiendo el patrón ya
-  establecido; integrar controles de captura en la pantalla `K` o una pantalla propia si no entra sin
-  amontonar; actualizar `docs/progress.md` y `README.md`.
+- **M22 — Pulido + i18n** 🚧 parcial (compilado, sin probar en el juego): fila de captura en la
+  pantalla `K` (`[Área]` alterna el modo selección, botón que cicla completo⇄solo-cambios, campo de
+  nombre, `[Guardar]`); captura de entidades en modo completo (`CaptureWriter.captureEntities` —
+  `entity.save` + `id`, `Pos` relativo a la región; solo datos del cliente: marcos, soportes de
+  armadura, cuadros, estado visible de mobs; el NBT completo de un mob no se sincroniza al cliente);
+  ícono del mod (`assets/holoplace/icon.png`, placeholder) + campo `icon` en `fabric.mod.json`.
+  Falta: barra de scroll en la pantalla `K` (se está poniendo alta).
 - **M23 (recomendado, no solo "nice to have")**: persistir `ChangeLog` en disco por mundo. Con el modo
   automático corriendo siempre en segundo plano, una construcción real puede durar varias sesiones de
   juego repartidas en días — sin esto, cualquier cierre del cliente a mitad de camino tira el

@@ -168,8 +168,9 @@ public final class CaptureController {
                     CaptureWriter.capture(name, selection, level, onlyChanges ? changes : null);
             LitematicaSchematicWriter.write(file, name, author, dataVersion, region);
             HoloPlaceClient.LOGGER.info(
-                    "Capture '{}': mode={}, selection={} cells, change-log={} entries, non-air written={}",
-                    name, onlyChanges ? "changes" : "full", volume, changes.size(), region.countNonAir());
+                    "Capture '{}': mode={}, selection={} cells, change-log={}, non-air={}, entities={}",
+                    name, onlyChanges ? "changes" : "full", volume, changes.size(),
+                    region.countNonAir(), region.entities().size());
             chat(Component.translatable("holoplace.capture.saved", name,
                     String.format("%,d", region.countNonAir())));
             if (onlyChanges && changes.isFull()) {

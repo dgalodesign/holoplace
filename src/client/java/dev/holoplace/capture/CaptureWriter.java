@@ -8,10 +8,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -75,6 +82,38 @@ final class CaptureWriter {
                 }
             }
         }
-        return new LitematicaSchematicWriter.Region(regionName, sx, sy, sz, blocks, tileEntities, List.of());
+        List<CompoundTag> entities = captureEntities(level, registries, lo, sx, sy, sz);
+        return new LitematicaSchematicWriter.Region(regionName, sx, sy, sz, blocks, tileEntities, entities);
+    }
+
+    /**
+     * Entities whose position is inside the box. Client-side data only: item frames, armour stands,
+     * paintings and mobs' <em>visible</em> state come through; full mob NBT (AI, attributes,
+     * inventory) is not synced to the client, so it won't be in the schematic.
+     */
+    private static List<CompoundTag> captureEntities(Level level, HolderLookup.Provider registries,
+                                                     BlockPos lo, int sx, int sy, int sz) {
+        AABB box = new AABB(lo.getX(), lo.getY(), lo.getZ(),
+                lo.getX() + sx, lo.getY() + sy, lo.getZ() + sz);
+        List<CompoundTag> out = new ArrayList<>();
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, box,
+                e -> !(e instanceof Player) && !e.isRemoved())) {
+            try {
+                TagValueOutput sink = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
+                if (!entity.save(sink)) {
+                    continue;
+                }
+                CompoundTag tag = sink.buildResult();
+                ListTag pos = new ListTag();
+                pos.add(DoubleTag.valueOf(entity.getX() - lo.getX()));
+                pos.add(DoubleTag.valueOf(entity.getY() - lo.getY()));
+                pos.add(DoubleTag.valueOf(entity.getZ() - lo.getZ()));
+                tag.put("Pos", pos);
+                out.add(tag);
+            } catch (Exception e) {
+                HoloPlaceClient.LOGGER.warn("Skipping an entity during capture", e);
+            }
+        }
+        return out;
     }
 }

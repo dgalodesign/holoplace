@@ -36,6 +36,7 @@ for the plan and [`docs/progress.md`](docs/progress.md) for the milestone histor
 | M16 | Real block-entity models (chests, signs, beds…), opacity-aware | ✅ |
 | M17 | help/welcome · rotate-around-centre · move/nudge · layer sliders · wrong-block red · face shading · paged list | ✅ |
 | M18 | Spanish translation · extra-block marker (orange) · look-at tooltip with item icon | ✅ |
+| M19–M22 | Schematic capture — area select · `.litematic` writer · full & changes-only modes · `K`-screen row | ✅ (changes-only mode paused) |
 
 Not done: GPU vertex-buffer upload (a perf win for very large schematics — the current
 per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/backlog.md).
@@ -52,6 +53,8 @@ per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/bac
 | `/holoplace move <x y z>` · `/holoplace nudge <dir> [n]` | Place at exact coords · shift by n blocks |
 | `/holoplace layers <min> [max]` · `/holoplace layers off` | Show only a Y-slice of the ghost |
 | `/holoplace materials` · `/holoplace help` | Blocks needed / still missing · full command + key list |
+| `B`, then left/right-click two blocks | Select a capture area (also on the `K` screen) |
+| `/holoplace capture save <name>` · `/holoplace capture mode` | Save the selection as a `.litematic` · switch full ⇄ changes-only |
 | Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
 | Wheel · `Shift`+wheel (grab mode) | Reach distance · vertical offset |
 | `G` | Toggle grab mode / lock |
