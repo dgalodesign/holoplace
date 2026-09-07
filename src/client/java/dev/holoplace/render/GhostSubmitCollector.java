@@ -90,7 +90,9 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
     @Override
     public void submitBlockModel(PoseStack poseStack, RenderType renderType, List<BlockStateModelPart> parts,
                                  int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
-        delegate.submitBlockModel(poseStack, blendable(renderType), parts, tint(tintLayers),
+        // Block-model render types (e.g. an item frame's frame model) aren't safe to swap for
+        // entityTranslucent — the vertex format / shader differ — so tint only, leave the type alone.
+        delegate.submitBlockModel(poseStack, renderType, parts, tint(tintLayers),
                 lightCoords, overlayCoords, outlineColor);
     }
 
