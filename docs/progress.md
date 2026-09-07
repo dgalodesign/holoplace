@@ -516,6 +516,18 @@ A scroll/scrollbar on the `K` screen (it's getting tall).
   re-applied `mirror`+`rotate`). Now the hanging-entity branch runs *before* those generic calls and
   computes the facing once from the just-loaded `Facing`. Verified in-game 2026-09.
 
+**Third round** (opacity slider skipped paintings, framed items, layered parts — `56f4de6`):
+- Paintings submit their picture via `submitCustomGeometry` — passed straight through. Now swaps the
+  render type (`blendable`) and wraps the buffer in a new `TintingVertexConsumer`.
+- Framed items submit raw `BakedQuad`s (white vertices, no tint index); `ItemFeatureRenderer` draws
+  them opaque regardless of `tintLayers`. Rebuild each quad against a blending render type + tint
+  slot 0 and pass a faded colour there; also override FRAPI's extended `submitItem(…, MeshView, …)`
+  (was dropping the mesh).
+- Villager clothes/hats, armour trims, … render via `RenderLayer.renderColoredCutoutModel` →
+  `collector.order(n).submitModel(…)`, and `order(n)` returned the *unwrapped* real collector. Tinting
+  split into `GhostOrderedSubmitCollector`; `order(n)` now returns a wrapped ordered collector.
+- Verified in-game: painting, item frame + water bucket, villager (body + robe + hat) all fade.
+
 ### Known gaps (M23)
 - Entities aren't ticked — armour stands / item frames / paintings are fine (static), but a mob shows
   in a default idle pose with no animation.
