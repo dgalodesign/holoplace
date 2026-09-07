@@ -13,8 +13,8 @@ on Litematica.
 
 ## Status
 
-MVP complete and verified in-game (Minecraft 26.1.2). See [`docs/plan.md`](docs/plan.md)
-for the plan and [`docs/progress.md`](docs/progress.md) for the milestone history.
+MVP complete and verified in-game (Minecraft 26.1.2). Docs index: [`docs/README.md`](docs/README.md)
+— plan, milestone history, capture sub-project, Litematica config reference, licensing, backlog.
 
 | Milestone | Scope | Status |
 |---|---|---|
