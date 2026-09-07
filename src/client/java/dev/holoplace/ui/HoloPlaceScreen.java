@@ -74,12 +74,12 @@ public final class HoloPlaceScreen extends Screen {
 
         // ---- header ----------------------------------------------------
         if (loaded) {
-            label(x, y, "§b❖ " + safe(g.sourceName()));
+            label(x, y, "§b❖ §f" + safe(g.sourceName()));
             y += 11;
-            label(x, y, "§7" + sizeStr(g) + "  §7" + tr("holoplace.hud.rot") + " §f" + rotLabel(g.rotation())
-                    + "  §7" + tr("holoplace.hud.mirror") + " §f" + mirrorLabel(g.mirror()));
-            y += 12;
-            button(x, y, 150, 16,
+            label(x, y, "§7" + sizeStr(g) + "   §7" + tr("holoplace.hud.rot") + " §f" + rotLabel(g.rotation())
+                    + "   §7" + tr("holoplace.hud.mirror") + " §f" + mirrorLabel(g.mirror()));
+            y += 13;
+            button(x, y, 110, 16,
                     Component.translatable(g.isVisible() ? "holoplace.ui.hide" : "holoplace.ui.show"),
                     b -> { g.setVisible(!g.isVisible()); rebuildWidgets(); }, null);
             y += 20;
@@ -97,15 +97,13 @@ public final class HoloPlaceScreen extends Screen {
         int rx = x;
         label(rx, y + 5, "§7" + tr("holoplace.ui.rotate"));
         rx += this.font.width(tr("holoplace.ui.rotate")) + 6;
-        button(rx, y, 20, 18, Component.literal("↺"),
+        button(rx, y, 36, 18, Component.literal("-90°"),
                 b -> { pc.rotate(false); rebuildWidgets(); }, tip("holoplace.tip.rotate")).active = loaded;
-        rx += 22;
-        label(rx, y + 5, "§f" + rotLabel(g.rotation()));
-        rx += 34;
-        button(rx, y, 20, 18, Component.literal("↻"),
+        rx += 39;
+        button(rx, y, 36, 18, Component.literal("+90°"),
                 b -> { pc.rotate(true); rebuildWidgets(); }, tip("holoplace.tip.rotate")).active = loaded;
-        button(x + PANEL_W - 116, y, 74, 18,
-                Component.literal(tr("holoplace.ui.mirror_label") + " " + mirrorLabel(g.mirror())),
+        button(x + PANEL_W - 118, y, 76, 18,
+                Component.literal(tr("holoplace.ui.mirror_label") + ": " + mirrorLabel(g.mirror())),
                 b -> { pc.cycleMirror(); rebuildWidgets(); }, tip("holoplace.tip.mirror")).active = loaded;
         button(x + PANEL_W - 40, y, 40, 18, Component.translatable("holoplace.ui.reset"),
                 b -> { pc.resetTransform(); rebuildWidgets(); }, null).active = loaded;
@@ -146,7 +144,7 @@ public final class HoloPlaceScreen extends Screen {
         y = section(x, y, "holoplace.ui.sect.schematics");
         List<Path> files = SchematicLibrary.list();
         SchematicMeta.retainOnly(files);
-        int listH = LIST_ROWS * LIST_ROW_H;
+        int listH = Mth.clamp(Math.max(files.size(), 1), 1, LIST_ROWS) * LIST_ROW_H;
         this.list = new SchematicList(this.minecraft, PANEL_W, listH, y, LIST_ROW_H, files, currentFile());
         this.list.updateSizeAndPosition(PANEL_W, listH, x, y);
         addRenderableWidget(this.list);
@@ -301,6 +299,11 @@ public final class HoloPlaceScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+        // The in-world menu background is a light tint that doesn't hold up over bright terrain;
+        // dim the whole screen and darken a band behind the panel so the text stays readable.
+        int px = (this.width - PANEL_W) / 2;
+        graphics.fill(0, 0, this.width, this.height, 0x8C0B0B10);
+        graphics.fill(px - 10, 0, px + PANEL_W + 10, this.height, 0x66000008);
         super.extractRenderState(graphics, mouseX, mouseY, a);
         for (int[] r : rules) {
             graphics.fill(r[0], r[1], r[2], r[1] + 1, 0x30FFFFFF);

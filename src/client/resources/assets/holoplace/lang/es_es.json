@@ -109,8 +109,8 @@
 
 	"holoplace.ui.see_through": "Ver a través",
 	"holoplace.ui.hide_placed": "Ocultar colocados",
-	"holoplace.ui.match_block_only": "Solo coincidir bloque",
-	"holoplace.ui.hide_wrong_too": "Ocultar incorrectos también",
+	"holoplace.ui.match_block_only": "Ignorar la orientación del bloque",
+	"holoplace.ui.hide_wrong_too": "Ocultar también mis errores",
 	"holoplace.ui.block_entity_models": "Modelos de entidades de bloque",
 	"holoplace.ui.entities": "Entidades",
 	"holoplace.ui.shading": "Sombreado",
