@@ -43,8 +43,8 @@ final class GhostMesh {
     }
 
     /** A deserialised schematic entity (item frame, armour stand, painting, mob…) with its
-     *  footprint-local position and transform already applied. */
-    record GhostEntity(net.minecraft.world.entity.Entity entity, double x, double y, double z) {
+     *  footprint-local position and yaw (transform already applied). */
+    record GhostEntity(net.minecraft.world.entity.Entity entity, double x, double y, double z, float yaw) {
     }
 
     private static final Direction[] FACES = Direction.values();
@@ -328,28 +328,39 @@ final class GhostMesh {
             }
             Entity entity = created.get();
 
+            // Mirror then rotate (matches PlacementTransform); each reads the current yaw.
             entity.setYRot(entity.mirror(transform.mirror()));
             entity.setYRot(entity.rotate(transform.rotation()));
+            float yaw = entity.getYRot();
             if (entity instanceof LivingEntity living) {
-                living.setYHeadRot(entity.getYRot());
-                living.setYBodyRot(entity.getYRot());
-                living.yBodyRotO = living.yBodyRot;
-                living.yHeadRotO = living.yHeadRot;
+                // ArmorStand.setYBodyRot has a vanilla quirk (leaves yBodyRot itself untouched), so
+                // set the rotation fields directly — nothing ticks these afterwards.
+                living.setYRot(yaw);
+                living.yRotO = yaw;
+                living.yBodyRot = living.yBodyRotO = yaw;
+                living.yHeadRot = living.yHeadRotO = yaw;
             }
 
             if (entity instanceof HangingEntity hanging) {
                 Direction d = transform.rotation().rotate(transform.mirror().mirror(hanging.getDirection()));
+                double ax = Math.floor(f[0]) + 0.5;
+                double ay = Math.floor(f[1]) + 0.5;
+                double az = Math.floor(f[2]) + 0.5;
                 // Put the attach block near where the frame sits, then point it — setDirection recalcs
                 // the bounding box, so the entity centre ends up right.
-                entity.setPos(Math.floor(f[0]) + 0.5, Math.floor(f[1]) + 0.5, Math.floor(f[2]) + 0.5);
+                entity.setPos(ax, ay, az);
                 ((dev.holoplace.mixin.HangingEntityInvoker) hanging).holoplace$setDirection(d);
                 entity.setOldPosAndRot();
-                return new GhostEntity(entity, Math.floor(f[0]) + 0.5, Math.floor(f[1]) + 0.5, Math.floor(f[2]) + 0.5);
+                HoloPlaceClient.LOGGER.info(
+                        "Ghost entity {}: facing {} -> {}, pos ({},{},{}), invisible={}, bb={}",
+                        tag.getStringOr("id", "?"), hanging.getDirection(), d, ax, ay, az,
+                        entity.isInvisible(), entity.getBoundingBox());
+                return new GhostEntity(entity, ax, ay, az, yaw);
             }
 
-            entity.snapTo(f[0], f[1], f[2], entity.getYRot(), entity.getXRot());
+            entity.snapTo(f[0], f[1], f[2], yaw, entity.getXRot());
             entity.setOldPosAndRot();
-            return new GhostEntity(entity, f[0], f[1], f[2]);
+            return new GhostEntity(entity, f[0], f[1], f[2], yaw);
         } catch (Exception e) {
             HoloPlaceClient.LOGGER.debug("Ghost entity load failed", e);
             return null;

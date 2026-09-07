@@ -518,11 +518,14 @@ public final class GhostRenderer {
             }
             try {
                 var entity = ge.entity();
+                if (!(entity instanceof net.minecraft.world.entity.decoration.HangingEntity)) {
+                    entity.setYRot(ge.yaw());
+                }
                 entity.setPos(anchor.getX() + ge.x(), anchor.getY() + ge.y(), anchor.getZ() + ge.z());
                 entity.setOldPosAndRot();
                 if (entity instanceof net.minecraft.world.entity.LivingEntity living) {
-                    living.yBodyRotO = living.yBodyRot;
-                    living.yHeadRotO = living.yHeadRot;
+                    living.yBodyRot = living.yBodyRotO = ge.yaw();
+                    living.yHeadRot = living.yHeadRotO = ge.yaw();
                 }
                 // partialTick 1.0 → every lerp (position, body/head rotation) resolves to the current
                 // value, so a never-ticked entity holds still instead of wobbling.
