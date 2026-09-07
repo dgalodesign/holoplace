@@ -1,11 +1,13 @@
 # HoloPlace — plan del primer lanzamiento (0.1.0)
 
-Estado a 2026-09-07. Decisiones tomadas con el usuario en esta fecha:
+Estado a 2026-09-08. Decisiones tomadas con el usuario:
 
-- **Alcance**: 0.1.0 NO es un MVP mínimo. Se meten dentro las mejoras que estaban en "0.2.0"
-  (Easy Place, asistencia al construir, rendimiento) para que el mod sea **relevante** de salida.
+- **Alcance**: 0.1.0 mete mejoras de UX (rediseño UI, asistencia al construir en modo *solo lectura*,
+  rendimiento) para que el mod sea **relevante** de salida.
+- **Easy Place descartado (2026-09-08)** — "1 clic = coloca el bloque por ti" tiene fricción
+  histórica con anticheats. HoloPlace NO coloca bloques; se queda en "mira y construye a mano".
 - **Versión de MC**: portar a **26.2** (la última estable) y soltar 26.1.x.
-- **UI/GUI primero**: un pase de rediseño de la pantalla `K` / HUD antes de tocar features nuevas.
+- **UI/GUI primero**: pase de rediseño de la pantalla `K` / HUD antes de las features nuevas.
 - **Repo**: público, open source MIT (ver §1).
 - Los hallazgos de código de la auditoría (topes de tamaño, `NbtAccounter`, overflow guard) están
   **hechos**. `CHANGELOG.md` creado con sección `[Unreleased]`.
@@ -16,12 +18,13 @@ Estado a 2026-09-07. Decisiones tomadas con el usuario en esta fecha:
 
 | # | Milestone | Contenido | Esfuerzo |
 |---|---|---|---|
-| **M24** | Pase de UI/GUI | Rediseñar la pantalla `K` (jerarquía, agrupación, iconos, quizá secciones); pulir HUD, tooltip y marcadores; decidir qué se ve y qué no | medio |
-| **M25** | Easy Place | 1 clic = bloque correcto del esquema, orientado, sin tenerlo exacto en mano. **Un solo toggle** | medio-alto |
-| **M26** | Paquete "asistencia" | Info de bloque al mirar (nombre + orientación esperada) · pick-block del esquema (rueda saca el bloque correcto) · "N bloques mal colocados" en `/holoplace materials` | bajo-medio |
-| **M27** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |
-| **M28** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
-| **M29** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
+| **M24** | Pase de UI/GUI | Pantalla `K` en secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado. **Escrito, compila — falta check in-game** | medio |
+| ~~M25~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
+| **M25** | Paquete "asistencia" (solo lectura) | Info de bloque al mirar (nombre + orientación esperada) · "N bloques mal colocados" en `/holoplace materials` · *(pick-block del esquema — a decidir, ver §6)* | bajo-medio |
+| **M26** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |
+| **M26.5** | Thumbnail 3D al hover | Preview del schematic en la lista, reusando el horneador de M26 (PIP de la GUI) | pequeño |
+| **M27** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
+| **M28** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
 | **—** | Lanzamiento | Ficha Modrinth + release 0.1.0 (§4) | bajo |
 
 ---
@@ -134,3 +137,22 @@ Topes de tamaño en `LitematicaSchematicReader` (ejes / volumen / nº de regione
 acotado a 256 MiB, guard de overflow en `LitematicaBitArray`, comentarios que nombraban internals
 de Litematica reescritos, `LICENSE` MIT consistente en jar + `fabric.mod.json`, i18n ES/EN completo,
 `docs/licensing.md`, `CHANGELOG.md` con `[Unreleased]`.
+
+---
+
+## 6. Pick-block del esquema — a decidir
+
+Litematica: la rueda / una tecla saca el bloque correcto del esquema (lo mueve al hotbar en
+creativo, o lo selecciona si lo tienes en survival). **No coloca nada** — solo cambia el slot activo.
+Riesgo anticheat: **muy bajo** (es un `pick block` vanilla), pero toca el hotbar de forma
+programática, y el usuario ha pedido cero fricción con anticheats.
+
+Opciones:
+- **Incluirlo** — útil de verdad al construir, 1 opción on/off, solo actúa al pulsar una tecla.
+- **Dejarlo fuera** — mantener HoloPlace estrictamente "no toca tu inventario ni el mundo". El
+  jugador usa el pick-block de vanilla mirando el fantasma.
+
+Recomendación: **incluirlo** en M25, con una tecla dedicada (sin bind por defecto) y solo en el
+bloque bajo la mira. Es lo más lejos que llega HoloPlace hacia "asistencia activa".
+
+**Decisión del usuario: pendiente.**

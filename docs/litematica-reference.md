@@ -21,7 +21,8 @@ usuario 2026-09-07. Sirve para dos cosas:
 | Config expuesta | **~250 opciones** en 6 pestañas | ~15 (una pantalla `K` + `config.json`) |
 | Modelo mental | "todo es un toggle, tú lo armas" | "valores por defecto sensatos, toca poco" |
 | Dependencias | MaLiLib (obligatoria) | ninguna |
-| Colocación | coordenadas / herramienta de esquinas | arrastrar en pantalla |
+| Coloca bloques por ti | sí (Easy Place — fricción con anticheats) | **no, por decisión** (2026-09-08) |
+| Posicionar la colocación | coordenadas / herramienta de esquinas | arrastrar en pantalla |
 | Cada toggle de render tiene | valor **+ hotkey + hotkey-toggle** (3 columnas) | un checkbox |
 | Idioma | ~30 vía Crowdin, se elige en config | ES/EN incluidos, sin pasos |
 
@@ -360,7 +361,7 @@ El modelo de HoloPlace (un rango Y con dos flechas) es más directo que 6 modos.
 | Saber qué falta | schematic verifier (GUI) + material list | lista de materiales + contador restantes | ✅ más simple |
 | Marcar errores (bloque incorrecto / sobra) | overlay de 4 tipos, configurable | 3 marcadores de color fijo | ✅ suficiente, más simple |
 | Ver a través de paredes | `renderThroughBlocks` (hotkey) | toggle see-through en `K` | ✅ igual |
-| Colocar "1 clic = bloque correcto" (Easy Place) | `easyPlaceMode` + ~10 sub-opciones | **no implementado** | ⚠️ hueco conocido |
+| Colocar "1 clic = bloque correcto" (Easy Place) | `easyPlaceMode` + ~10 sub-opciones | **descartado** (2026-09-08, riesgo anticheat) | ✅ decisión de producto — no coloca bloques |
 | Construir por capas | 6 modos de layer | rango Y con 2 flechas | ✅ más simple |
 | Crear un esquema | herramienta de esquinas + GUI guardar | seleccionar área + `Guardar` | ✅ más simple |
 
@@ -377,16 +378,19 @@ El modelo de HoloPlace (un rango Y con dos flechas) es más directo que 6 modos.
 
 ### 8.3 Lo que conviene **tomar prestado** de Litematica
 
-1. **Easy Place** (`easyPlaceMode`): el mayor diferenciador de Litematica frente a "solo mirar el
-   ghost". Un jugador nuevo *quiere* que un clic ponga el bloque correcto. Candidato nº1 a milestone
-   post-MVP, **con 1 sola opción** (on/off), no 10.
-2. **Info de bloque al mirar** ("Líneas Info Bloque"): "esto debería ser X orientado así". HoloPlace
+> **Easy Place (`easyPlaceMode`) — descartado (2026-09-08).** Era el mayor diferenciador de
+> Litematica, pero "colocar el bloque por ti" arrastra fricción histórica con anticheats de
+> servidores. Decisión de producto: **HoloPlace no coloca bloques**. Se queda en "mira y construye
+> a mano" — y ahí ya gana en posicionamiento (arrastrar), rotar/espejo (visibles) y sin dependencias.
+
+1. **Info de bloque al mirar** ("Líneas Info Bloque"): "esto debería ser X orientado así". HoloPlace
    ya tiene el germen (marcador crosshair M17); vale la pena que muestre nombre + orientación
-   esperada cuando el bloque puesto está mal.
-3. **Pick-block del esquema**: rueda/tecla saca el bloque correcto del esquema. Útil, 1 opción.
+   esperada cuando el bloque puesto está mal. → M25.
+2. **"N bloques mal colocados"** en la salida de `/holoplace materials` (schematic verifier como
+   lista, no como overlay). El scan `wrongBlock[]` ya existe. → M25.
+3. **Pick-block del esquema**: rueda/tecla saca el bloque correcto. Sin riesgo anticheat real (es un
+   pick-block vanilla), pero toca el hotbar — **decisión pendiente**, ver `launch-checklist.md` §6.
 4. **Marcador de "sobra un bloque"** (extra): ya tomado (M18).
-5. **Schematic verifier como lista, no como overlay**: HoloPlace ya va por ahí (lista de materiales);
-   añadir "N bloques mal colocados" a esa lista cierra el círculo.
 
 ### 8.4 Riesgo de diseño a vigilar
 

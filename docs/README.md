@@ -22,8 +22,9 @@ Ver el [`README.md`](../README.md) raíz para la descripción del producto y el 
 - **Falta para publicar**: confirmar repo público, fichas Modrinth/CurseForge, ícono real,
   CHANGELOG, decisión sobre 26.2. Detalle en `progress.md` (sección "Reader hardening + licensing")
   y en `licensing.md` §"Practical checklist before publishing".
-- **Hueco funcional conocido vs Litematica**: no hay "Easy Place" (1 clic = bloque correcto).
-  Candidato nº1 post-MVP — ver `litematica-reference.md` §8.3.
+- **Easy Place descartado (2026-09-08)** — "1 clic = coloca el bloque por ti" arrastra fricción con
+  anticheats. HoloPlace no coloca bloques por decisión de producto. Ver `litematica-reference.md` §8.3
+  y `launch-checklist.md`.
 
 ## Toolchain (recordatorio)
 
