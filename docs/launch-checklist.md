@@ -1,76 +1,136 @@
-# HoloPlace — checklist del primer lanzamiento (0.1.0, early access)
+# HoloPlace — plan del primer lanzamiento (0.1.0)
 
-Estado a 2026-09-07: **el código del MVP está listo**. Los hallazgos de código de la auditoría
-(topes de tamaño en el lector, `NbtAccounter` acotado, guard de overflow en `LitematicaBitArray`)
-están **hechos**. Lo que queda es empaquetado y publicación.
+Estado a 2026-09-07. Decisiones tomadas con el usuario en esta fecha:
 
-Decisión de alcance: se lanza como **0.1.0 / early access**, sin Easy Place. Easy Place y las demás
-mejoras van a 0.2.0 — ver §4 y `litematica-reference.md` §8.3.
+- **Alcance**: 0.1.0 NO es un MVP mínimo. Se meten dentro las mejoras que estaban en "0.2.0"
+  (Easy Place, asistencia al construir, rendimiento) para que el mod sea **relevante** de salida.
+- **Versión de MC**: portar a **26.2** (la última estable) y soltar 26.1.x.
+- **UI/GUI primero**: un pase de rediseño de la pantalla `K` / HUD antes de tocar features nuevas.
+- **Repo**: público, open source MIT (ver §1).
+- Los hallazgos de código de la auditoría (topes de tamaño, `NbtAccounter`, overflow guard) están
+  **hechos**. `CHANGELOG.md` creado con sección `[Unreleased]`.
 
 ---
 
-## 1. Bloqueantes (sin esto no se publica)
+## 0. Secuencia de trabajo (milestones)
 
-- [ ] **Repo público**. `fabric.mod.json` → `contact.sources = github.com/edgardgalof/holoplace`.
-  Hoy no hay `git remote` configurado. Crear el repo en GitHub, `git remote add origin …`,
-  `git push -u origin main`. Confirmar que es público y que tiene el código + `LICENSE` + `README`.
-- [ ] **Ícono real**. `assets/holoplace/icon.png` es un placeholder generado (cubo de alambre cian).
-  Diseñar uno de 256×256 o 512×512 (las tiendas escalan). Reemplazar el archivo; el campo `"icon"`
-  de `fabric.mod.json` ya está.
-- [ ] **Decisión 26.2**. `depends.minecraft` es `~26.1`, que **no** cubre 26.2 (ya disponible).
-  Opciones: (a) dejarlo en 26.1.x para 0.1.0 y sacar 0.2.0 para 26.2, o (b) ampliar a `>=26.1 <26.3`
-  y probar en 26.2 antes de lanzar. Reflejar la misma decisión en la ficha de la tienda.
-- [ ] **CHANGELOG.md**. Crear con la entrada `0.1.0` (resumen de features del MVP). Modrinth pide
-  notas por versión; hoy habría que copiarlas a mano desde `progress.md`.
-- [ ] **Ficha Modrinth** (mínimo viable; CurseForge opcional en 0.1.0):
-  - Nombre "HoloPlace", categoría Utility, client-side, MC 26.1.x, Fabric, requiere Fabric API.
-  - Descripción con posicionamiento honesto: *"alternativa liviana y sin dependencias para
-    previsualizar y construir desde esquemas `.litematic`"* — **no** "reemplazo de Litematica".
-  - Disclaimer visible: **"No afiliado con Litematica ni con Mojang."**
-  - Comparación de features solo factual, sin desprestigiar.
-  - Marcar el release como `0.1.0` / early access / beta.
-- [ ] **1–3 screenshots o un gif** para la ficha: ghost texturizado en el mundo, el panel `K`,
-  build-assist con marcadores. (La ficha sin imágenes convierte mal.)
+| # | Milestone | Contenido | Esfuerzo |
+|---|---|---|---|
+| **M24** | Pase de UI/GUI | Rediseñar la pantalla `K` (jerarquía, agrupación, iconos, quizá secciones); pulir HUD, tooltip y marcadores; decidir qué se ve y qué no | medio |
+| **M25** | Easy Place | 1 clic = bloque correcto del esquema, orientado, sin tenerlo exacto en mano. **Un solo toggle** | medio-alto |
+| **M26** | Paquete "asistencia" | Info de bloque al mirar (nombre + orientación esperada) · pick-block del esquema (rueda saca el bloque correcto) · "N bloques mal colocados" en `/holoplace materials` | bajo-medio |
+| **M27** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |
+| **M28** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
+| **M29** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
+| **—** | Lanzamiento | Ficha Modrinth + release 0.1.0 (§4) | bajo |
 
-## 2. Recomendable antes de lanzar (no estrictamente bloqueante)
+---
 
-- [ ] **Smoke test de cada feature en una sesión** y pasar los milestones de `progress.md` de
-  "needs in-game check" a "verificado" (o anotar los que sigan sin probar). Hoy casi todo dice
-  "verificado" pero fue un playtest único del autor.
-- [ ] **Compat con shaders**: probar con Sodium + Iris/shaders activos. El ghost usa render types y
-  `RenderPipeline` propios; un shader pack puede alterarlo.
-- [ ] **Compat con 2–3 mods populares** a la vez (Sodium ya validado). Zona sin probar:
-  `MouseHandlerMixin` (scroll) vs otro mod que también intercepte la rueda.
-- [ ] **Metadata de `fabric.mod.json`**: añadir `contact.homepage` e `contact.issues` (Modrinth los
-  muestra). Opcional: entrypoint de Mod Menu para abrir la pantalla `K` desde ahí.
-- [ ] **`build` limpio desde cero** (`./gradlew clean build`) y probar el jar resultante en una
-  instancia de Fabric limpia (no el `runClient` de dev).
+## 1. Repo público — por qué (y alternativa)
 
-## 3. Post-lanzamiento inmediato (primeras 1–2 semanas)
+**No es técnicamente obligatorio.** Modrinth/CurseForge no exigen código fuente. Pero:
 
-- [ ] CurseForge si Modrinth arranca.
-- [ ] Responder issues de compat que aparezcan; el `MouseHandlerMixin` es el candidato.
-- [ ] Más idiomas solo si la comunidad los pide (ES/EN ya cubren mucho).
+- `fabric.mod.json` declara `contact.sources = github.com/edgardgalof/holoplace`. Si no existe o es
+  privado, es un enlace roto en Mod Menu → mala señal.
+- Declarar licencia **MIT** con el repo cerrado es incoherente (MIT solo tiene efecto sobre quien
+  recibe el código). Si va a ser closed-source, la licencia debería ser "all rights reserved".
+- Para un mod nuevo que compite con Litematica (que es open source LGPL-3.0), **ser open source MIT
+  es un argumento de venta**: "liviano, sin dependencias, y abierto". También da confianza
+  (la gente ve que no hay nada raro en el jar).
 
-## 4. Fuera del primer lanzamiento — 0.2.0+
+**Decisión**: público, MIT. Pasos: crear el repo en GitHub, `git remote add origin …`,
+`git push -u origin main`. Confirmar que es público y trae `LICENSE` + `README` + `docs/`.
 
-Priorizado por impacto para un jugador nuevo (de `litematica-reference.md` §8.3):
+Si se cambiara de idea → licencia "all rights reserved" en `fabric.mod.json`, quitar
+`contact.sources`, y deja de ser bloqueante.
 
-1. **Easy Place** — 1 clic coloca el bloque correcto del esquema, orientado, sin tenerlo exacto en
-   mano. Es el mayor diferenciador de Litematica. **Una sola opción on/off**, no las ~10 de
-   Litematica. Nota: es "colocar bloques por ti" — revisar la postura anti-ban que la ficha de
-   0.1.0 vaya a comunicar (Litematica Easy Place ha tenido fricción con anticheats).
-2. **Info de bloque al mirar** — ampliar el tooltip de M17: al mirar un bloque mal puesto, mostrar
-   nombre + orientación esperada, no solo el icono.
-3. **Pick-block del esquema** — rueda/tecla saca el bloque correcto. Una opción.
-4. **"N bloques mal colocados"** en la salida de `/holoplace materials` (cerrar el círculo del
-   verificador sin una GUI aparte).
-5. **Carga de malla fuera del hilo de render** para esquemas grandes legítimos (backlog).
-6. **26.2** si no entró en 0.1.0.
+---
+
+## 2. Ícono
+
+- **Formato**: PNG con transparencia.
+- **Tamaño**: 512×512 para las tiendas (Modrinth y CurseForge lo reescalan). El del mod
+  (`assets/holoplace/icon.png`) puede ser el mismo a 256 o 128.
+- **Legibilidad**: se muestra a ~32×32 en las listas de mods. Silueta clara, pocos colores,
+  contraste alto.
+- **Estilo**: un martillo pixel-art encaja. Para coherencia con "HoloPlace" (holograma / blueprint):
+  martillo cian o blanco sobre fondo azul oscuro, opcionalmente con efecto holográfico
+  (líneas de escaneo, glow tenue).
+- El usuario lo hace. Al tenerlo: reemplazar `assets/holoplace/icon.png` y subir el 512 a la ficha.
+
+---
+
+## 3. Pre-lanzamiento — detalle de cada check (M29)
+
+### 3.1 Smoke test completo + actualizar `progress.md`
+Una sesión de juego ejercitando **cada** feature una vez, de forma deliberada, con la build final:
+cargar esquema → arrastrar → rotar → espejar → opacidad → ver-a-través → build-assist con bloques
+bien / mal / extra → tooltip al mirar → lista de materiales → capturar un área y recargarla →
+capas → salir y reconectar (persistencia) → soltar un archivo en la ventana.
+**Por qué**: `progress.md` dice "verificado" en casi todo, pero fue verificación incremental
+durante el desarrollo, no un pase completo con la build 0.1.0. Los bugs de integración
+(una feature rompió otra) se escapan así. Nada visual es testeable con los 18 unit tests.
+**Salida**: marcar en `progress.md` qué pasó el pase y qué no.
+
+### 3.2 Compatibilidad con shaders (Iris)
+Sodium + Iris + un shaderpack (Complementary / BSL), shaders activos, comprobar que el ghost
+sigue viéndose: translúcido, con color de bioma, sin z-fighting agresivo, sin desaparecer.
+**Por qué**: el ghost usa render types y un `RenderPipeline` propio (`GhostPipelines`). Iris
+reemplaza los shaders del juego y puede ignorar o romper pipelines custom — es la incompatibilidad
+más probable y la más reportada (Litematica la ha sufrido).
+**Si rompe**: no bloquea el lanzamiento; se documenta "shaders: soporte limitado" y se abre issue.
+
+### 3.3 Compatibilidad con otros mods
+Instalar 2–3 mods populares a la vez (Litematica misma, un mod de zoom con scroll, WorldEdit CUI)
+y jugar un rato.
+**Por qué específico**: el único mixin invasivo es `MouseHandlerMixin` — intercepta el scroll con
+`cancellable=true` en `HEAD`. Cualquier otro mod que también capture la rueda (zoom, otro asistente)
+es un conflicto potencial de "quién consume el evento". Sodium ya se validó; el resto no.
+
+### 3.4 Metadata de `fabric.mod.json`
+- Añadir `contact.homepage` (ficha Modrinth) e `contact.issues` (GitHub issues) — Mod Menu los
+  muestra como botones.
+- `authors`: nombre visible, no solo el handle.
+- Revisar `description` (Mod Menu la trunca si es muy larga).
+- Opcional: entrypoint `modmenu` para que el botón de config de Mod Menu abra la pantalla `K`.
+
+### 3.5 Build limpio + probar el jar real
+`./gradlew clean build` → coger `build/libs/holoplace-0.1.0.jar` (**no** el `-sources.jar`) →
+instalarlo en una instancia de **producción** (launcher oficial o Prism con Fabric + Fabric API),
+no en el `runClient` de desarrollo.
+**Por qué**: `runClient` usa el classpath de dev sin remapear y con los sources cargados. El jar
+real pasa por el `remapJar` de Loom y corre en otro entorno. Cosas que compilan y corren en dev
+pueden fallar empaquetadas (refmap de mixins, recursos no incluidos, etc.).
+
+---
+
+## 4. Publicar en Modrinth — paso a paso
+
+1. Cuenta en modrinth.com (GitHub o email).
+2. **Create a project** → tipo **Mod**, loader **Fabric**, entorno **Client** (server: unsupported).
+3. Slug `holoplace`, nombre `HoloPlace`, summary de una frase.
+4. Descripción (markdown): la larga — features, cómo se usa, **disclaimer "no afiliado con
+   Litematica ni Mojang"**, screenshots, posicionamiento honesto ("alternativa liviana sin
+   dependencias", no "reemplazo de Litematica").
+5. Licencia: MIT. Categorías: Utility, Game Mechanics. Links: source + issues.
+6. Subir el ícono 512×512.
+7. El proyecto entra en **cola de moderación de Modrinth** (< 48 h normalmente); no es público
+   hasta que lo aprueban.
+8. Crear una **Version**: subir `holoplace-0.1.0.jar`, número `0.1.0`, changelog (de
+   `CHANGELOG.md`), MC `26.2`, loader Fabric, **dependencia Fabric API (required)**, canal
+   **Release** (o Beta).
+9. Publicar.
+
+**Opcional**: el plugin Gradle `com.modrinth.minotaur` publica con `./gradlew modrinth` + un token
+API — vale la pena si vas a sacar varias versiones.
+
+CurseForge: proceso parecido pero moderación más lenta y tediosa — dejarlo para después de 0.1.0.
+
+---
 
 ## 5. Ya resuelto (no repetir)
 
 Topes de tamaño en `LitematicaSchematicReader` (ejes / volumen / nº de regiones), `NbtAccounter`
 acotado a 256 MiB, guard de overflow en `LitematicaBitArray`, comentarios que nombraban internals
 de Litematica reescritos, `LICENSE` MIT consistente en jar + `fabric.mod.json`, i18n ES/EN completo,
-`docs/licensing.md` con la postura legal.
+`docs/licensing.md`, `CHANGELOG.md` con `[Unreleased]`.
