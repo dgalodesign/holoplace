@@ -45,10 +45,12 @@ import org.jspecify.annotations.Nullable;
  */
 public final class HoloPlaceScreen extends Screen {
 
-    private static final int PANEL_W = 316;
-    private static final int MARGIN = 8;
-    private static final int LIST_ROWS = 4;
-    private static final int LIST_ROW_H = 12;
+    private static final int PANEL_W = 320;
+    private static final int MARGIN = 10;
+    private static final int ROW = 22;          // one checkbox / button row, with breathing room
+    private static final int SECT_GAP = 8;      // extra space before a section header
+    private static final int LIST_ROWS = 5;
+    private static final int LIST_ROW_H = 14;
 
     private static boolean advancedOpen;
     private static int scrollY;
@@ -75,114 +77,109 @@ public final class HoloPlaceScreen extends Screen {
         // ---- header ----------------------------------------------------
         if (loaded) {
             label(x, y, "§b❖ §f" + safe(g.sourceName()));
-            y += 11;
+            y += 13;
             label(x, y, "§7" + sizeStr(g) + "   §7" + tr("holoplace.hud.rot") + " §f" + rotLabel(g.rotation())
                     + "   §7" + tr("holoplace.hud.mirror") + " §f" + mirrorLabel(g.mirror()));
-            y += 13;
-            button(x, y, 110, 16,
+            y += 17;
+            button(x, y, 110, 18,
                     Component.translatable(g.isVisible() ? "holoplace.ui.hide" : "holoplace.ui.show"),
                     b -> { g.setVisible(!g.isVisible()); rebuildWidgets(); }, null);
-            y += 20;
+            y += 24;
         } else {
             label(x, y, "§7" + tr("holoplace.ui.pick_prompt"));
-            y += 15;
+            y += 22;
         }
-        y += 3;
 
         // ---- DISPLAY -------------------------------------------------
         y = section(x, y, "holoplace.ui.sect.display");
         addRenderableWidget(new OpacitySlider(x, y, PANEL_W));
-        y += 22;
+        y += 26;
 
         int rx = x;
         label(rx, y + 5, "§7" + tr("holoplace.ui.rotate"));
-        rx += this.font.width(tr("holoplace.ui.rotate")) + 6;
-        button(rx, y, 36, 18, Component.literal("-90°"),
+        rx += this.font.width(tr("holoplace.ui.rotate")) + 8;
+        button(rx, y, 38, 18, Component.literal("-90°"),
                 b -> { pc.rotate(false); rebuildWidgets(); }, tip("holoplace.tip.rotate")).active = loaded;
-        rx += 39;
-        button(rx, y, 36, 18, Component.literal("+90°"),
+        rx += 42;
+        button(rx, y, 38, 18, Component.literal("+90°"),
                 b -> { pc.rotate(true); rebuildWidgets(); }, tip("holoplace.tip.rotate")).active = loaded;
-        button(x + PANEL_W - 118, y, 76, 18,
+        button(x + PANEL_W - 122, y, 78, 18,
                 Component.literal(tr("holoplace.ui.mirror_label") + ": " + mirrorLabel(g.mirror())),
                 b -> { pc.cycleMirror(); rebuildWidgets(); }, tip("holoplace.tip.mirror")).active = loaded;
         button(x + PANEL_W - 40, y, 40, 18, Component.translatable("holoplace.ui.reset"),
                 b -> { pc.resetTransform(); rebuildWidgets(); }, null).active = loaded;
-        y += 22;
+        y += 26;
 
         checkKey(x, y, "holoplace.ui.see_through", "holoplace.tip.see_through", HoloPlaceKeys.SEE_THROUGH,
                 g.seeThrough(), v -> { g.setSeeThrough(v); cfg.seeThrough = v; HoloPlaceConfig.save(); }, true);
-        y += 18;
+        y += ROW;
         check(x, y, "holoplace.ui.shading", "holoplace.tip.shading",
                 g.shade(), v -> { g.setShade(v); cfg.ambientOcclusion = v; HoloPlaceConfig.save(); }, true);
-        y += 18;
-        y += 3;
+        y += ROW;
 
         // ---- BUILD ASSIST -----------------------------------------
         y = section(x, y, "holoplace.ui.sect.buildassist");
         checkKey(x, y, "holoplace.ui.hide_placed", "holoplace.tip.hide_placed", HoloPlaceKeys.BUILD_ASSIST,
                 g.hideMatched(), v -> { g.setHideMatched(v); cfg.hideMatched = v; HoloPlaceConfig.save(); }, true);
-        y += 17;
+        y += 19;
         if (g.hideMatched() && g.totalBlocks() > 0 && g.matchedBlocks() >= 0) {
             int placed = g.matchedBlocks();
             int total = g.totalBlocks();
             int pct = Math.round(placed * 100f / total);
-            label(x + 16, y, "§8" + tr("holoplace.ui.placed", placed, total, pct));
-            y += 11;
+            label(x + 18, y, "§8" + tr("holoplace.ui.placed", placed, total, pct));
+            y += 15;
         }
-        check(x + 16, y, "holoplace.ui.match_block_only", "holoplace.tip.match_block_only",
+        check(x + 18, y, "holoplace.ui.match_block_only", "holoplace.tip.match_block_only",
                 g.matchBlockOnly(), v -> { g.setMatchBlockOnly(v); cfg.matchBlockOnly = v; HoloPlaceConfig.save(); },
                 g.hideMatched());
-        y += 17;
-        check(x + 16, y, "holoplace.ui.hide_wrong_too", "holoplace.tip.hide_wrong_too",
+        y += ROW;
+        check(x + 18, y, "holoplace.ui.hide_wrong_too", "holoplace.tip.hide_wrong_too",
                 g.hideWrongToo(), v -> { g.setHideWrongToo(v); cfg.hideWrongToo = v; HoloPlaceConfig.save(); },
                 g.hideMatched());
-        y += 17;
+        y += ROW;
         y = layers(g, pc, x, y);
-        y += 3;
 
         // ---- SCHEMATICS -----------------------------------------
         y = section(x, y, "holoplace.ui.sect.schematics");
         List<Path> files = SchematicLibrary.list();
         SchematicMeta.retainOnly(files);
-        int listH = Mth.clamp(Math.max(files.size(), 1), 1, LIST_ROWS) * LIST_ROW_H;
+        int listH = Mth.clamp(Math.max(files.size(), 1), 1, LIST_ROWS) * LIST_ROW_H + 4;
         this.list = new SchematicList(this.minecraft, PANEL_W, listH, y, LIST_ROW_H, files, currentFile());
         this.list.updateSizeAndPosition(PANEL_W, listH, x, y);
         addRenderableWidget(this.list);
-        y += listH + 3;
-        button(x, y, PANEL_W, 16, Component.translatable("holoplace.ui.open_folder"),
+        y += listH + 6;
+        button(x, y, PANEL_W, 18, Component.translatable("holoplace.ui.open_folder"),
                 b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()), null);
-        y += 20;
-        y += 3;
+        y += 24;
 
         // ---- CREATE --------------------------------------------
         y = section(x, y, "holoplace.ui.sect.create");
         CaptureController cc = CaptureController.get();
-        EditBox name = new EditBox(this.font, x + 92, y, PANEL_W - 92 - 52, 18, Component.empty());
+        EditBox name = new EditBox(this.font, x + 96, y, PANEL_W - 96 - 56, 18, Component.empty());
         name.setMaxLength(48);
         name.setHint(Component.translatable("holoplace.ui.capture_name_hint"));
-        button(x, y, 88, 18, Component.translatable("holoplace.ui.capture_select"),
+        button(x, y, 90, 18, Component.translatable("holoplace.ui.capture_select"),
                 b -> { cc.toggleSelecting(); onClose(); }, tip("holoplace.tip.capture_select"));
         addRenderableWidget(name);
-        button(x + PANEL_W - 48, y, 48, 18, Component.translatable("holoplace.ui.capture_save"),
+        button(x + PANEL_W - 52, y, 52, 18, Component.translatable("holoplace.ui.capture_save"),
                 b -> { cc.save(name.getValue().isBlank() ? null : name.getValue()); onClose(); }, null);
-        y += 22;
-        y += 3;
+        y += 28;
 
         // ---- ADVANCED (collapsible) ---------------------------
-        button(x, y, 120, 14,
+        button(x, y, 124, 16,
                 Component.literal("§7" + (advancedOpen ? "▾ " : "▸ ") + tr("holoplace.ui.advanced")),
                 b -> { advancedOpen = !advancedOpen; rebuildWidgets(); }, null);
-        y += 16;
+        y += 20;
         if (advancedOpen) {
             BlockPos a = g.anchor();
-            EditBox bx = coordBox(x + 24, y, String.valueOf(a.getX()));
-            EditBox by = coordBox(x + 74, y, String.valueOf(a.getY()));
-            EditBox bz = coordBox(x + 124, y, String.valueOf(a.getZ()));
+            EditBox bx = coordBox(x + 26, y, String.valueOf(a.getX()));
+            EditBox by = coordBox(x + 78, y, String.valueOf(a.getY()));
+            EditBox bz = coordBox(x + 130, y, String.valueOf(a.getZ()));
             label(x, y + 5, "§7" + tr("holoplace.ui.move"));
             addRenderableWidget(bx);
             addRenderableWidget(by);
             addRenderableWidget(bz);
-            button(x + 176, y, 40, 18, Component.translatable("holoplace.ui.go"), b -> {
+            button(x + 182, y, 42, 18, Component.translatable("holoplace.ui.go"), b -> {
                 Integer ix = parseInt(bx.getValue());
                 Integer iy = parseInt(by.getValue());
                 Integer iz = parseInt(bz.getValue());
@@ -191,20 +188,20 @@ public final class HoloPlaceScreen extends Screen {
                     rebuildWidgets();
                 }
             }, null).active = loaded;
-            y += 21;
+            y += 24;
             check(x, y, "holoplace.ui.block_entity_models", "holoplace.tip.block_entity_models",
                     g.blockEntityModels(),
                     v -> { g.setBlockEntityModels(v); cfg.blockEntityModels = v; HoloPlaceConfig.save(); }, true);
-            y += 17;
+            y += ROW;
             check(x, y, "holoplace.ui.entities", "holoplace.tip.entities",
                     g.showEntities(),
                     v -> { g.setShowEntities(v); cfg.showEntities = v; HoloPlaceConfig.save(); }, true);
-            y += 18;
+            y += ROW;
         }
-        y += 6;
+        y += 8;
 
-        button(x + PANEL_W - 100, y, 100, 18, CommonComponents.GUI_DONE, b -> onClose(), null);
-        y += 22;
+        button(x + PANEL_W - 100, y, 100, 20, CommonComponents.GUI_DONE, b -> onClose(), null);
+        y += 26;
 
         this.contentBottom = y + scrollY;
         int maxScroll = Math.max(0, this.contentBottom + MARGIN - this.height);
@@ -218,10 +215,11 @@ public final class HoloPlaceScreen extends Screen {
     // ---- builders --------------------------------------------------------
 
     private int section(int x, int y, String key) {
+        y += SECT_GAP;
         String text = tr(key).toUpperCase(Locale.ROOT);
         label(x, y, "§7" + text);
-        rules.add(new int[] {x + this.font.width(text) + 6, y + 4, x + PANEL_W});
-        return y + 13;
+        rules.add(new int[] {x + this.font.width(text) + 8, y + 4, x + PANEL_W});
+        return y + 16;
     }
 
     private void label(int x, int y, String text) {
@@ -262,26 +260,26 @@ public final class HoloPlaceScreen extends Screen {
         PlacementTransform t = g.transform();
         int layers = t == null ? 0 : t.footprintY();
         if (layers <= 1) {
-            label(x, y, "§7" + tr("holoplace.ui.layer_single"));
-            return y + 12;
+            label(x, y + 2, "§7" + tr("holoplace.ui.layer_single"));
+            return y + 18;
         }
         int hi = g.layerClip() && g.layerMax() != Integer.MAX_VALUE
                 ? Math.min(g.layerMax(), layers - 1) : layers - 1;
         int lo = g.layerClip() ? Math.min(g.layerMin(), hi) : 0;
 
-        label(x, y + 4, "§7" + tr("holoplace.ui.layers_label")
+        label(x, y + 5, "§7" + tr("holoplace.ui.layers_label")
                 + " §f" + layerSpan(lo, hi) + " §7/ " + layers);
-        button(x + PANEL_W - 44, y, 44, 16, Component.translatable("holoplace.ui.all"),
+        button(x + PANEL_W - 46, y, 46, 16, Component.translatable("holoplace.ui.all"),
                 b -> { pc.clearLayers(); rebuildWidgets(); }, null).active = g.layerClip();
-        y += 17;
+        y += 20;
 
         int[] range = {lo, hi};
         addRenderableWidget(new LayerSlider(x, y, PANEL_W, tr("holoplace.ui.layer_from"), layers - 1, range[0],
                 v -> { range[0] = Math.min(v, range[1]); pc.setLayers(range[0], range[1]); }));
-        y += 16;
+        y += 19;
         addRenderableWidget(new LayerSlider(x, y, PANEL_W, tr("holoplace.ui.layer_to"), layers - 1, range[1],
                 v -> { range[1] = Math.max(v, range[0]); pc.setLayers(range[0], range[1]); }));
-        return y + 18;
+        return y + 22;
     }
 
     private static String layerSpan(int lo, int hi) {
