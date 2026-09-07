@@ -2,7 +2,6 @@ package dev.holoplace.capture;
 
 import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.SchematicLibrary;
-import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.schematic.LitematicaSchematicWriter;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -36,7 +35,6 @@ public final class CaptureController {
 
     private final SelectionState selection = new SelectionState();
     private boolean selecting;
-    private boolean changesOnly = HoloPlaceConfig.get().captureChangesOnly;
 
     private CaptureController() {
     }
@@ -70,10 +68,6 @@ public final class CaptureController {
         return selecting;
     }
 
-    public boolean changesOnly() {
-        return changesOnly;
-    }
-
     public long volumeWarnLimit() {
         return VOLUME_WARN_LIMIT;
     }
@@ -81,16 +75,6 @@ public final class CaptureController {
     public void toggleSelecting() {
         selecting = !selecting;
         overlay(Component.translatable(selecting ? "holoplace.capture.select_on" : "holoplace.capture.select_off"));
-    }
-
-    /** {@code null} toggles; otherwise sets the mode. Full = everything in the box; changes = only
-     *  the cells the passive {@link ChangeTracker} recorded this session. */
-    public void setMode(@Nullable Boolean onlyChanges) {
-        changesOnly = onlyChanges == null ? !changesOnly : onlyChanges;
-        HoloPlaceConfig.get().captureChangesOnly = changesOnly;
-        HoloPlaceConfig.save();
-        overlay(Component.translatable(changesOnly
-                ? "holoplace.capture.mode_changes" : "holoplace.capture.mode_full"));
     }
 
     /** @return true if the click was consumed (i.e. selection mode is on and a corner was set). */
@@ -129,13 +113,8 @@ public final class CaptureController {
         overlay(Component.translatable("holoplace.capture.cleared"));
     }
 
-    /**
-     * Write the selection to {@code <name>.litematic}, using the current {@link #changesOnly()} mode:
-     * changes → only cells the passive {@link ChangeTracker} recorded this session keep their block,
-     * the rest become air; full → everything in the box as-is.
-     */
+    /** Write the selection to {@code <name>.litematic} — everything in the box, as it is now. */
     public void save(@Nullable String rawName) {
-        boolean onlyChanges = changesOnly;
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null || mc.player == null) {
@@ -152,11 +131,6 @@ public final class CaptureController {
                     String.format("%,d", volume), String.format("%,d", MAX_SAVE_VOLUME)));
             return;
         }
-        ChangeLog changes = ChangeTracker.log();
-        if (onlyChanges && changes.isEmpty()) {
-            chat(Component.translatable("holoplace.capture.save_no_changes"));
-            return;
-        }
 
         String name = sanitize(rawName);
         try {
@@ -164,18 +138,13 @@ public final class CaptureController {
             Path file = SchematicLibrary.primaryDir().resolve(name + ".litematic");
             int dataVersion = SharedConstants.getCurrentVersion().dataVersion().version();
             String author = mc.getUser().getName();
-            LitematicaSchematicWriter.Region region =
-                    CaptureWriter.capture(name, selection, level, onlyChanges ? changes : null);
+            LitematicaSchematicWriter.Region region = CaptureWriter.capture(name, selection, level);
             LitematicaSchematicWriter.write(file, name, author, dataVersion, region);
-            HoloPlaceClient.LOGGER.info(
-                    "Capture '{}': mode={}, selection={} cells, change-log={}, non-air={}, entities={}",
-                    name, onlyChanges ? "changes" : "full", volume, changes.size(),
-                    region.countNonAir(), region.entities().size());
+            HoloPlaceClient.LOGGER.info("Capture '{}': {} cells, non-air={}, block entities={}, entities={}",
+                    name, volume, region.countNonAir(), region.blockEntities().size(),
+                    region.entities().size());
             chat(Component.translatable("holoplace.capture.saved", name,
                     String.format("%,d", region.countNonAir())));
-            if (onlyChanges && changes.isFull()) {
-                chat(Component.translatable("holoplace.capture.changes_capped"));
-            }
         } catch (Exception e) {
             HoloPlaceClient.LOGGER.error("Capture save failed", e);
             chat(Component.translatable("holoplace.capture.save_failed", String.valueOf(e.getMessage())));

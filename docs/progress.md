@@ -442,69 +442,38 @@ the wire edges.
   local position.
 
 ### Known gaps (M20)
-- Entities (item frames, armour stands, paintings) aren't captured — `Entities` is written empty.
 - No live progress/feedback for a big capture — it's synchronous on the calling thread (fine under
   the 8M cap, but a large capture will hitch briefly).
 
-## M21 — capture: automatic mode (only what you changed) 🚧 (written, compiles, 30 tests green, **needs in-game check**)
+M20 verified in-game 2026-09.
 
-The differentiator from Litematica: capture only the cells the player actually changed this session,
-without any "start recording" step to forget and without declaring the area up front.
+## M21 — capture: "changes only" mode ❌ built, tested, then removed
 
-- `ChangeLog` (`src/main`, testable) — a `LongOpenHashSet` of touched cell positions, capped at 3M
-  (`isFull()` then; the capture warns it may be incomplete).
-- `ChangeTracker` (client) — owns the single `ChangeLog`, always on. Reset on world join / disconnect
-  so each session starts clean (persisting across relogs is M23). **A change is only logged if it
-  lands within 1.5s of the player interacting with a block** (`AttackBlockCallback` /
-  `UseBlockCallback` / `ClientPlayerBlockBreakEvents.AFTER` refresh the window). First in-game test
-  showed the raw hook also catches worldgen post-processing, grass/leaf/fluid ambient churn, etc. —
-  which happens right where you build, so the selection box doesn't filter it. The window keeps the
-  placement + its immediate redstone/water/piston cascade and drops the ambient noise.
-- `LevelBlockChangeMixin` — `@Inject` at HEAD of `Level.setBlock(BlockPos, BlockState, int, int)`,
-  the one method both the client's own predicted placement/break and server block-update packets
-  funnel through; bulk chunk streaming fills sections directly and does *not* go through it, so this
-  naturally sees only real incremental changes. `isClientSide()` guard drops the integrated server's
-  own calls in singleplayer.
-- `CaptureWriter.capture(…, @Nullable ChangeLog)` — with a log, only recorded cells keep their world
-  state, the rest become air (and only recorded cells contribute block entities).
-- Mode is a persisted toggle (`HoloPlaceConfig.captureChangesOnly`), not a `save` sub-arg — the
-  first cut used `/holoplace capture save changes` which brigadier flagged as ambiguous with the
-  schematic-name argument and mis-routed to full mode. Now: `/holoplace capture mode [full|changes]`
-  toggles it, the HUD shows the current mode, and `save [name]` uses it. (K-screen checkbox is M22.)
-
-### Known gaps / risks (M21)
-- Chunk-load safety: confirmed against 26.1 source — `LevelChunk.replaceWithPacketData` fills sections
-  via `section.read(buffer)` and never calls `Level.setBlock`; the only in-chunk `setBlock` is
-  `postProcessGeneration(ServerLevel)`, server-only and filtered by the `isClientSide()` guard. So the
-  log sees only real incremental changes.
-- `ChangeLog` is memory-only; a client restart loses it (M23 = persist per world). A build spanning
-  sessions must finish and `save changes` before quitting, or fall back to full capture.
-- Another player / a piston / mob griefing near your build within the 1.5s interaction window is
-  still recorded (rare overlap); outside the window it's dropped.
-- Ambient change that happens to land in the 1.5s window after one of your interactions slips
-  through (a few stray cells at most).
-- No dimension-change reset — travelling to the Nether and back keeps one log (fine), but stray
-  Nether coords that happen to fall in an Overworld selection box would be a near-impossible
-  coincidence, currently unhandled.
-
-**Paused after M21** (user, 2026-09): the automatic "changes only" mode works but is opt-in
-(`captureChangesOnly` defaults off). M22 (K-screen toggle, entity capture) and M23 (persist the log
-across relogs) are not started.
+Tried and worked: a passive `LevelBlockChangeMixin` on `Level.setBlock` fed a `ChangeLog`, filtered
+to changes within 1.5s of a player block interaction (to drop worldgen post-processing / grass /
+fluid ambient churn), and `save changes` exported only those cells. The user paused it, then asked to
+remove it entirely (2026-09). Deleted: `ChangeLog`, `ChangeTracker`, `LevelBlockChangeMixin`,
+`ChangeLogTest`, `HoloPlaceConfig.captureChangesOnly`, the `/holoplace capture mode` command, the
+K-screen mode button, the HUD mode lines, and the related lang keys. `CaptureWriter.capture` is back
+to always-full. If ever revisited: Minecraft stores no per-block "who placed this", so after-the-fact
+detection isn't possible — you must track changes live or diff against a baseline snapshot.
 
 ## M22 (partial) — capture in the K screen, entities, mod icon 🚧 (written, compiles, **needs in-game check**)
 
-- **Entity capture** (`CaptureWriter.captureEntities`) — full capture now also picks up entities whose
+- **Entity capture** (`CaptureWriter.captureEntities`) — capture now also picks up entities whose
   position is inside the box: `entity.save(TagValueOutput…)` + `id`, with `Pos` rewritten
-  region-relative (same convention as the block-entity `x`/`y`/`z`). Client-side data only — item
+  region-relative (same convention as the block-entity `x`/`y`/`z`). Verified in-game: an item frame
+  and an armour stand write into the file with their client-side data. Client-side data only — item
   frames, armour stands, paintings and a mob's *visible* state come through; full mob NBT (AI,
   attributes, inventory) isn't synced to the client so it won't be in the file. Players are skipped.
-- **Capture row in the `K` screen** — `[Área]` (toggles selection mode, closes the screen), a button
-  that cycles the mode (full ⇄ changes only), a name field, and `[Guardar]`.
+- **Capture row in the `K` screen** — `[Área]` (toggles selection mode, closes the screen), a name
+  field, and `[Guardar]`.
 - **Mod icon** — `assets/holoplace/icon.png` (128×128, a cyan wire cube on a blueprint grid — a
   placeholder, replace before a real launch) + the `"icon"` field in `fabric.mod.json`.
 
-Not done in M22: persist the capture change-log across relogs (M23), a scroll/scrollbar on the `K`
-screen (it's getting tall).
+Not done: HoloPlace doesn't **render** entities from a loaded schematic (the ghost only draws
+blocks / fluids / block entities), so a captured entity is invisible in HoloPlace — verify it in
+Litematica or by inspecting the NBT. A scroll/scrollbar on the `K` screen (it's getting tall).
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 

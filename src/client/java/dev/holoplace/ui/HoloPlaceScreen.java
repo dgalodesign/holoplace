@@ -113,31 +113,22 @@ public final class HoloPlaceScreen extends Screen {
     private LinearLayout captureRow() {
         dev.holoplace.capture.CaptureController cc = dev.holoplace.capture.CaptureController.get();
         LinearLayout row = LinearLayout.horizontal().spacing(4);
-        row.addChild(new StringWidget(42, 18, Component.translatable("holoplace.ui.capture"), this.font));
+        row.addChild(new StringWidget(48, 18, Component.translatable("holoplace.ui.capture"), this.font));
 
-        EditBox name = new EditBox(this.font, 96, 18, Component.empty());
+        EditBox name = new EditBox(this.font, 150, 18, Component.empty());
         name.setMaxLength(48);
         name.setHint(Component.translatable("holoplace.ui.capture_name_hint"));
 
         row.addChild(Button.builder(Component.translatable("holoplace.ui.capture_select"), b -> {
             cc.toggleSelecting();
             onClose();
-        }).width(46).build());
-        row.addChild(Button.builder(captureModeLabel(cc), b -> {
-            cc.setMode(null);
-            rebuildWidgets();
-        }).width(88).build());
+        }).width(60).build());
         row.addChild(name);
         row.addChild(Button.builder(Component.translatable("holoplace.ui.capture_save"), b -> {
             cc.save(name.getValue().isBlank() ? null : name.getValue());
             onClose();
-        }).width(46).build());
+        }).width(60).build());
         return row;
-    }
-
-    private static Component captureModeLabel(dev.holoplace.capture.CaptureController cc) {
-        return Component.translatable(cc.changesOnly()
-                ? "holoplace.hud.capture_mode_changes" : "holoplace.hud.capture_mode_full");
     }
 
     private LinearLayout coordRow(GhostState g) {

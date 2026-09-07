@@ -106,19 +106,6 @@ public final class HoloPlaceCommand {
                                     dev.holoplace.capture.CaptureController.get().clearSelection();
                                     return 1;
                                 }))
-                                .then(ClientCommands.literal("mode")
-                                        .executes(ctx -> {
-                                            dev.holoplace.capture.CaptureController.get().setMode(null);
-                                            return 1;
-                                        })
-                                        .then(ClientCommands.literal("full").executes(ctx -> {
-                                            dev.holoplace.capture.CaptureController.get().setMode(false);
-                                            return 1;
-                                        }))
-                                        .then(ClientCommands.literal("changes").executes(ctx -> {
-                                            dev.holoplace.capture.CaptureController.get().setMode(true);
-                                            return 1;
-                                        })))
                                 .then(ClientCommands.literal("save")
                                         .executes(ctx -> {
                                             dev.holoplace.capture.CaptureController.get().save(null);
