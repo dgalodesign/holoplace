@@ -503,7 +503,6 @@ public final class GhostRenderer {
         }
 
         var dispatcher = mc.getEntityRenderDispatcher();
-        float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         var camState = ctx.levelState().cameraRenderState;
         Vec3 camPos = camState.pos;
         GhostSubmitCollector collector = new GhostSubmitCollector(ctx.submitNodeCollector(), state.opacity());
@@ -521,7 +520,14 @@ public final class GhostRenderer {
                 var entity = ge.entity();
                 entity.setPos(anchor.getX() + ge.x(), anchor.getY() + ge.y(), anchor.getZ() + ge.z());
                 entity.setOldPosAndRot();
-                var s = dispatcher.extractEntity(entity, partialTick);
+                if (entity instanceof net.minecraft.world.entity.LivingEntity living) {
+                    living.yBodyRotO = living.yBodyRot;
+                    living.yHeadRotO = living.yHeadRot;
+                }
+                // partialTick 1.0 → every lerp (position, body/head rotation) resolves to the current
+                // value, so a never-ticked entity holds still instead of wobbling.
+                var s = dispatcher.extractEntity(entity, 1.0f);
+                s.lightCoords = FULL_BRIGHT;
                 dispatcher.submit(s, camState, s.x - camPos.x, s.y - camPos.y, s.z - camPos.z, ps, collector);
                 submitted++;
             } catch (Exception e) {

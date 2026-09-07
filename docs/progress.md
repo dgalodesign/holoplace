@@ -489,6 +489,19 @@ A scroll/scrollbar on the `K` screen (it's getting tall).
   Honours the layer clip.
 - Toggle: "Entities" checkbox on the `K` screen (`GhostState.showEntities`, persisted, default on).
 
+**Follow-up fixes** (first in-game test: item frame didn't draw, armour stand spun):
+- Armour stand spin — a never-ticked `LivingEntity` has `yBodyRotO`/`yHeadRotO` at 0 while
+  `yBodyRot`/`yHeadRot` hold the target, so the renderer's `rotLerp` swept between them as
+  `partialTick` cycled. Fix: `submitEntities` now extracts with `partialTick = 1.0f` (every lerp
+  resolves to the current value) and syncs the `*O` fields each frame; `makeEntity` syncs them once.
+- Item frame invisible — `BlockAttachedEntity.readAdditionalSaveData` rejects the captured `block_pos`
+  (absolute world coords, >16 blocks from the region-relative `Pos`), so the frame loaded with a
+  default direction/position. Fix: a small `HangingEntityInvoker` mixin (`@Invoker` for the
+  `protected setDirection`) — `makeEntity` sets the attach block near the transformed position, then
+  `setDirection(transformedFacing)` recalcs the bounding box. `Rotation.rotate(Direction)` /
+  `Mirror.mirror(Direction)` give the transformed facing.
+- Ghost entities render full-bright (`s.lightCoords = FULL_BRIGHT`), like the ghost blocks.
+
 ### Known gaps (M23)
 - Entities aren't ticked — armour stands / item frames / paintings are fine (static), but a mob shows
   in a default idle pose with no animation.

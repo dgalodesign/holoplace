@@ -18,6 +18,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -299,7 +304,9 @@ final class GhostMesh {
 
     /**
      * Deserialise one schematic entity and place it in footprint-local space with the ghost's
-     * rotation/mirror applied. {@code null} on any failure (unknown type, bad NBT, no level).
+     * rotation/mirror applied. Returns the value that, passed to {@code entity.setPos(anchor + …)} at
+     * render time, positions it correctly (an item frame's is its attachment-block centre, since
+     * {@code BlockAttachedEntity.setPos} treats its arg as the attach block). {@code null} on failure.
      */
     private static @Nullable GhostEntity makeEntity(HolderLookup.@Nullable Provider registries,
             CompoundTag tag, PlacementTransform transform, int baseX, int baseY, int baseZ) {
@@ -312,23 +319,34 @@ final class GhostMesh {
             double px = baseX + pos.getDoubleOr(0, 0.0);
             double py = baseY + pos.getDoubleOr(1, 0.0);
             double pz = baseZ + pos.getDoubleOr(2, 0.0);
+            double[] f = transform.forwardExact(px, py, pz);
 
             var input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
-            var created = net.minecraft.world.entity.EntityType.create(
-                    input, mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+            var created = EntityType.create(input, mc.level, EntitySpawnReason.LOAD);
             if (created.isEmpty()) {
                 return null;
             }
-            net.minecraft.world.entity.Entity entity = created.get();
+            Entity entity = created.get();
 
             entity.setYRot(entity.mirror(transform.mirror()));
             entity.setYRot(entity.rotate(transform.rotation()));
-            if (entity instanceof net.minecraft.world.entity.LivingEntity living) {
+            if (entity instanceof LivingEntity living) {
                 living.setYHeadRot(entity.getYRot());
                 living.setYBodyRot(entity.getYRot());
+                living.yBodyRotO = living.yBodyRot;
+                living.yHeadRotO = living.yHeadRot;
             }
 
-            double[] f = transform.forwardExact(px, py, pz);
+            if (entity instanceof HangingEntity hanging) {
+                Direction d = transform.rotation().rotate(transform.mirror().mirror(hanging.getDirection()));
+                // Put the attach block near where the frame sits, then point it — setDirection recalcs
+                // the bounding box, so the entity centre ends up right.
+                entity.setPos(Math.floor(f[0]) + 0.5, Math.floor(f[1]) + 0.5, Math.floor(f[2]) + 0.5);
+                ((dev.holoplace.mixin.HangingEntityInvoker) hanging).holoplace$setDirection(d);
+                entity.setOldPosAndRot();
+                return new GhostEntity(entity, Math.floor(f[0]) + 0.5, Math.floor(f[1]) + 0.5, Math.floor(f[2]) + 0.5);
+            }
+
             entity.snapTo(f[0], f[1], f[2], entity.getYRot(), entity.getXRot());
             entity.setOldPosAndRot();
             return new GhostEntity(entity, f[0], f[1], f[2]);
