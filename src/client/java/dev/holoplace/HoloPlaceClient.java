@@ -34,6 +34,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostState.get().setHideWrongToo(config.hideWrongToo);
         GhostState.get().setMatchBlockOnly(config.matchBlockOnly);
         GhostState.get().setBlockEntityModels(config.blockEntityModels);
+        GhostState.get().setShowEntities(config.showEntities);
         GhostState.get().setShade(config.ambientOcclusion);
         if (config.layerMax != Integer.MAX_VALUE || config.layerMin != 0) {
             GhostState.get().setLayers(config.layerMin, config.layerMax);

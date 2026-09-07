@@ -63,6 +63,7 @@ public final class GhostRenderer {
     private static boolean warnedTooLarge;
     private static boolean warnedExtrasTooLarge;
     private static @Nullable GhostMesh loggedBeMesh;
+    private static @Nullable GhostMesh loggedEntityMesh;
 
     private GhostRenderer() {
     }
@@ -70,6 +71,7 @@ public final class GhostRenderer {
     public static void register() {
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(GhostRenderer::render);
         LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::submitBlockEntities);
+        LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::submitEntities);
     }
 
     public static void invalidate() {
@@ -484,6 +486,51 @@ public final class GhostRenderer {
             loggedBeMesh = m;
             HoloPlaceClient.LOGGER.info("Ghost block entities: {} of {} submitted",
                     submitted, m.blockEntityCount());
+        }
+    }
+
+    /** Submit the schematic's entities (item frames, armour stands, paintings…), faded with opacity. */
+    private static void submitEntities(LevelRenderContext ctx) {
+        GhostState state = GhostState.get();
+        GhostMesh m = mesh;
+        if (!state.isVisible() || !state.showEntities() || m == null || m.entityCount() == 0
+                || m.totalQuads() > MAX_QUADS) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || m.schematic() != state.schematic()) {
+            return;
+        }
+
+        var dispatcher = mc.getEntityRenderDispatcher();
+        float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        var camState = ctx.levelState().cameraRenderState;
+        Vec3 camPos = camState.pos;
+        GhostSubmitCollector collector = new GhostSubmitCollector(ctx.submitNodeCollector(), state.opacity());
+        BlockPos anchor = state.anchor();
+        boolean layerClip = state.layerClip();
+        PoseStack ps = new PoseStack();
+        int submitted = 0;
+
+        for (int i = 0, n = m.entityCount(); i < n; i++) {
+            GhostMesh.GhostEntity ge = m.entity(i);
+            if (layerClip && !state.layerVisible((int) Math.floor(ge.y()))) {
+                continue;
+            }
+            try {
+                var entity = ge.entity();
+                entity.setPos(anchor.getX() + ge.x(), anchor.getY() + ge.y(), anchor.getZ() + ge.z());
+                entity.setOldPosAndRot();
+                var s = dispatcher.extractEntity(entity, partialTick);
+                dispatcher.submit(s, camState, s.x - camPos.x, s.y - camPos.y, s.z - camPos.z, ps, collector);
+                submitted++;
+            } catch (Exception e) {
+                HoloPlaceClient.LOGGER.debug("Ghost entity submit failed", e);
+            }
+        }
+        if (loggedEntityMesh != m) {
+            loggedEntityMesh = m;
+            HoloPlaceClient.LOGGER.info("Ghost entities: {} of {} submitted", submitted, m.entityCount());
         }
     }
 

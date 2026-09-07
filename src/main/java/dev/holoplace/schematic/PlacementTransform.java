@@ -46,6 +46,21 @@ public record PlacementTransform(int sizeX, int sizeY, int sizeZ, Mirror mirror,
         };
     }
 
+    /**
+     * Continuous version of {@link #forward} for fractional positions (entities). Reflects about the
+     * box edges ({@code size - p}) rather than block-index parity ({@code size - 1 - p}).
+     */
+    public double[] forwardExact(double x, double y, double z) {
+        double mx = mirror == Mirror.FRONT_BACK ? sizeX - x : x;
+        double mz = mirror == Mirror.LEFT_RIGHT ? sizeZ - z : z;
+        return switch (rotation) {
+            case CLOCKWISE_90 -> new double[] {sizeZ - mz, y, mx};
+            case COUNTERCLOCKWISE_90 -> new double[] {mz, y, sizeX - mx};
+            case CLOCKWISE_180 -> new double[] {sizeX - mx, y, sizeZ - mz};
+            default -> new double[] {mx, y, mz};
+        };
+    }
+
     /** Transformed footprint coords → authored bounding-box coords (inverse of {@link #forward}). */
     public int[] inverse(int fx, int fy, int fz) {
         int mx;

@@ -62,9 +62,12 @@ client/ capture/
 - **M21 — Modo "solo cambios"** ❌ construido y probado, luego **removido** (ver "Descartado" arriba).
 - **M22 (parcial)** ✅ compilado: fila de captura en la pantalla `K` (`[Área]` + campo de nombre +
   `[Guardar]`); captura de entidades; ícono del mod (`assets/holoplace/icon.png`, placeholder) +
-  campo `icon` en `fabric.mod.json`. Falta: barra de scroll en la pantalla `K` (se está poniendo
-  alta); render de entidades del schematic (hoy el fantasma solo dibuja bloques/fluidos/BEs, así que
-  una entidad capturada no se ve en HoloPlace — sí en Litematica).
+  campo `icon` en `fabric.mod.json`. Falta: barra de scroll en la pantalla `K`.
+- **M23 — render de entidades del fantasma** 🚧 compilado, sin probar en el juego: `GhostMesh`
+  deserializa las entidades del schematic (`EntityType.create` + `entity.mirror/.rotate` +
+  `PlacementTransform.forwardExact` para la posición fraccionaria); `GhostRenderer.submitEntities` las
+  envía en `COLLECT_SUBMITS` por el mismo `GhostSubmitCollector` que los block entities (se desvanecen
+  con la opacidad). Checkbox "Entidades" en la pantalla `K` (`GhostState.showEntities`, persistido).
 
 ## Riesgos / límites conocidos
 
@@ -72,5 +75,6 @@ client/ capture/
 |---|---|
 | Selección enorme cuelga el cliente | Tope de 8M celdas en el `save`, antes de reservar memoria |
 | Entidades: datos incompletos | Límite del lado del cliente (Litematica tiene el mismo); mobs guardan solo su estado visible |
-| Entidades capturadas no se ven en HoloPlace | HoloPlace no renderiza entidades de un schematic todavía — abrir en Litematica para verlas |
+| Entidades no se tickean al renderizarse | Bien para marcos/soportes/cuadros; un mob sale en pose idle |
+| `Pos` de entidad en archivos de terceros | Asumido relativo a la región; si algún archivo lo guarda distinto, la entidad queda corrida |
 | Pantalla `K` cada vez más alta | Falta scrollbar |

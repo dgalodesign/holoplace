@@ -112,6 +112,7 @@
 	"holoplace.ui.match_block_only": "Match block only",
 	"holoplace.ui.hide_wrong_too": "Hide wrong too",
 	"holoplace.ui.block_entity_models": "Block entity models",
+	"holoplace.ui.entities": "Entities",
 	"holoplace.ui.shading": "Shading",
 	"holoplace.ui.move": "Move",
 	"holoplace.ui.reset_transform": "Reset rot/mirror",

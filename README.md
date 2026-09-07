@@ -2,7 +2,8 @@
 
 Modern UX for building from schematics in Minecraft (Fabric, client-side).
 
-Load a `.litematic` file, see it as a **textured ghost overlay** in the world, and
+Load a `.litematic` file, see it as a **textured ghost overlay** in the world (blocks,
+fluids, block-entity models, and entities like item frames and armour stands), and
 position it **directly on screen with drag-to-position** — no nested menus, no
 manual coordinate entry. Basic controls (opacity, rotation, mirror) stay visible
 on a single panel.
@@ -37,6 +38,7 @@ for the plan and [`docs/progress.md`](docs/progress.md) for the milestone histor
 | M17 | help/welcome · rotate-around-centre · move/nudge · layer sliders · wrong-block red · face shading · paged list | ✅ |
 | M18 | Spanish translation · extra-block marker (orange) · look-at tooltip with item icon | ✅ |
 | M19–M22 | Schematic capture — area select · `.litematic` writer · blocks + block entities + entities · `K`-screen row | ✅ |
+| M23 | Render schematic entities in the ghost (item frames, armour stands, paintings…) | ✅ |
 
 Not done: GPU vertex-buffer upload (a perf win for very large schematics — the current
 per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/backlog.md).

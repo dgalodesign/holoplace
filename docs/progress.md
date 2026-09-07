@@ -471,9 +471,31 @@ detection isn't possible — you must track changes live or diff against a basel
 - **Mod icon** — `assets/holoplace/icon.png` (128×128, a cyan wire cube on a blueprint grid — a
   placeholder, replace before a real launch) + the `"icon"` field in `fabric.mod.json`.
 
-Not done: HoloPlace doesn't **render** entities from a loaded schematic (the ghost only draws
-blocks / fluids / block entities), so a captured entity is invisible in HoloPlace — verify it in
-Litematica or by inspecting the NBT. A scroll/scrollbar on the `K` screen (it's getting tall).
+A scroll/scrollbar on the `K` screen (it's getting tall).
+
+## M23 — render schematic entities in the ghost 🚧 (written, compiles, **needs in-game check**)
+
+*(user request after seeing a captured item frame / armour stand not show up)*
+
+- `GhostMesh` now deserialises the schematic's `Entities` per (schematic, transform):
+  `EntityType.create(TagValueInput…, mc.level, LOAD)`, then `entity.mirror(…)` + `entity.rotate(…)`
+  for the ghost's rotation/mirror (hanging entities update their `direction` too), and
+  `PlacementTransform.forwardExact` (a fractional-position variant of `forward` — reflects about the
+  box edge `size - p`, not block parity `size - 1 - p`) for the position. Stored as a `GhostEntity`
+  record (entity + footprint-local x/y/z).
+- `GhostRenderer.submitEntities` — a second `COLLECT_SUBMITS` handler: per entity, `setPos(anchor +
+  local)` + `setOldPosAndRot`, then `dispatcher.extractEntity` / `dispatcher.submit(...)` through the
+  same `GhostSubmitCollector` the block-entity path uses, so entities fade with the opacity slider.
+  Honours the layer clip.
+- Toggle: "Entities" checkbox on the `K` screen (`GhostState.showEntities`, persisted, default on).
+
+### Known gaps (M23)
+- Entities aren't ticked — armour stands / item frames / paintings are fine (static), but a mob shows
+  in a default idle pose with no animation.
+- Client-side entity data only (from capture) — a captured mob has no AI/inventory NBT, so it renders
+  bare.
+- Entity `Pos` from third-party (real Litematica) files is assumed region-relative; if some file
+  stores it differently the entity will be offset (fixable once seen).
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 

@@ -25,6 +25,7 @@ public final class GhostState {
     private boolean hideWrongToo;
     private boolean matchBlockOnly;
     private boolean blockEntityModels = true;
+    private boolean showEntities = true;
     private boolean shade = true;
     private int layerMin = 0;
     private int layerMax = Integer.MAX_VALUE;
@@ -113,6 +114,14 @@ public final class GhostState {
 
     public void setBlockEntityModels(boolean blockEntityModels) {
         this.blockEntityModels = blockEntityModels;
+    }
+
+    public boolean showEntities() {
+        return showEntities;
+    }
+
+    public void setShowEntities(boolean showEntities) {
+        this.showEntities = showEntities;
     }
 
     public boolean shade() {

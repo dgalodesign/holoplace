@@ -78,6 +78,11 @@ public final class HoloPlaceScreen extends Screen {
             HoloPlaceConfig.get().blockEntityModels = v;
             HoloPlaceConfig.save();
         }));
+        t2.addChild(check(text("holoplace.ui.entities"), g::showEntities, v -> {
+            g.setShowEntities(v);
+            HoloPlaceConfig.get().showEntities = v;
+            HoloPlaceConfig.save();
+        }));
         t2.addChild(check(text("holoplace.ui.shading"), g::shade, v -> {
             g.setShade(v);
             HoloPlaceConfig.get().ambientOcclusion = v;

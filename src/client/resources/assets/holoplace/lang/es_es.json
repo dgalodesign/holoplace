@@ -112,6 +112,7 @@
 	"holoplace.ui.match_block_only": "Solo coincidir bloque",
 	"holoplace.ui.hide_wrong_too": "Ocultar incorrectos también",
 	"holoplace.ui.block_entity_models": "Modelos de entidades de bloque",
+	"holoplace.ui.entities": "Entidades",
 	"holoplace.ui.shading": "Sombreado",
 	"holoplace.ui.move": "Mover",
 	"holoplace.ui.reset_transform": "Restablecer rot/espejo",

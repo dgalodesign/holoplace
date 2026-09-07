@@ -37,6 +37,11 @@ final class GhostMesh {
     record Quad(float x, float y, float z, BakedQuad quad, boolean tinted) {
     }
 
+    /** A deserialised schematic entity (item frame, armour stand, painting, mob…) with its
+     *  footprint-local position and transform already applied. */
+    record GhostEntity(net.minecraft.world.entity.Entity entity, double x, double y, double z) {
+    }
+
     private static final Direction[] FACES = Direction.values();
 
     private final Schematic schematic;
@@ -61,12 +66,15 @@ final class GhostMesh {
     private final BlockState[] beStates;
     private final @Nullable BlockEntity[] beEntities;
 
+    private final GhostEntity[] entities;
+
     private GhostMesh(Schematic schematic, PlacementTransform transform,
                      int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
                      int[] quadStart, Quad[] quads,
                      int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates,
                      int[] beX, int[] beY, int[] beZ, BlockState[] beStates,
-                     @Nullable BlockEntity[] beEntities) {
+                     @Nullable BlockEntity[] beEntities,
+                     GhostEntity[] entities) {
         this.schematic = schematic;
         this.transform = transform;
         this.blockX = blockX;
@@ -84,6 +92,15 @@ final class GhostMesh {
         this.beZ = beZ;
         this.beStates = beStates;
         this.beEntities = beEntities;
+        this.entities = entities;
+    }
+
+    int entityCount() {
+        return entities.length;
+    }
+
+    GhostEntity entity(int i) {
+        return entities[i];
     }
 
     boolean matches(Schematic schematic, PlacementTransform transform) {
@@ -190,6 +207,7 @@ final class GhostMesh {
         List<int[]> bePositions = new ArrayList<>();
         List<BlockState> beStateList = new ArrayList<>();
         List<BlockEntity> beEntityList = new ArrayList<>();
+        List<GhostEntity> ghostEntities = new ArrayList<>();
         var registries = mc.level != null ? mc.level.registryAccess() : null;
 
         int schMinX = schematic.min().getX();
@@ -202,6 +220,14 @@ final class GhostMesh {
             int authoredBaseX = origin.getX() - schMinX;
             int authoredBaseY = origin.getY() - schMinY;
             int authoredBaseZ = origin.getZ() - schMinZ;
+
+            for (CompoundTag entityTag : region.entities()) {
+                GhostEntity ge = makeEntity(registries, entityTag, transform,
+                        authoredBaseX, authoredBaseY, authoredBaseZ);
+                if (ge != null) {
+                    ghostEntities.add(ge);
+                }
+            }
 
             for (int y = 0; y < region.sizeY(); y++) {
                 for (int z = 0; z < region.sizeZ(); z++) {
@@ -256,9 +282,9 @@ final class GhostMesh {
         quadStart[blockCount] = allQuads.size();
 
         long beOk = beEntityList.stream().filter(java.util.Objects::nonNull).count();
-        if (!bePositions.isEmpty()) {
-            HoloPlaceClient.LOGGER.info("Ghost mesh: {} block-entity cells, {} constructed",
-                    bePositions.size(), beOk);
+        if (!bePositions.isEmpty() || !ghostEntities.isEmpty()) {
+            HoloPlaceClient.LOGGER.info("Ghost mesh: {} block-entity cells ({} constructed), {} entities",
+                    bePositions.size(), beOk, ghostEntities.size());
         }
 
         return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
@@ -267,7 +293,49 @@ final class GhostMesh {
                 fluidStateList.toArray(new BlockState[0]),
                 col(bePositions, 0), col(bePositions, 1), col(bePositions, 2),
                 beStateList.toArray(new BlockState[0]),
-                beEntityList.toArray(new BlockEntity[0]));
+                beEntityList.toArray(new BlockEntity[0]),
+                ghostEntities.toArray(new GhostEntity[0]));
+    }
+
+    /**
+     * Deserialise one schematic entity and place it in footprint-local space with the ghost's
+     * rotation/mirror applied. {@code null} on any failure (unknown type, bad NBT, no level).
+     */
+    private static @Nullable GhostEntity makeEntity(HolderLookup.@Nullable Provider registries,
+            CompoundTag tag, PlacementTransform transform, int baseX, int baseY, int baseZ) {
+        Minecraft mc = Minecraft.getInstance();
+        if (registries == null || mc.level == null) {
+            return null;
+        }
+        try {
+            var pos = tag.getListOrEmpty("Pos");
+            double px = baseX + pos.getDoubleOr(0, 0.0);
+            double py = baseY + pos.getDoubleOr(1, 0.0);
+            double pz = baseZ + pos.getDoubleOr(2, 0.0);
+
+            var input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+            var created = net.minecraft.world.entity.EntityType.create(
+                    input, mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+            if (created.isEmpty()) {
+                return null;
+            }
+            net.minecraft.world.entity.Entity entity = created.get();
+
+            entity.setYRot(entity.mirror(transform.mirror()));
+            entity.setYRot(entity.rotate(transform.rotation()));
+            if (entity instanceof net.minecraft.world.entity.LivingEntity living) {
+                living.setYHeadRot(entity.getYRot());
+                living.setYBodyRot(entity.getYRot());
+            }
+
+            double[] f = transform.forwardExact(px, py, pz);
+            entity.snapTo(f[0], f[1], f[2], entity.getYRot(), entity.getXRot());
+            entity.setOldPosAndRot();
+            return new GhostEntity(entity, f[0], f[1], f[2]);
+        } catch (Exception e) {
+            HoloPlaceClient.LOGGER.debug("Ghost entity load failed", e);
+            return null;
+        }
     }
 
     private static @Nullable BlockEntity makeBlockEntity(

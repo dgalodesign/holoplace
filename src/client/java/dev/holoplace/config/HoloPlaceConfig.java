@@ -25,6 +25,7 @@ public final class HoloPlaceConfig {
     public boolean hideWrongToo = false;
     public boolean matchBlockOnly = false;
     public boolean blockEntityModels = true;
+    public boolean showEntities = true;
     public boolean ambientOcclusion = true;
     public int layerMin = 0;
     public int layerMax = Integer.MAX_VALUE;
