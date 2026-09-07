@@ -1,7 +1,17 @@
-# M24 — pase de UI/GUI (propuesta, pendiente de aprobar)
+# M24 — pase de UI/GUI
 
-Rediseño de la pantalla `K` (`HoloPlaceScreen`) y retoque del HUD. **Solo estructura — no se toca
-código hasta que apruebes esto.**
+Rediseño de la pantalla `K` (`HoloPlaceScreen`) y retoque del HUD.
+
+**Estado (2026-09-07)**: estructura aprobada por el usuario. Mockup renderizado en
+`docs/assets/k-screen-mockup.html` (publicado como artifact). Pendiente: el visto bueno final
+sobre el mockup, y luego implementar.
+
+**Decisiones**:
+- Cabeceras de sección fijas + solo «Avanzado» plegable. ✅
+- Rotar/Espejo = fila de botones `[↺] [↻] [espejo ▸]` en el panel. ✅
+- Lista de schematics = lista con scroll (sin paginador). ✅
+- HUD: se retoca en este milestone (colapsar a 2 líneas cuando está bloqueado). ✅
+- Preview 3D al hover: **su propio milestone, después de M27** (ver §7).
 
 Norte (de `litematica-reference.md` §8): un jugador nuevo necesita ~6 controles visibles; el resto
 se agrupa, se esconde o se explica con tooltip. Sigue siendo **una sola pantalla, sin pestañas**
@@ -165,13 +175,23 @@ Estimación: **1 pase de tamaño medio**. Riesgo bajo (es UI, testeable a ojo, s
 
 ---
 
-## 6. Preguntas para ti antes de codificar
+## 7. Preview 3D del schematic al hacer hover — veredicto
 
-1. **¿Secciones con cabecera de texto** (`── VISUALIZACIÓN ──`) o **secciones plegables** (todas
-   colapsables)? Recomiendo cabeceras fijas + solo "Avanzado" plegable — menos clics para el caso común.
-2. **Rotar/Espejo**: ¿botones `[↺] [↻] [espejo ▸]` en una fila, o un control más compacto?
-   Recomiendo la fila de botones — es lo más legible.
-3. **Lista de schematics**: ¿lista con scroll (mi propuesta) o mantengo los botones + paginador?
-   La lista con scroll es estándar y quita ruido.
-4. **HUD**: ¿lo retoco en este milestone (colapsar cuando está bloqueado) o lo dejo para otro?
-5. ¿Quieres un **mockup renderizado** (HTML/imagen) además de este ASCII, para verlo mejor?
+**Posible, pero es su propio milestone, no un extra de M24.**
+
+- 26.1 trae un sistema *picture-in-picture* para renderizar 3D dentro de la GUI
+  (`net.minecraft.client.renderer.state.gui.pip.*` — `GuiEntityRenderState`, `GuiSignRenderState`,
+  `GuiSkinRenderState`, `GuiBookModelRenderState`…). No hay un estado «renderizar una estructura»,
+  pero se puede registrar uno propio que dibuje un `GhostMesh` ya horneado en un rectángulo
+  recortado, con cámara ortográfica isométrica.
+- **El coste real es hornear.** Para previsualizar un schematic hay que parsearlo + hornear su
+  malla — exactamente el hitch que **M27** (carga de malla off-thread) va a resolver.
+- Necesitaría: caché LRU (últimos 3–4 en hover), tope de tamaño (schematics enormes → info en
+  texto, no 3D), y el render PIP a medida.
+- **Encaje limpio**: hacerlo **después de M27**, reutilizando su horneador en segundo plano.
+  Milestone pequeño, tipo «M27.5».
+- **En M24, gratis y útil ya**: al hacer hover sobre una fila de la lista, mostrar **metadatos**
+  (tamaño, nº de bloques, versión de datos de MC, nº de bloques desconocidos) — solo requiere leer
+  la cabecera del `.litematic`, sin hornear nada. Es lo que de verdad ayuda a elegir el archivo.
+
+→ M24 hace el hover-con-metadatos; el thumbnail 3D entra como M27.5.
