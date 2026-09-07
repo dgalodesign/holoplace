@@ -87,11 +87,23 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
                 sprite, sheeted, hasFoil, tint(tintedColor), crumblingOverlay, outlineColor);
     }
 
+    static int blockModelCalls;
+
     @Override
     public void submitBlockModel(PoseStack poseStack, RenderType renderType, List<BlockStateModelPart> parts,
                                  int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
         // Block-model render types (e.g. an item frame's frame model) aren't safe to swap for
         // entityTranslucent — the vertex format / shader differ — so tint only, leave the type alone.
+        blockModelCalls++;
+        if (blockModelCalls <= 2) {
+            StringBuilder trace = new StringBuilder();
+            for (StackTraceElement el : Thread.currentThread().getStackTrace()) {
+                trace.append("\n    ").append(el);
+            }
+            dev.holoplace.HoloPlaceClient.LOGGER.info(
+                    "GhostSubmitCollector.submitBlockModel #{}: type={} parts={} blending={} tintLayers={}{}",
+                    blockModelCalls, renderType, parts.size(), renderType.hasBlending(), tintLayers.length, trace);
+        }
         delegate.submitBlockModel(poseStack, renderType, parts, tint(tintLayers),
                 lightCoords, overlayCoords, outlineColor);
     }
