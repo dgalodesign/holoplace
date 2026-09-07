@@ -531,25 +531,6 @@ public final class GhostRenderer {
                 // value, so a never-ticked entity holds still instead of wobbling.
                 var s = dispatcher.extractEntity(entity, 1.0f);
                 s.lightCoords = FULL_BRIGHT;
-                if (loggedEntityMesh != m
-                        && s instanceof net.minecraft.client.renderer.entity.state.ItemFrameRenderState frame) {
-                    var fakeState = net.minecraft.client.resources.model.BlockStateDefinitions
-                            .getItemFrameFakeState(false, false);
-                    var bsm = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
-                    java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tp =
-                            new java.util.ArrayList<>();
-                    bsm.get(fakeState).collectParts(net.minecraft.util.RandomSource.create(42L), tp);
-                    int fq = 0;
-                    for (var p : tp) {
-                        fq += p.getQuads(null).size();
-                        for (var d : net.minecraft.core.Direction.values()) fq += p.getQuads(d).size();
-                    }
-                    HoloPlaceClient.LOGGER.info(
-                            "Ghost item frame state: dir={} frameModelEmpty={} itemEmpty={} mapId={} x/y/z=({},{},{})"
-                                    + " | fakeStateModel: parts={} quads={}",
-                            frame.direction, frame.frameModel.isEmpty(), frame.item.isEmpty(), frame.mapId,
-                            s.x, s.y, s.z, tp.size(), fq);
-                }
                 dispatcher.submit(s, camState, s.x - camPos.x, s.y - camPos.y, s.z - camPos.z, ps, collector);
                 submitted++;
             } catch (Exception e) {

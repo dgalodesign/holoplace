@@ -328,6 +328,22 @@ final class GhostMesh {
             }
             Entity entity = created.get();
 
+            if (entity instanceof HangingEntity hanging) {
+                // HangingEntity.mirror()/rotate() have side effects (they call setDirection), so
+                // transform the just-loaded facing once, directly, the same way a directional block
+                // state would (mirror then rotate).
+                Direction d = transform.rotation().rotate(transform.mirror().mirror(hanging.getDirection()));
+                double ax = Math.floor(f[0]) + 0.5;
+                double ay = Math.floor(f[1]) + 0.5;
+                double az = Math.floor(f[2]) + 0.5;
+                // Put the attach block near where the frame sits, then point it — setDirection recalcs
+                // the bounding box, so the entity centre ends up right.
+                entity.setPos(ax, ay, az);
+                ((dev.holoplace.mixin.HangingEntityInvoker) hanging).holoplace$setDirection(d);
+                entity.setOldPosAndRot();
+                return new GhostEntity(entity, ax, ay, az, entity.getYRot());
+            }
+
             // Mirror then rotate (matches PlacementTransform); each reads the current yaw.
             entity.setYRot(entity.mirror(transform.mirror()));
             entity.setYRot(entity.rotate(transform.rotation()));
@@ -339,23 +355,6 @@ final class GhostMesh {
                 living.yRotO = yaw;
                 living.yBodyRot = living.yBodyRotO = yaw;
                 living.yHeadRot = living.yHeadRotO = yaw;
-            }
-
-            if (entity instanceof HangingEntity hanging) {
-                Direction d = transform.rotation().rotate(transform.mirror().mirror(hanging.getDirection()));
-                double ax = Math.floor(f[0]) + 0.5;
-                double ay = Math.floor(f[1]) + 0.5;
-                double az = Math.floor(f[2]) + 0.5;
-                // Put the attach block near where the frame sits, then point it — setDirection recalcs
-                // the bounding box, so the entity centre ends up right.
-                entity.setPos(ax, ay, az);
-                ((dev.holoplace.mixin.HangingEntityInvoker) hanging).holoplace$setDirection(d);
-                entity.setOldPosAndRot();
-                HoloPlaceClient.LOGGER.info(
-                        "Ghost entity {}: facing {} -> {}, pos ({},{},{}), invisible={}, bb={}",
-                        tag.getStringOr("id", "?"), hanging.getDirection(), d, ax, ay, az,
-                        entity.isInvisible(), entity.getBoundingBox());
-                return new GhostEntity(entity, ax, ay, az, yaw);
             }
 
             entity.snapTo(f[0], f[1], f[2], yaw, entity.getXRot());

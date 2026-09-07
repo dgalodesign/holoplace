@@ -87,25 +87,62 @@ final class GhostSubmitCollector implements SubmitNodeCollector {
                 sprite, sheeted, hasFoil, tint(tintedColor), crumblingOverlay, outlineColor);
     }
 
-    static int blockModelCalls;
-
     @Override
     public void submitBlockModel(PoseStack poseStack, RenderType renderType, List<BlockStateModelPart> parts,
                                  int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
         // Block-model render types (e.g. an item frame's frame model) aren't safe to swap for
         // entityTranslucent — the vertex format / shader differ — so tint only, leave the type alone.
-        blockModelCalls++;
-        if (blockModelCalls <= 2) {
-            StringBuilder trace = new StringBuilder();
-            for (StackTraceElement el : Thread.currentThread().getStackTrace()) {
-                trace.append("\n    ").append(el);
-            }
-            dev.holoplace.HoloPlaceClient.LOGGER.info(
-                    "GhostSubmitCollector.submitBlockModel #{}: type={} parts={} blending={} tintLayers={}{}",
-                    blockModelCalls, renderType, parts.size(), renderType.hasBlending(), tintLayers.length, trace);
-        }
         delegate.submitBlockModel(poseStack, renderType, parts, tint(tintLayers),
                 lightCoords, overlayCoords, outlineColor);
+    }
+
+    /**
+     * Fabric-renderer-api's extended overload: when a block model bakes into a FRAPI {@code Mesh}
+     * (the item frame's frame model does), the vanilla {@code parts} list is empty and the geometry
+     * lives in {@code mesh}. The default forwarding impl drops the mesh, so a wrapping collector that
+     * doesn't override this makes the model vanish — forward it to the real collector, which stores it
+     * as an {@code ExtendedBlockModelSubmit} that {@code BlockFeatureRenderer} then draws. Fade it like
+     * the rest of the ghost: multiply the opacity into the mesh's vertex colours, swap the (opaque)
+     * render type for a blending one and route it through the translucent feature pass.
+     */
+    @Override
+    public void submitBlockModel(PoseStack poseStack,
+                                 java.util.function.Function<net.minecraft.client.renderer.chunk.ChunkSectionLayer,
+                                         RenderType> renderTypeByLayer,
+                                 boolean hasBlending, List<BlockStateModelPart> parts,
+                                 net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh mesh,
+                                 int[] tintLayers, int lightCoords, int overlayCoords, int outlineColor) {
+        if (alpha >= 0.995f) {
+            delegate.submitBlockModel(poseStack, renderTypeByLayer, hasBlending, parts, mesh,
+                    tintLayers, lightCoords, overlayCoords, outlineColor);
+            return;
+        }
+        var fadedMesh = fade(mesh);
+        delegate.submitBlockModel(poseStack, renderTypeByLayer.andThen(this::blendable),
+                hasBlending || fadedMesh != mesh, parts, fadedMesh,
+                tint(tintLayers), lightCoords, overlayCoords, outlineColor);
+    }
+
+    /** Multiply the ghost opacity into a FRAPI mesh's vertex colours. Returns the mesh unchanged if
+     *  it is empty or the active renderer is unavailable. */
+    private net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh fade(
+            net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh mesh) {
+        if (mesh == null || mesh.size() == 0) {
+            return mesh;
+        }
+        try {
+            var mutable = net.fabricmc.fabric.api.client.renderer.v1.Renderer.get().mutableMesh();
+            var emitter = mutable.emitter();
+            int mul = (Math.round(alpha * 255f) << 24) | 0x00FFFFFF;
+            mesh.forEach(quad -> {
+                emitter.copyFrom(quad);
+                emitter.multiplyColor(mul);
+                emitter.emit();
+            });
+            return mutable.immutableCopy();
+        } catch (RuntimeException | LinkageError e) {
+            return mesh;
+        }
     }
 
     @Override
