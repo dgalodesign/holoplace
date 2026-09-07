@@ -102,6 +102,18 @@ class LitematicaSchematicReaderTest {
     }
 
     @Test
+    void rejectsAnImplausiblyLargeRegion() {
+        // A hostile / corrupt file: an absurd Size would overflow the bit array or OOM.
+        CompoundTag hugeAxis = schematic(6, region("main", 0, 0, 0, 2_000_000, 1, 1,
+                palette(airEntry()), new long[0]));
+        assertThrows(IOException.class, () -> LitematicaSchematicReader.fromNbt(hugeAxis, "x"));
+
+        CompoundTag hugeVolume = schematic(6, region("main", 0, 0, 0, 4000, 4000, 4000,
+                palette(airEntry()), new long[0]));
+        assertThrows(IOException.class, () -> LitematicaSchematicReader.fromNbt(hugeVolume, "x"));
+    }
+
+    @Test
     void readsMultipleRegions() throws IOException {
         LitematicaBitArray a = new LitematicaBitArray(2, 1);
         a.set(0, 1);

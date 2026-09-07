@@ -3,9 +3,9 @@ package dev.holoplace.schematic;
 /**
  * Fixed-width bit-packed integer array as used by the {@code .litematic} format's {@code BlockStates}.
  *
- * <p>Unlike vanilla's {@code net.minecraft.util.BitStorage} (which since MC 1.16 never lets an entry
- * straddle a {@code long} boundary), litematica packs entries contiguously: an entry may span two
- * adjacent longs. This class implements that contiguous packing.
+ * <p>The format packs entries <b>contiguously</b>: an entry may straddle a {@code long} boundary,
+ * unlike vanilla's {@code net.minecraft.util.BitStorage}, which since MC 1.16 keeps each entry inside
+ * one {@code long}. This class implements the contiguous packing the format requires.
  *
  * <p>The number of bits per entry is <b>not</b> stored in the file; it is derived from the palette
  * size by the caller, see {@link #bitsFor(int)}.
@@ -20,15 +20,26 @@ public final class LitematicaBitArray {
         this(bitsPerEntry, size, null);
     }
 
+    /** Guards the {@code long[]} allocation below — {@code Integer.MAX_VALUE} longs is already ~16 GB. */
+    private static final long MAX_WORDS = Integer.MAX_VALUE - 8;
+
     public LitematicaBitArray(int bitsPerEntry, long size, long[] backing) {
         if (bitsPerEntry < 1 || bitsPerEntry > 32) {
             throw new IllegalArgumentException("bitsPerEntry out of range: " + bitsPerEntry);
+        }
+        if (size < 0 || size > MAX_WORDS * 64L / bitsPerEntry) {
+            throw new IllegalArgumentException("size out of range: " + size);
         }
         this.bitsPerEntry = bitsPerEntry;
         this.size = size;
         this.maxEntryValue = (1L << bitsPerEntry) - 1L;
 
-        int wordCount = (int) ((size * bitsPerEntry + 63L) / 64L);
+        long wordCountLong = (size * bitsPerEntry + 63L) / 64L;
+        if (wordCountLong > MAX_WORDS) {
+            throw new IllegalArgumentException(
+                    "bit array too large: " + size + " entries × " + bitsPerEntry + " bits");
+        }
+        int wordCount = (int) wordCountLong;
         if (backing == null) {
             this.words = new long[wordCount];
         } else if (backing.length == wordCount) {
@@ -82,8 +93,8 @@ public final class LitematicaBitArray {
     }
 
     /**
-     * Bits per entry for a palette of {@code paletteSize} entries. Matches litematica:
-     * {@code max(2, Integer.SIZE - Integer.numberOfLeadingZeros(paletteSize - 1))}.
+     * Bits per entry for a palette of {@code paletteSize} entries, as the format defines it:
+     * {@code max(2, ceil(log2(paletteSize)))} — i.e. enough bits to index the palette, minimum 2.
      */
     public static int bitsFor(int paletteSize) {
         return Math.max(2, Integer.SIZE - Integer.numberOfLeadingZeros(paletteSize - 1));

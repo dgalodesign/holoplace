@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  *   <li>{@code onlyChanges != null} — only cells recorded in that {@link ChangeLog} keep their world
  *       state; the rest become air. This is "capture what I built this session".
  * </ul>
- * Block entities are stored in litematica's layout: {@code saveCustomOnly} data plus region-relative
+ * Block entities are stored in the format's layout: {@code saveCustomOnly} data plus region-relative
  * {@code x}/{@code y}/{@code z} ints, no vanilla id.
  */
 final class CaptureWriter {

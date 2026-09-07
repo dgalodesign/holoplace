@@ -486,3 +486,22 @@ without any "start recording" step to forget and without declaring the area up f
 - No dimension-change reset — travelling to the Nether and back keeps one log (fine), but stray
   Nether coords that happen to fall in an Overworld selection box would be a near-impossible
   coincidence, currently unhandled.
+
+**Paused after M21** (user, 2026-09): the automatic "changes only" mode works but is opt-in
+(`captureChangesOnly` defaults off). M22 (K-screen toggle, entity capture) and M23 (persist the log
+across relogs) are not started.
+
+## Reader hardening + licensing note (pre-publish, 2026-09)
+
+*(from the publish-readiness audit — the [High] finding was: no size cap before allocating memory.)*
+
+- `LitematicaSchematicReader` now bounds a load: `NbtIo.readCompressed` with a 256 MiB `NbtAccounter`
+  (was `unlimitedHeap()`), a per-axis cap (30 000), a per-region volume cap (64 M cells), and a region
+  count cap (4096). An oversized/corrupt/hostile `.litematic` throws a clear `IOException` (caught and
+  shown to the player) instead of freezing or OOM-ing the client.
+- `LitematicaBitArray` rejects a `size` that would overflow the `(int)` word-count cast or demand a
+  multi-GB `long[]`. 2 new tests each side (32 total).
+- `docs/licensing.md` — Litematica + MaLiLib are LGPL-3.0; that binds their code, not the idea /
+  features / file format. An independent MIT implementation that copies no code or assets is fine
+  (SAS v. WPL: software functionality and file formats aren't copyrightable). Code comments that
+  named Litematica internals were reworded to describe the format instead.

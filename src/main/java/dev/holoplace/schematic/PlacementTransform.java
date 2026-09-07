@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Maps positions between a schematic's authored bounding-box space {@code [0, size)} and the
  * transformed footprint space produced by applying a {@link Mirror} then a {@link Rotation} about the
- * vertical axis. Mirror-then-rotate matches litematica's placement order.
+ * vertical axis (mirror first, then rotate).
  *
  * <p>{@code sizeX/Y/Z} are the <b>authored</b> enclosing dimensions. After a 90°/270° rotation the
  * footprint's X and Z extents swap — see {@link #footprintX()} / {@link #footprintZ()}.

@@ -31,11 +31,20 @@ public final class LitematicaSchematicReader {
     public static final int MIN_SUPPORTED_VERSION = 4;
     public static final int MAX_TESTED_VERSION = 7;
 
+    /** NBT decode quota — generous for a real megabuild, small enough to stop a hostile file
+     *  from allocating gigabytes before we even look at it. */
+    private static final long NBT_QUOTA_BYTES = 256L * 1024 * 1024;
+    /** Reject a region whose declared size implies more cells than this — covers every hand-built
+     *  schematic; anything larger is corrupt or hostile, and would OOM / overflow the bit array. */
+    static final long MAX_REGION_VOLUME = 64_000_000L;
+    static final int MAX_REGION_AXIS = 30_000;
+    static final int MAX_REGIONS = 4096;
+
     private LitematicaSchematicReader() {
     }
 
     public static Schematic read(Path file) throws IOException {
-        CompoundTag root = NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
+        CompoundTag root = NbtIo.readCompressed(file, NbtAccounter.create(NBT_QUOTA_BYTES));
         return fromNbt(root, defaultName(file));
     }
 
@@ -56,6 +65,10 @@ public final class LitematicaSchematicReader {
         CompoundTag regionsTag = root.getCompoundOrEmpty("Regions");
         if (regionsTag.isEmpty()) {
             throw new IOException("No Regions in .litematic");
+        }
+
+        if (regionsTag.keySet().size() > MAX_REGIONS) {
+            throw new IOException("Too many regions in .litematic: " + regionsTag.keySet().size());
         }
 
         List<SchematicRegion> regions = new ArrayList<>();
@@ -88,11 +101,16 @@ public final class LitematicaSchematicReader {
                 regions, schematicMin, enclosingSize, missing);
     }
 
-    private static SchematicRegion readRegion(String name, CompoundTag regionTag, Set<Identifier> missing) {
+    private static SchematicRegion readRegion(String name, CompoundTag regionTag, Set<Identifier> missing)
+            throws IOException {
         Vec3i pos = readVec3i(regionTag.getCompoundOrEmpty("Position"));
         Vec3i size = readVec3i(regionTag.getCompoundOrEmpty("Size"));
         if (size.getX() == 0 || size.getY() == 0 || size.getZ() == 0) {
             return null;
+        }
+        if (Math.abs(size.getX()) > MAX_REGION_AXIS || Math.abs(size.getY()) > MAX_REGION_AXIS
+                || Math.abs(size.getZ()) > MAX_REGION_AXIS) {
+            throw new IOException("Region '" + name + "' has an implausible size " + size);
         }
 
         // Normalise: local (0,0,0) is the minimum corner; dimensions become positive.
@@ -104,6 +122,9 @@ public final class LitematicaSchematicReader {
         int sizeY = maxCorner.getY() - minCorner.getY() + 1;
         int sizeZ = maxCorner.getZ() - minCorner.getZ() + 1;
         long volume = (long) sizeX * sizeY * sizeZ;
+        if (volume > MAX_REGION_VOLUME) {
+            throw new IOException("Region '" + name + "' is too large to load: " + volume + " cells");
+        }
 
         BlockState[] palette = readPalette(regionTag.getListOrEmpty("BlockStatePalette"), missing);
         if (palette.length == 0) {
@@ -147,7 +168,7 @@ public final class LitematicaSchematicReader {
         return out;
     }
 
-    /** Per-axis: {@code v>=0 ? v-1 : v+1}. Mirrors litematica's {@code getRelativeEndPositionFromAreaSize}. */
+    /** The format stores a signed size vector; the opposite corner is {@code v>=0 ? v-1 : v+1} per axis. */
     private static BlockPos relativeEnd(Vec3i size) {
         return new BlockPos(shrinkTowardZero(size.getX()), shrinkTowardZero(size.getY()),
                 shrinkTowardZero(size.getZ()));

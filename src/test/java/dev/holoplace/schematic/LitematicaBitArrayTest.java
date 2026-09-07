@@ -2,6 +2,7 @@ package dev.holoplace.schematic;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class LitematicaBitArrayTest {
 
     @Test
-    void bitsForMatchesLitematicaFormula() {
+    void bitsForMatchesFormatFormula() {
         assertEquals(2, LitematicaBitArray.bitsFor(1));
         assertEquals(2, LitematicaBitArray.bitsFor(2));
         assertEquals(2, LitematicaBitArray.bitsFor(4));
@@ -42,6 +43,13 @@ class LitematicaBitArrayTest {
         assertEquals(2, new LitematicaBitArray(5, 13).backing().length);
         // 4 bits * 16 entries = 64 bits -> 1 word
         assertEquals(1, new LitematicaBitArray(4, 16).backing().length);
+    }
+
+    @Test
+    void rejectsSizesThatWouldOverflowOrOom() {
+        assertThrows(IllegalArgumentException.class, () -> new LitematicaBitArray(2, -1));
+        assertThrows(IllegalArgumentException.class, () -> new LitematicaBitArray(32, Long.MAX_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> new LitematicaBitArray(16, 1L << 40));
     }
 
     @Test

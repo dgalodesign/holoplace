@@ -27,7 +27,7 @@ public final class LitematicaSchematicWriter {
     }
 
     /**
-     * One captured region: a dense block grid plus its block entities / entities in litematica's own
+     * One captured region: a dense block grid plus its block entities / entities in the format's
      * layout (region-relative {@code x}/{@code y}/{@code z} int keys, no vanilla {@code id}).
      */
     public record Region(

@@ -96,4 +96,5 @@ official launcher) is a full JDK 25 and works.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Standalone implementation of the open `.litematic` format; not
+affiliated with Litematica (LGPL-3.0) or Mojang. See [`docs/licensing.md`](docs/licensing.md).
