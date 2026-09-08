@@ -49,17 +49,15 @@ Si se cambiara de idea → licencia "all rights reserved" en `fabric.mod.json`, 
 
 ---
 
-## 2. Ícono
+## 2. Ícono — HECHO (2026-09-08)
 
-- **Formato**: PNG con transparencia.
-- **Tamaño**: 512×512 para las tiendas (Modrinth y CurseForge lo reescalan). El del mod
-  (`assets/holoplace/icon.png`) puede ser el mismo a 256 o 128.
-- **Legibilidad**: se muestra a ~32×32 en las listas de mods. Silueta clara, pocos colores,
-  contraste alto.
-- **Estilo**: un martillo pixel-art encaja. Para coherencia con "HoloPlace" (holograma / blueprint):
-  martillo cian o blanco sobre fondo azul oscuro, opcionalmente con efecto holográfico
-  (líneas de escaneo, glow tenue).
-- El usuario lo hace. Al tenerlo: reemplazar `assets/holoplace/icon.png` y subir el 512 a la ficha.
+Martillo holográfico pixelado (glow cian, mango dorado, líneas de escaneo, fondo azul oscuro).
+Lo hizo el usuario. En repo:
+- `docs/assets/icon-512.png` (512×512 RGBA) — para las fichas de Modrinth / CurseForge.
+- `docs/assets/icon.png` (128×128, recorte más cerrado a la cabeza) = copia exacta de
+  `src/main/resources/assets/holoplace/icon.png`, el que usa el juego / Mod Menu.
+
+Al publicar: subir el 512 a la ficha. (El 128 aguanta a ~32 px en las listas; el 512 es el que luce.)
 
 ---
 

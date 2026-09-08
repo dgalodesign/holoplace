@@ -468,8 +468,9 @@ detection isn't possible — you must track changes live or diff against a basel
   attributes, inventory) isn't synced to the client so it won't be in the file. Players are skipped.
 - **Capture row in the `K` screen** — `[Área]` (toggles selection mode, closes the screen), a name
   field, and `[Guardar]`.
-- **Mod icon** — `assets/holoplace/icon.png` (128×128, a cyan wire cube on a blueprint grid — a
-  placeholder, replace before a real launch) + the `"icon"` field in `fabric.mod.json`.
+- **Mod icon** — `assets/holoplace/icon.png` + the `"icon"` field in `fabric.mod.json`.
+  Final art (2026-09-08): holographic pixel hammer, user-made. 128 in the jar, 512 in
+  `docs/assets/icon-512.png` for the store listing.
 
 A scroll/scrollbar on the `K` screen (it's getting tall).
 
