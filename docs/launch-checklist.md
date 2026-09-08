@@ -7,7 +7,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
   quiere cero fricción con anticheats.
 - **Easy Place descartado (2026-09-08)** — "1 clic = coloca el bloque por ti" tiene fricción
   histórica con anticheats. HoloPlace NO coloca bloques; se queda en "mira y construye a mano".
-- **Versión de MC**: portar a **26.2** (la última estable) y soltar 26.1.x.
+- **Versión de MC**: **0.1.0 sale en 26.1.2** (decisión 2026-09-08 — 26.2 reescribió el pipeline de
+  render y el port es riesgo de regresión en la ruta al lanzamiento). Port a 26.2 = 0.2.0 fast-follow.
 - **UI/GUI primero**: pase de rediseño de la pantalla `K` / HUD antes de las features nuevas.
 - **Repo**: público, open source MIT (ver §1).
 - Los hallazgos de código de la auditoría (topes de tamaño, `NbtAccounter`, overflow guard) están
@@ -23,10 +24,10 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 | ~~M25 (Easy Place)~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
 | ~~M25 (asistencia)~~ | Paquete "asistencia" (solo lectura) | Info de bloque al mirar + "N mal colocados" en `/materials`. **A BACKLOG (2026-09-08)** — el usuario no quiere ninguna fricción con anticheats; fuera de 0.1.0. Ver §6 | bajo |
 | ~~M26~~ | Malla off-thread | `GhostMesh.bakeGeometry` en un worker daemon; mientras hornea se dibuja el contorno del footprint + "preparando el modelo…" en el HUD; la construcción de BE/entidades se queda en el hilo de render. **HECHO — falta check in-game** | medio |
-| **M26.5** | Thumbnail 3D al hover | Preview del schematic en la lista, reusando el horneador de M26 (PIP de la GUI) | pequeño |
-| **M27** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
 | **M28** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
-| **—** | Lanzamiento | Ficha Modrinth + release 0.1.0 (§4) | bajo |
+| **—** | **Lanzamiento 0.1.0 en MC 26.1.2** | Ficha Modrinth + release (§4). 26.1.2 sigue estable y listada | bajo |
+| ~~M26.5~~ | Thumbnail al hover → **0.2.0** | **Aplazado (decisión 2026-09-08).** En 26.1 no hay estado PIP para "structure" — el 3D vivo pediría `RenderTarget` + pipeline propios a mano en la capa de render frágil, justo antes del lanzamiento. La lista se queda con el tooltip de metadatos. Se hace (2D isométrico o 3D) junto al port a 26.2 | pequeño-medio |
+| ~~M27~~ | Port a 26.2 → **0.2.0** | **Aplazado tras el lanzamiento (decisión 2026-09-08).** 26.2 reescribió el pipeline de render de nivel (submit-node, sin `ShapeRenderer`/`bufferSource`). Recon + arreglos mecánicos hechos en rama `port/mc-26.2`; ver `docs/port-26.2-notes.md` | medio |
 
 ---
 
@@ -119,7 +120,7 @@ pueden fallar empaquetadas (refmap de mixins, recursos no incluidos, etc.).
 7. El proyecto entra en **cola de moderación de Modrinth** (< 48 h normalmente); no es público
    hasta que lo aprueban.
 8. Crear una **Version**: subir `holoplace-0.1.0.jar`, número `0.1.0`, changelog (de
-   `CHANGELOG.md`), MC `26.2`, loader Fabric, **dependencia Fabric API (required)**, canal
+   `CHANGELOG.md`), MC `26.1.2`, loader Fabric, **dependencia Fabric API (required)**, canal
    **Release** (o Beta).
 9. Publicar.
 

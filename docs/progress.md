@@ -610,7 +610,9 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
   (`tip.layers`, `ui.capture_select`, `ui.go`, `ui.layer_of/layer_one/layer_range`, `ui.move`,
   `ui.page`, `ui.reset_transform`, `ui.schematics`, `ui.sect.create`). Parity 147/147.
 - `./gradlew build` verde (18 tests), `holoplace-0.1.0.jar` generado.
-- Thumbnail 3D al hover → M26.5 (tras el horneador off-thread de M26).
+- Thumbnail al hover → aplazado a 0.2.0 (2026-09-08). En 26.1 no hay estado PIP para "structure";
+  el 3D vivo pediría RenderTarget + pipeline propios en la capa de render, y 0.1.0 sale en 26.1.2
+  para no arriesgar esa capa antes del lanzamiento. Se hace junto al port a 26.2.
 
 ## M26 — horneado de malla off-thread (2026-09-08, falta check in-game)
 
