@@ -51,6 +51,13 @@ public final class GhostHud {
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
             progress = "§7" + text("holoplace.hud.build") + " §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
                     + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : "");
+            int wrong = GhostRenderer.wrongMarkers();
+            int extra = GhostRenderer.extraMarkers();
+            if (wrong > 0 || extra > 0) {
+                progress += "  " + (wrong > 0 ? "§c" + wrong + " " + text("holoplace.hud.wrong") : "")
+                        + (wrong > 0 && extra > 0 ? "  " : "")
+                        + (extra > 0 ? "§6" + extra + " " + text("holoplace.hud.extra") : "");
+            }
         }
 
         if (!grabbing) {

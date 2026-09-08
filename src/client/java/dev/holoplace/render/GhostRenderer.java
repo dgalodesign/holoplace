@@ -176,13 +176,16 @@ public final class GhostRenderer {
             renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched, hideWrongToo);
         }
         if (hideMatched) {
-            renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
-                    anchor, cam, ctx, state, WRONG_COLOR);
-            renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
-                    anchor, cam, ctx, state, WRONG_COLOR);
-            renderMarkerSet(wrongFluid, m::fluidX, m::fluidY, m::fluidZ, m.fluidCount(),
-                    anchor, cam, ctx, state, WRONG_COLOR);
-            renderExtraBlocks(anchor, cam, ctx, state);
+            wrongMarkers = renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
+                    anchor, cam, ctx, state, WRONG_COLOR)
+                    + renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
+                            anchor, cam, ctx, state, WRONG_COLOR)
+                    + renderMarkerSet(wrongFluid, m::fluidX, m::fluidY, m::fluidZ, m.fluidCount(),
+                            anchor, cam, ctx, state, WRONG_COLOR);
+            extraMarkers = renderExtraBlocks(anchor, cam, ctx, state);
+        } else {
+            wrongMarkers = 0;
+            extraMarkers = 0;
         }
 
         state.setRemainingBlocks(hideMatched ? placedCount : -1, m.blockCount());
@@ -192,57 +195,122 @@ public final class GhostRenderer {
         int get(int index);
     }
 
-    /** Wire cube for every flagged index, using the given per-index footprint-local coordinates. */
-    private static void renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
-                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
-                                        GhostState state, int color) {
+    /** Above this many flagged cells in one set, stop drawing a cube per cell (it becomes an
+     *  unreadable mesh — e.g. a schematic dropped on unclear terrain) and draw one box around the
+     *  lot instead. The true count still reaches the HUD. */
+    private static final int MARKER_CAP = 150;
+
+    private static int wrongMarkers;
+    private static int extraMarkers;
+
+    public static int wrongMarkers() {
+        return wrongMarkers;
+    }
+
+    public static int extraMarkers() {
+        return extraMarkers;
+    }
+
+    /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
+     *  Returns how many cells were flagged (before the {@link #MARKER_CAP}). */
+    private static int renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
+                                       int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
+                                       GhostState state, int color) {
         if (flags == null || flags.length != count) {
-            return;
+            return 0;
         }
         boolean layerClip = state.layerClip();
-        VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
-        PoseStack ps = new PoseStack();
-        boolean any = false;
+        int n = 0;
+        int lox = Integer.MAX_VALUE, loy = Integer.MAX_VALUE, loz = Integer.MAX_VALUE;
+        int hix = Integer.MIN_VALUE, hiy = Integer.MIN_VALUE, hiz = Integer.MIN_VALUE;
         for (int i = 0; i < count; i++) {
             if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
                 continue;
             }
-            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
-                    anchor.getX() + x.get(i) - cam.x,
-                    anchor.getY() + y.get(i) - cam.y,
-                    anchor.getZ() + z.get(i) - cam.z,
-                    color, 2.5f);
-            any = true;
+            n++;
+            lox = Math.min(lox, x.get(i));
+            loy = Math.min(loy, y.get(i));
+            loz = Math.min(loz, z.get(i));
+            hix = Math.max(hix, x.get(i));
+            hiy = Math.max(hiy, y.get(i));
+            hiz = Math.max(hiz, z.get(i));
         }
-        if (any) {
-            ctx.bufferSource().endBatch(GhostPipelines.linesForGhost(state.seeThrough()));
+        if (n == 0) {
+            return 0;
         }
+
+        RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
+        VertexConsumer lines = ctx.bufferSource().getBuffer(type);
+        PoseStack ps = new PoseStack();
+        if (n > MARKER_CAP) {
+            ShapeRenderer.renderShape(ps, lines,
+                    Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
+                    anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
+                    color, 3.0f);
+        } else {
+            for (int i = 0; i < count; i++) {
+                if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
+                    continue;
+                }
+                ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                        anchor.getX() + x.get(i) - cam.x,
+                        anchor.getY() + y.get(i) - cam.y,
+                        anchor.getZ() + z.get(i) - cam.z,
+                        color, 2.5f);
+            }
+        }
+        ctx.bufferSource().endBatch(type);
+        return n;
     }
 
     /** Orange wire cube where the world has a block but the schematic calls for nothing there. */
-    private static void renderExtraBlocks(BlockPos anchor, Vec3 cam, LevelRenderContext ctx, GhostState state) {
+    private static int renderExtraBlocks(BlockPos anchor, Vec3 cam, LevelRenderContext ctx, GhostState state) {
         int[] xs = extraX;
         int[] ys = extraY;
         int[] zs = extraZ;
         if (xs == null || ys == null || zs == null || xs.length == 0) {
-            return;
+            return 0;
         }
         boolean layerClip = state.layerClip();
-        VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
-        PoseStack ps = new PoseStack();
-        boolean any = false;
+        int n = 0;
+        int lox = Integer.MAX_VALUE, loy = Integer.MAX_VALUE, loz = Integer.MAX_VALUE;
+        int hix = Integer.MIN_VALUE, hiy = Integer.MIN_VALUE, hiz = Integer.MIN_VALUE;
         for (int i = 0; i < xs.length; i++) {
             if (layerClip && !state.layerVisible(ys[i])) {
                 continue;
             }
-            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
-                    anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y, anchor.getZ() + zs[i] - cam.z,
-                    EXTRA_COLOR, 2.5f);
-            any = true;
+            n++;
+            lox = Math.min(lox, xs[i]);
+            loy = Math.min(loy, ys[i]);
+            loz = Math.min(loz, zs[i]);
+            hix = Math.max(hix, xs[i]);
+            hiy = Math.max(hiy, ys[i]);
+            hiz = Math.max(hiz, zs[i]);
         }
-        if (any) {
-            ctx.bufferSource().endBatch(GhostPipelines.linesForGhost(state.seeThrough()));
+        if (n == 0) {
+            return 0;
         }
+
+        RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
+        VertexConsumer lines = ctx.bufferSource().getBuffer(type);
+        PoseStack ps = new PoseStack();
+        if (n > MARKER_CAP) {
+            ShapeRenderer.renderShape(ps, lines,
+                    Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
+                    anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
+                    EXTRA_COLOR, 3.0f);
+        } else {
+            for (int i = 0; i < xs.length; i++) {
+                if (layerClip && !state.layerVisible(ys[i])) {
+                    continue;
+                }
+                ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                        anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y,
+                        anchor.getZ() + zs[i] - cam.z, EXTRA_COLOR, 2.5f);
+            }
+        }
+        ctx.bufferSource().endBatch(type);
+        return n;
     }
 
     /**

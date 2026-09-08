@@ -153,5 +153,7 @@
 	"holoplace.ui.create.clear": "Limpiar selección",
 	"holoplace.ui.create.name": "Nombre del schematic:",
 	"holoplace.ui.details": "Detalles (cofres, carteles, marcos, cuadros)",
-	"holoplace.tip.details": "Dibuja cofres, carteles, marcos, soportes de armadura y cuadros del schematic. Apágalo en un schematic enorme si va lento."
+	"holoplace.tip.details": "Dibuja cofres, carteles, marcos, soportes de armadura y cuadros del schematic. Apágalo en un schematic enorme si va lento.",
+	"holoplace.hud.wrong": "mal",
+	"holoplace.hud.extra": "sobran"
 }

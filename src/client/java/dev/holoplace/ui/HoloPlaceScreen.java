@@ -157,7 +157,15 @@ public final class HoloPlaceScreen extends Screen {
             int total = g.totalBlocks();
             int pct = Math.round(placed * 100f / total);
             label(x + 18, y, "§8" + tr("holoplace.ui.placed", placed, total, pct));
-            y += 16;
+            y += 14;
+            int wrong = dev.holoplace.render.GhostRenderer.wrongMarkers();
+            int extra = dev.holoplace.render.GhostRenderer.extraMarkers();
+            if (wrong > 0 || extra > 0) {
+                label(x + 18, y, (wrong > 0 ? "§c" + wrong + " " + tr("holoplace.hud.wrong") : "")
+                        + (wrong > 0 && extra > 0 ? "§8  ·  " : "")
+                        + (extra > 0 ? "§6" + extra + " " + tr("holoplace.hud.extra") : ""));
+                y += 14;
+            }
         }
         y = layers(g, pc, x, y);
 

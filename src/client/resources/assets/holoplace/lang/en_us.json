@@ -153,5 +153,7 @@
 	"holoplace.ui.create.clear": "Clear selection",
 	"holoplace.ui.create.name": "Schematic name:",
 	"holoplace.ui.details": "Details (chests, signs, item frames, paintings)",
-	"holoplace.tip.details": "Draw chests, signs, item frames, armour stands and paintings from the schematic. Turn off on a very large schematic if it lags."
+	"holoplace.tip.details": "Draw chests, signs, item frames, armour stands and paintings from the schematic. Turn off on a very large schematic if it lags.",
+	"holoplace.hud.wrong": "wrong",
+	"holoplace.hud.extra": "extra"
 }
