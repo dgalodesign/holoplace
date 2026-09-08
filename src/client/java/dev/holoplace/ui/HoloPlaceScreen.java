@@ -113,9 +113,6 @@ public final class HoloPlaceScreen extends Screen {
         checkKey(x, y, "holoplace.ui.see_through", "holoplace.tip.see_through", HoloPlaceKeys.SEE_THROUGH,
                 g.seeThrough(), v -> { g.setSeeThrough(v); cfg.seeThrough = v; HoloPlaceConfig.save(); }, true);
         y += ROW;
-        check(x, y, "holoplace.ui.shading", "holoplace.tip.shading",
-                g.shade(), v -> { g.setShade(v); cfg.ambientOcclusion = v; HoloPlaceConfig.save(); }, true);
-        y += ROW;
 
         // ---- BUILD ASSIST -----------------------------------------
         y = section(x, y, "holoplace.ui.sect.buildassist");
@@ -127,16 +124,8 @@ public final class HoloPlaceScreen extends Screen {
             int total = g.totalBlocks();
             int pct = Math.round(placed * 100f / total);
             label(x + 18, y, "§8" + tr("holoplace.ui.placed", placed, total, pct));
-            y += 15;
+            y += 16;
         }
-        check(x + 18, y, "holoplace.ui.match_block_only", "holoplace.tip.match_block_only",
-                g.matchBlockOnly(), v -> { g.setMatchBlockOnly(v); cfg.matchBlockOnly = v; HoloPlaceConfig.save(); },
-                g.hideMatched());
-        y += ROW;
-        check(x + 18, y, "holoplace.ui.hide_wrong_too", "holoplace.tip.hide_wrong_too",
-                g.hideWrongToo(), v -> { g.setHideWrongToo(v); cfg.hideWrongToo = v; HoloPlaceConfig.save(); },
-                g.hideMatched());
-        y += ROW;
         y = layers(g, pc, x, y);
 
         // ---- SCHEMATICS -----------------------------------------
@@ -189,6 +178,10 @@ public final class HoloPlaceScreen extends Screen {
                 }
             }, null).active = loaded;
             y += 24;
+            check(x, y, "holoplace.ui.match_block_only", "holoplace.tip.match_block_only",
+                    g.matchBlockOnly(),
+                    v -> { g.setMatchBlockOnly(v); cfg.matchBlockOnly = v; HoloPlaceConfig.save(); }, true);
+            y += ROW;
             check(x, y, "holoplace.ui.block_entity_models", "holoplace.tip.block_entity_models",
                     g.blockEntityModels(),
                     v -> { g.setBlockEntityModels(v); cfg.blockEntityModels = v; HoloPlaceConfig.save(); }, true);

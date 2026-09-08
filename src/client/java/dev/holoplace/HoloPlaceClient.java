@@ -31,11 +31,13 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostState.get().setOpacity(config.opacity);
         GhostState.get().setSeeThrough(config.seeThrough);
         GhostState.get().setHideMatched(config.hideMatched);
-        GhostState.get().setHideWrongToo(config.hideWrongToo);
         GhostState.get().setMatchBlockOnly(config.matchBlockOnly);
         GhostState.get().setBlockEntityModels(config.blockEntityModels);
         GhostState.get().setShowEntities(config.showEntities);
-        GhostState.get().setShade(config.ambientOcclusion);
+        // Not user-facing any more — the ghost always shades faces (looks like a real block) and
+        // always hides the model for wrongly-placed cells (just the red outline + "should be" hint).
+        GhostState.get().setShade(true);
+        GhostState.get().setHideWrongToo(true);
         if (config.layerMax != Integer.MAX_VALUE || config.layerMin != 0) {
             GhostState.get().setLayers(config.layerMin, config.layerMax);
         }

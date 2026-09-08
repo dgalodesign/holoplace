@@ -556,14 +556,26 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
   data version en un tooltip. Nunca desempaqueta bloques.
 - **HUD colapsado** (`GhostHud`) — bloqueado: solo `❖ nombre` (+ progreso si build-assist). Agarrando:
   las 6 líneas completas.
-- 22 claves de lang nuevas (ES/EN, parity 152/152). `build` + `test` verdes.
+- `build` + `test` verdes. Espaciado subido tras el primer screenshot (filas ~22px).
+- **Repaso de opciones (2026-09-08)** — cada toggle evaluado contra "¿su default sirve al 90%?":
+  - **"Sombreado de caras"** → quitado, siempre ON (nadie lo apaga; apoya el pitch "parece real").
+  - **"Ocultar también mis errores"** → quitado, siempre ON (el modelo fantasma sobre un bloque
+    mal colocado es clutter; el contorno rojo + el tooltip "debería ser X" ya informan).
+  - **"Ignorar la orientación del bloque"** (`match_block_only`) → movido a "Avanzado" (flujo real
+    —pasada rápida vs acabado— pero de nicho).
+  - `HoloPlaceClient` fuerza `setShade(true)` / `setHideWrongToo(true)`; los campos de config
+    siguen (persistencia), solo desaparece el checkbox. 4 claves de lang muertas eliminadas
+    (parity 148/148).
+  - `VISUALIZACIÓN` queda: opacidad · rotar/espejo/reset · ver a través.
+    `ASISTENTE` queda: ocultar-colocados + progreso + capas. `AVANZADO`: mover-coords ·
+    ignorar-orientación · modelos BE · entidades.
 
 ### Pendiente M24
-- Verificar en el juego (no puedo abrir la GUI aquí): layout, scroll, tooltips, la lista, el hover
-  de metadatos, el HUD colapsado.
+- Verificar en el juego: layout con el espaciado nuevo, scroll con la rueda, tooltips, la lista,
+  el hover de metadatos, el HUD colapsado, sub-opciones en gris cuando el padre está off.
 - Claves de lang muertas del diseño viejo (`holoplace.ui.layer_of/layer_one/layer_range/page/
   capture/schematics`) — dejarlas o limpiarlas.
-- Thumbnail 3D al hover → M27.5 (tras el horneador off-thread de M27).
+- Thumbnail 3D al hover → M26.5 (tras el horneador off-thread de M26).
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
