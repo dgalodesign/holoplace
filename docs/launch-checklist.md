@@ -19,8 +19,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 | # | Milestone | Contenido | Esfuerzo |
 |---|---|---|---|
 | ~~M24~~ | Pase de UI/GUI | Pantalla `K` en dos pestañas (Construir/Crear) + secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado, celda-mal-colocada sin fantasma. **CERRADO — verificado in-game 2026-09-08** | medio |
-| ~~M25~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
-| **M25** | Paquete "asistencia" (solo lectura) | Info de bloque al mirar (nombre + orientación esperada) · "N bloques mal colocados" en `/holoplace materials` · *(pick-block del esquema — a decidir, ver §6)* | bajo-medio |
+| ~~M25 (Easy Place)~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
+| **M25** | Paquete "asistencia" (solo lectura) | Info de bloque al mirar (nombre + orientación esperada) · "N bloques mal colocados" en `/holoplace materials`. **Sin pick-block** — a backlog (2026-09-08), el usuario no quiere fricción con anticheats | bajo |
 | **M26** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |
 | **M26.5** | Thumbnail 3D al hover | Preview del schematic en la lista, reusando el horneador de M26 (PIP de la GUI) | pequeño |
 | **M27** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
@@ -140,19 +140,12 @@ de Litematica reescritos, `LICENSE` MIT consistente en jar + `fabric.mod.json`, 
 
 ---
 
-## 6. Pick-block del esquema — a decidir
+## 6. Pick-block del esquema — BACKLOG (descartado de 0.1.0)
 
-Litematica: la rueda / una tecla saca el bloque correcto del esquema (lo mueve al hotbar en
-creativo, o lo selecciona si lo tienes en survival). **No coloca nada** — solo cambia el slot activo.
-Riesgo anticheat: **muy bajo** (es un `pick block` vanilla), pero toca el hotbar de forma
-programática, y el usuario ha pedido cero fricción con anticheats.
+**Decisión del usuario (2026-09-08): fuera, a backlog.** No quiere ninguna fricción con anticheats,
+aunque el riesgo aquí sea bajo. HoloPlace se queda estrictamente "no toca tu inventario ni el mundo":
+el jugador usa el pick-block de vanilla mirando el fantasma.
 
-Opciones:
-- **Incluirlo** — útil de verdad al construir, 1 opción on/off, solo actúa al pulsar una tecla.
-- **Dejarlo fuera** — mantener HoloPlace estrictamente "no toca tu inventario ni el mundo". El
-  jugador usa el pick-block de vanilla mirando el fantasma.
-
-Recomendación: **incluirlo** en M25, con una tecla dedicada (sin bind por defecto) y solo en el
-bloque bajo la mira. Es lo más lejos que llega HoloPlace hacia "asistencia activa".
-
-**Decisión del usuario: pendiente.**
+Si algún día se revisita: la rueda / una tecla saca el bloque correcto del esquema (hotbar en
+creativo, selección en survival), no coloca nada. Tecla dedicada sin bind por defecto, solo el
+bloque bajo la mira.
