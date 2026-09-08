@@ -118,6 +118,7 @@
 	"holoplace.ui.show": "Mostrar",
 	"holoplace.ui.schematics": "§7Schematics",
 	"holoplace.ui.open_folder": "Abrir carpeta de schematics",
+	"holoplace.ui.drop_hint": "Truco: suelta un .litematic en la ventana del juego para importarlo.",
 	"holoplace.ui.layer_single": "§7Capas: §8una sola capa",
 	"holoplace.ui.layer_one": "capa %s",
 	"holoplace.ui.layer_range": "capas %s–%s",

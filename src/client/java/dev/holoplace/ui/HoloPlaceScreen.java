@@ -136,7 +136,9 @@ public final class HoloPlaceScreen extends Screen {
         this.list = new SchematicList(this.minecraft, PANEL_W, listH, y, LIST_ROW_H, files, currentFile());
         this.list.updateSizeAndPosition(PANEL_W, listH, x, y);
         addRenderableWidget(this.list);
-        y += listH + 6;
+        y += listH + 5;
+        label(x, y, "§8" + tr("holoplace.ui.drop_hint"));
+        y += 12;
         button(x, y, PANEL_W, 18, Component.translatable("holoplace.ui.open_folder"),
                 b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()), null);
         y += 24;

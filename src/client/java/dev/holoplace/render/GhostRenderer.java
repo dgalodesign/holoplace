@@ -19,7 +19,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -201,7 +200,7 @@ public final class GhostRenderer {
             return;
         }
         boolean layerClip = state.layerClip();
-        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
         PoseStack ps = new PoseStack();
         boolean any = false;
         for (int i = 0; i < count; i++) {
@@ -216,7 +215,7 @@ public final class GhostRenderer {
             any = true;
         }
         if (any) {
-            ctx.bufferSource().endBatch(RenderTypes.lines());
+            ctx.bufferSource().endBatch(GhostPipelines.linesForGhost(state.seeThrough()));
         }
     }
 
@@ -229,7 +228,7 @@ public final class GhostRenderer {
             return;
         }
         boolean layerClip = state.layerClip();
-        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
         PoseStack ps = new PoseStack();
         boolean any = false;
         for (int i = 0; i < xs.length; i++) {
@@ -242,7 +241,7 @@ public final class GhostRenderer {
             any = true;
         }
         if (any) {
-            ctx.bufferSource().endBatch(RenderTypes.lines());
+            ctx.bufferSource().endBatch(GhostPipelines.linesForGhost(state.seeThrough()));
         }
     }
 
@@ -388,7 +387,7 @@ public final class GhostRenderer {
         GhostState state = GhostState.get();
         boolean models = state.blockEntityModels();
         int color = (state.opacityAlpha() << 24) | 0x0055CCFF;
-        VertexConsumer lines = ctx.bufferSource().getBuffer(RenderTypes.lines());
+        VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
         boolean any = false;
@@ -411,7 +410,7 @@ public final class GhostRenderer {
             any = true;
         }
         if (any) {
-            ctx.bufferSource().endBatch(RenderTypes.lines());
+            ctx.bufferSource().endBatch(GhostPipelines.linesForGhost(state.seeThrough()));
         }
     }
 

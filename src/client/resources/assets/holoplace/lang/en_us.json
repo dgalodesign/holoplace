@@ -118,6 +118,7 @@
 	"holoplace.ui.show": "Show",
 	"holoplace.ui.schematics": "§7Schematics",
 	"holoplace.ui.open_folder": "Open schematics folder",
+	"holoplace.ui.drop_hint": "Tip: drop a .litematic on the game window to import it.",
 	"holoplace.ui.layer_single": "§7Layers: §8single layer",
 	"holoplace.ui.layer_one": "layer %s",
 	"holoplace.ui.layer_range": "layers %s–%s",
