@@ -570,9 +570,24 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
     `ASISTENTE` queda: ocultar-colocados + progreso + capas. `AVANZADO`: mover-coords ·
     ignorar-orientación · modelos BE · entidades.
 
+**Ajustes tras los screenshots del usuario:**
+- Fondo del menú in-world muy claro sobre terreno brillante → oscurecido (fill full-screen + banda
+  tras el panel en `extractRenderState`).
+- Botones `↺`/`↻` sin glifo en la fuente de MC → `-90°` / `+90°`.
+- Espaciado subido (filas ~22px, cabeceras 8+16).
+- **See-through no cubría los marcadores del asistente** — los cubos de alambre de error/sobra
+  usaban `RenderTypes.lines()` (con test de profundidad) → ocultos tras los bloques ya puestos.
+  Nuevo `GhostPipelines.SEE_THROUGH_LINES` (snippet LINES + depth `ALWAYS_PASS`);
+  `linesForGhost(seeThrough)` en los 3 pases de marcadores de `GhostRenderer`.
+- **Dos pestañas Construir / Crear** (`805b226`) — las dos tareas del mod, visibles desde el
+  primer momento. Construir = header + display/asistente/schematics/avanzado. Crear = flujo de
+  captura con espacio (intro, seleccionar área, esquinas + tamaño, limpiar, nombre + guardar).
+- **"Mover a coords" quitado** de Avanzado (redundante con arrastrar y `/holoplace move`).
+- Hint de drag-and-drop bajo la lista ("suelta un .litematic en la ventana").
+
 ### Pendiente M24
-- Verificar en el juego: layout con el espaciado nuevo, scroll con la rueda, tooltips, la lista,
-  el hover de metadatos, el HUD colapsado, sub-opciones en gris cuando el padre está off.
+- Verificar en el juego: las dos pestañas, layout/scroll, tooltips, la lista + hover de metadatos,
+  el HUD colapsado, sub-opciones en gris, see-through + asistente.
 - Claves de lang muertas del diseño viejo (`holoplace.ui.layer_of/layer_one/layer_range/page/
   capture/schematics`) — dejarlas o limpiarlas.
 - Thumbnail 3D al hover → M26.5 (tras el horneador off-thread de M26).
