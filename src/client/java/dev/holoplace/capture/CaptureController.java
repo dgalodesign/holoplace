@@ -162,7 +162,7 @@ public final class CaptureController {
     private static void overlay(Component message) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.gui != null) {
-            mc.gui.setOverlayMessage(message, false);
+            mc.gui.hud.setOverlayMessage(message, false);
         }
     }
 

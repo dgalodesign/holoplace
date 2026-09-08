@@ -71,6 +71,6 @@ public final class HoloPlaceKeys {
     }
 
     private static void onOpenPicker(Minecraft client) {
-        client.setScreen(new HoloPlaceScreen());
+        client.gui.setScreen(new HoloPlaceScreen());
     }
 }

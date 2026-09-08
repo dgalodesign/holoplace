@@ -20,6 +20,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.HangingEntity;
@@ -416,7 +417,8 @@ final class GhostMesh {
             double[] f = transform.forwardExact(px, py, pz);
 
             var input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
-            var created = EntityType.create(input, mc.level, EntitySpawnReason.LOAD);
+            var created = EntityType.create(input, mc.level,
+                    new EntitySpawnRequest(EntitySpawnReason.LOAD, false));
             if (created.isEmpty()) {
                 return null;
             }

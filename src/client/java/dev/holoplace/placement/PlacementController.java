@@ -100,7 +100,7 @@ public final class PlacementController {
      */
     public boolean handleScroll(double yOffset) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             return false;
         }
         int dir = (int) Math.signum(yOffset);
@@ -334,7 +334,7 @@ public final class PlacementController {
 
     private static void actionBar(Minecraft mc, String message) {
         if (mc.gui != null) {
-            mc.gui.setOverlayMessage(Component.literal(message), false);
+            mc.gui.hud.setOverlayMessage(Component.literal(message), false);
         }
     }
 }

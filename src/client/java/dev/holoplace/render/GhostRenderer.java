@@ -147,7 +147,7 @@ public final class GhostRenderer {
         boolean[] wrong = wrongBlock;
         boolean layerClip = state.layerClip();
 
-        var cam = mc.gameRenderer.getMainCamera().position();
+        var cam = mc.gameRenderer.mainCamera().position();
         float ox = (float) (anchor.getX() - cam.x);
         float oy = (float) (anchor.getY() - cam.y);
         float oz = (float) (anchor.getZ() - cam.z);
@@ -621,7 +621,7 @@ public final class GhostRenderer {
             return null;
         }
         BlockEntityRenderState s = renderer.createRenderState();
-        Vec3 camPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
+        Vec3 camPos = Minecraft.getInstance().gameRenderer.mainCamera().position();
         ((net.minecraft.client.renderer.blockentity.BlockEntityRenderer) renderer)
                 .extractRenderState(be, s, partialTick, camPos, null);
         s.blockPos = worldCell;

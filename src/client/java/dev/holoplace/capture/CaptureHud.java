@@ -30,7 +30,7 @@ public final class CaptureHud {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             return;
         }
         Font font = mc.font;
