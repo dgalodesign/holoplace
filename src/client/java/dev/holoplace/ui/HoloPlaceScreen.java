@@ -202,6 +202,10 @@ public final class HoloPlaceScreen extends Screen {
                         HoloPlaceConfig.save();
                     }, true);
             y += ROW;
+            check(x, y, "holoplace.ui.error_box", "holoplace.tip.error_box",
+                    g.errorBox(),
+                    v -> { g.setErrorBox(v); cfg.errorBox = v; HoloPlaceConfig.save(); }, true);
+            y += ROW;
         }
         return y;
     }

@@ -27,6 +27,7 @@ public final class GhostState {
     private boolean blockEntityModels = true;
     private boolean showEntities = true;
     private boolean shade = true;
+    private boolean errorBox = true;
     private int layerMin = 0;
     private int layerMax = Integer.MAX_VALUE;
     private Rotation rotation = Rotation.NONE;
@@ -130,6 +131,16 @@ public final class GhostState {
 
     public void setShade(boolean shade) {
         this.shade = shade;
+    }
+
+    /** When build-assist flags too many cells at once, draw one box around the area (true) instead of
+     *  leaving just the count (false). */
+    public boolean errorBox() {
+        return errorBox;
+    }
+
+    public void setErrorBox(boolean errorBox) {
+        this.errorBox = errorBox;
     }
 
     public boolean layerClip() {

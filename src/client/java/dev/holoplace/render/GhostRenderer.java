@@ -200,6 +200,12 @@ public final class GhostRenderer {
      *  lot instead. The true count still reaches the HUD. */
     private static final int MARKER_CAP = 150;
 
+    /** Thin lines for the per-cell markers / bounding box — they're an overlay, not the subject. */
+    private static final float MARKER_LINE = 1.5f;
+    private static final float MARKER_BOX_LINE = 2.0f;
+    /** Markers fade with the opacity slider, but never below this so an error still catches the eye. */
+    private static final int MARKER_MIN_ALPHA = 0x66;
+
     private static int wrongMarkers;
     private static int extraMarkers;
 
@@ -209,6 +215,11 @@ public final class GhostRenderer {
 
     public static int extraMarkers() {
         return extraMarkers;
+    }
+
+    /** {@code rgb} tinted with the ghost opacity (with a visibility floor). */
+    private static int markerColor(int rgb, GhostState state) {
+        return (Math.max(MARKER_MIN_ALPHA, state.opacityAlpha()) << 24) | (rgb & 0x00FFFFFF);
     }
 
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
@@ -239,14 +250,17 @@ public final class GhostRenderer {
             return 0;
         }
 
+        int argb = markerColor(color, state);
         RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
         VertexConsumer lines = ctx.bufferSource().getBuffer(type);
         PoseStack ps = new PoseStack();
         if (n > MARKER_CAP) {
-            ShapeRenderer.renderShape(ps, lines,
-                    Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
-                    anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
-                    color, 3.0f);
+            if (state.errorBox()) {
+                ShapeRenderer.renderShape(ps, lines,
+                        Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
+                        anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
+                        argb, MARKER_BOX_LINE);
+            }
         } else {
             for (int i = 0; i < count; i++) {
                 if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
@@ -256,7 +270,7 @@ public final class GhostRenderer {
                         anchor.getX() + x.get(i) - cam.x,
                         anchor.getY() + y.get(i) - cam.y,
                         anchor.getZ() + z.get(i) - cam.z,
-                        color, 2.5f);
+                        argb, MARKER_LINE);
             }
         }
         ctx.bufferSource().endBatch(type);
@@ -291,14 +305,17 @@ public final class GhostRenderer {
             return 0;
         }
 
+        int argb = markerColor(EXTRA_COLOR, state);
         RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
         VertexConsumer lines = ctx.bufferSource().getBuffer(type);
         PoseStack ps = new PoseStack();
         if (n > MARKER_CAP) {
-            ShapeRenderer.renderShape(ps, lines,
-                    Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
-                    anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
-                    EXTRA_COLOR, 3.0f);
+            if (state.errorBox()) {
+                ShapeRenderer.renderShape(ps, lines,
+                        Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
+                        anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
+                        argb, MARKER_BOX_LINE);
+            }
         } else {
             for (int i = 0; i < xs.length; i++) {
                 if (layerClip && !state.layerVisible(ys[i])) {
@@ -306,7 +323,7 @@ public final class GhostRenderer {
                 }
                 ShapeRenderer.renderShape(ps, lines, Shapes.block(),
                         anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y,
-                        anchor.getZ() + zs[i] - cam.z, EXTRA_COLOR, 2.5f);
+                        anchor.getZ() + zs[i] - cam.z, argb, MARKER_LINE);
             }
         }
         ctx.bufferSource().endBatch(type);
@@ -454,7 +471,7 @@ public final class GhostRenderer {
                                                  boolean hideWrongToo) {
         GhostState state = GhostState.get();
         boolean models = state.blockEntityModels();
-        int color = (state.opacityAlpha() << 24) | 0x0055CCFF;
+        int color = markerColor(0x55CCFF, state);
         VertexConsumer lines = ctx.bufferSource().getBuffer(GhostPipelines.linesForGhost(state.seeThrough()));
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();
@@ -474,7 +491,7 @@ public final class GhostRenderer {
             }
             ShapeRenderer.renderShape(ps, lines, Shapes.block(),
                     worldPos.getX() - cam.x, worldPos.getY() - cam.y, worldPos.getZ() - cam.z,
-                    color, 2.0f);
+                    color, MARKER_LINE);
             any = true;
         }
         if (any) {

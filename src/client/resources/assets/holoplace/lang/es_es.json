@@ -155,5 +155,7 @@
 	"holoplace.ui.details": "Detalles (cofres, carteles, marcos, cuadros)",
 	"holoplace.tip.details": "Dibuja cofres, carteles, marcos, soportes de armadura y cuadros del schematic. Apágalo en un schematic enorme si va lento.",
 	"holoplace.hud.wrong": "mal",
-	"holoplace.hud.extra": "sobran"
+	"holoplace.hud.extra": "sobran",
+	"holoplace.ui.error_box": "Caja en zonas con muchos errores",
+	"holoplace.tip.error_box": "Cuando el asistente marca muchos bloques a la vez, dibuja una caja alrededor de la zona en vez de marcar cada bloque. Apágalo para dejar solo el número."
 }

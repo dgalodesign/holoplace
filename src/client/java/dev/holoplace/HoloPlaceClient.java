@@ -34,6 +34,7 @@ public class HoloPlaceClient implements ClientModInitializer {
         GhostState.get().setMatchBlockOnly(config.matchBlockOnly);
         GhostState.get().setBlockEntityModels(config.blockEntityModels);
         GhostState.get().setShowEntities(config.showEntities);
+        GhostState.get().setErrorBox(config.errorBox);
         // Not user-facing any more — the ghost always shades faces (looks like a real block). The
         // model stays visible on wrongly-placed cells so you can still see what belongs there; a
         // red outline flags it (and "should be X" at the crosshair).
