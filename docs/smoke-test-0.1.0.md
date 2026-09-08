@@ -17,6 +17,9 @@ Sale en `build/libs/holoplace-0.1.0.jar`. **Ignora** el `holoplace-0.1.0-sources
 
 1. **New instance** → Loader **Fabric**, versión de Minecraft **26.1.2**. (La app descarga sola el
    Java 25 que necesita 26.1.2.)
+   - **Fabric Loader debe ser `0.19.5` o posterior** — no basta con "Fabric" a secas. Si la
+     instancia trae una anterior (p. ej. 0.19.3), el juego no arranca: *Options* de la instancia
+     (o botón derecho → *Edit*) → selector de **Loader version** → `0.19.5+` → Save.
 2. Con la instancia abierta → pestaña **Content** → **Add content** → busca **Fabric API** e
    instala la versión **`0.155.2+26.1.2`** (filtra por game version 26.1.2).
 3. Meter el jar local: en la instancia → menú **···** (o *Options*) → **Open folder** → entra en
