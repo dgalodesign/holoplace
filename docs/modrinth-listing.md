@@ -16,7 +16,7 @@ Todo lo de aquí es para **pegar** en el formulario de Modrinth. No es documenta
 | **Server side** | Unsupported |
 | **Categories** | Utility · Game Mechanics |
 | **License** | MIT |
-| **Links** | Source: `https://github.com/edgardgalof/holoplace` · Issues: `https://github.com/edgardgalof/holoplace/issues` |
+| **Links** | Source: `https://github.com/dgalodesign/holoplace` · Issues: `https://github.com/dgalodesign/holoplace/issues` |
 | **Icon** | `docs/assets/icon-512.png` |
 | **Environment** | Client |
 

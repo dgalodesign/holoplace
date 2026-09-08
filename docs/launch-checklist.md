@@ -35,7 +35,7 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 
 **No es técnicamente obligatorio.** Modrinth/CurseForge no exigen código fuente. Pero:
 
-- `fabric.mod.json` declara `contact.sources = github.com/edgardgalof/holoplace`. Si no existe o es
+- `fabric.mod.json` declara `contact.sources = github.com/dgalodesign/holoplace`. Si no existe o es
   privado, es un enlace roto en Mod Menu → mala señal.
 - Declarar licencia **MIT** con el repo cerrado es incoherente (MIT solo tiene efecto sobre quien
   recibe el código). Si va a ser closed-source, la licencia debería ser "all rights reserved".

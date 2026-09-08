@@ -9,8 +9,8 @@
 	],
 	"contact": {
 		"homepage": "https://modrinth.com/mod/holoplace",
-		"sources": "https://github.com/edgardgalof/holoplace",
-		"issues": "https://github.com/edgardgalof/holoplace/issues"
+		"sources": "https://github.com/dgalodesign/holoplace",
+		"issues": "https://github.com/dgalodesign/holoplace/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/holoplace/icon.png",
