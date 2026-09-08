@@ -651,7 +651,9 @@ al hover pasan a 0.2.0.
   Todas las features funcionan. (Nota inicial: la instancia traía loader 0.19.3 y el `depends`
   bloqueó el arranque como se esperaba — subir a 0.19.5 lo resolvió.)
 - **`CHANGELOG.md`**: `[Unreleased]` → `[0.1.0] — 2026-09-08`.
-- **Repo GitHub + Modrinth**: pendiente (último paso).
+- **Repo GitHub**: HECHO — `github.com/dgalodesign/holoplace` público, MIT, `main` + `port/mc-26.2`.
+  URLs de `contact.*` y LICENSE actualizadas a `dgalodesign` / "Edgar D' Galo".
+- **Modrinth**: pendiente — crear proyecto con `docs/modrinth-listing.md`, subir jar + ícono + capturas.
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 

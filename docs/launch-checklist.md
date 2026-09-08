@@ -43,8 +43,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
   es un argumento de venta**: "liviano, sin dependencias, y abierto". También da confianza
   (la gente ve que no hay nada raro en el jar).
 
-**Decisión**: público, MIT. Pasos: crear el repo en GitHub, `git remote add origin …`,
-`git push -u origin main`. Confirmar que es público y trae `LICENSE` + `README` + `docs/`.
+**HECHO (2026-09-08)**: [`github.com/dgalodesign/holoplace`](https://github.com/dgalodesign/holoplace)
+— público, MIT, `main` + rama `port/mc-26.2`, con `LICENSE` + `README` + `docs/`.
 
 Si se cambiara de idea → licencia "all rights reserved" en `fabric.mod.json`, quitar
 `contact.sources`, y deja de ser bloqueante.
