@@ -24,6 +24,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
@@ -119,8 +120,7 @@ public final class HoloPlaceScreen extends Screen {
                     b -> { g.setVisible(!g.isVisible()); rebuildWidgets(); }, null);
             y += 24;
         } else {
-            label(x, y, "§7" + tr("holoplace.ui.pick_prompt"));
-            y += 22;
+            y += wrapLabel(x, y, "holoplace.ui.pick_prompt", 0xA0A0A0) + 8;
         }
 
         // ---- DISPLAY -------------------------------------------------
@@ -170,8 +170,7 @@ public final class HoloPlaceScreen extends Screen {
         this.list.updateSizeAndPosition(PANEL_W, listH, x, y);
         addRenderableWidget(this.list);
         y += listH + 5;
-        label(x, y, "§8" + tr("holoplace.ui.drop_hint"));
-        y += 12;
+        y += wrapLabel(x, y, "holoplace.ui.drop_hint", 0x808080) + 4;
         button(x, y, PANEL_W, 18, Component.translatable("holoplace.ui.open_folder"),
                 b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()), null);
         y += 24;
@@ -206,16 +205,14 @@ public final class HoloPlaceScreen extends Screen {
         SelectionState sel = cc.selection();
         boolean selecting = cc.isSelecting();
 
-        label(x, y, "§7" + tr("holoplace.ui.create.intro"));
-        y += 20;
+        y += wrapLabel(x, y, "holoplace.ui.create.intro", 0xA0A0A0) + 8;
 
         button(x, y, PANEL_W, 18,
                 Component.translatable(selecting ? "holoplace.ui.create.selecting" : "holoplace.ui.create.select_area"),
                 b -> { cc.toggleSelecting(); if (cc.isSelecting()) rebuildWidgets(); else onClose(); },
                 tip("holoplace.tip.capture_select"));
-        y += 21;
-        label(x, y, "§8" + tr("holoplace.ui.create.select_hint"));
-        y += 20;
+        y += 22;
+        y += wrapLabel(x, y, "holoplace.ui.create.select_hint", 0x808080) + 8;
 
         BlockPos c1 = sel.corner1();
         BlockPos c2 = sel.corner2();
@@ -277,7 +274,19 @@ public final class HoloPlaceScreen extends Screen {
     }
 
     private void label(int x, int y, String text) {
-        addRenderableWidget(new StringWidget(x, y, this.font.width(text), 9, Component.literal(text), this.font));
+        StringWidget widget = new StringWidget(x, y, Math.min(this.font.width(text), PANEL_W), 9,
+                Component.literal(text), this.font);
+        widget.setMaxWidth(PANEL_W, StringWidget.TextOverflow.CLAMPED);
+        addRenderableWidget(widget);
+    }
+
+    /** A sentence that wraps to the panel width. Returns the height it took so the caller can advance. */
+    private int wrapLabel(int x, int y, String key, int color) {
+        MultiLineTextWidget w = new MultiLineTextWidget(x, y,
+                Component.translatable(key).withStyle(s -> s.withColor(color)), this.font);
+        w.setMaxWidth(PANEL_W);
+        addRenderableWidget(w);
+        return w.getHeight();
     }
 
     private Button button(int x, int y, int w, int h, Component text, Button.OnPress onPress,
