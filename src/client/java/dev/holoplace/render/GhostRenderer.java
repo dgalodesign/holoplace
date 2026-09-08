@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -200,11 +201,8 @@ public final class GhostRenderer {
      *  lot instead. The true count still reaches the HUD. */
     private static final int MARKER_CAP = 150;
 
-    /** Thin lines for the per-cell markers / bounding box — they're an overlay, not the subject. */
-    private static final float MARKER_LINE = 1.5f;
-    private static final float MARKER_BOX_LINE = 2.0f;
-    /** Markers fade with the opacity slider, but never below this so an error still catches the eye. */
-    private static final int MARKER_MIN_ALPHA = 0x66;
+    private static final float MARKER_LINE = 2.5f;
+    private static final float MARKER_BOX_LINE = 2.5f;
 
     private static int wrongMarkers;
     private static int extraMarkers;
@@ -217,9 +215,10 @@ public final class GhostRenderer {
         return extraMarkers;
     }
 
-    /** {@code rgb} tinted with the ghost opacity (with a visibility floor). */
+    /** {@code rgb} at the marker opacity (its own control — markers are alerts, not the ghost). */
     private static int markerColor(int rgb, GhostState state) {
-        return (Math.max(MARKER_MIN_ALPHA, state.opacityAlpha()) << 24) | (rgb & 0x00FFFFFF);
+        int a = Mth.clamp(Math.round(state.markerOpacity() * 255f), 8, 255);
+        return (a << 24) | (rgb & 0x00FFFFFF);
     }
 
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.

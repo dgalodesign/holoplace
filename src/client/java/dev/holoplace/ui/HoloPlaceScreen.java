@@ -206,6 +206,8 @@ public final class HoloPlaceScreen extends Screen {
                     g.errorBox(),
                     v -> { g.setErrorBox(v); cfg.errorBox = v; HoloPlaceConfig.save(); }, true);
             y += ROW;
+            addRenderableWidget(new MarkerOpacitySlider(x, y, PANEL_W));
+            y += 22;
         }
         return y;
     }
@@ -590,6 +592,28 @@ public final class HoloPlaceScreen extends Screen {
         protected void applyValue() {
             GhostState.get().setOpacity((float) (0.05 + this.value * 0.95));
             HoloPlaceConfig.get().opacity = GhostState.get().opacity();
+            HoloPlaceConfig.save();
+        }
+    }
+
+    /** Build-assist marker opacity — its own control, separate from the ghost opacity. */
+    private static final class MarkerOpacitySlider extends AbstractSliderButton {
+        MarkerOpacitySlider(int x, int y, int width) {
+            super(x, y, width, 16, Component.empty(),
+                    Mth.clamp((GhostState.get().markerOpacity() - 0.15) / 0.85, 0.0, 1.0));
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.literal(tr("holoplace.ui.marker_opacity",
+                    Math.round(GhostState.get().markerOpacity() * 100)) + "%"));
+        }
+
+        @Override
+        protected void applyValue() {
+            GhostState.get().setMarkerOpacity((float) (0.15 + this.value * 0.85));
+            HoloPlaceConfig.get().markerOpacity = GhostState.get().markerOpacity();
             HoloPlaceConfig.save();
         }
     }

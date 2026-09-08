@@ -28,6 +28,7 @@ public final class HoloPlaceConfig {
     public boolean showEntities = true;
     public boolean ambientOcclusion = true;
     public boolean errorBox = true;
+    public float markerOpacity = 0.85f;
     public int layerMin = 0;
     public int layerMax = Integer.MAX_VALUE;
     public boolean seenIntro = false;

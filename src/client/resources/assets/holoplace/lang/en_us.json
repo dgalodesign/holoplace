@@ -157,5 +157,6 @@
 	"holoplace.hud.wrong": "wrong",
 	"holoplace.hud.extra": "extra",
 	"holoplace.ui.error_box": "Box around large error areas",
-	"holoplace.tip.error_box": "When build-assist flags a lot of blocks at once, draw one box around the area instead of marking each block. Turn off to keep just the count."
+	"holoplace.tip.error_box": "When build-assist flags a lot of blocks at once, draw one box around the area instead of marking each block. Turn off to keep just the count.",
+	"holoplace.ui.marker_opacity": "Marker opacity: %s"
 }

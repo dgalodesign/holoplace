@@ -28,6 +28,7 @@ public final class GhostState {
     private boolean showEntities = true;
     private boolean shade = true;
     private boolean errorBox = true;
+    private float markerOpacity = 0.85f;
     private int layerMin = 0;
     private int layerMax = Integer.MAX_VALUE;
     private Rotation rotation = Rotation.NONE;
@@ -141,6 +142,16 @@ public final class GhostState {
 
     public void setErrorBox(boolean errorBox) {
         this.errorBox = errorBox;
+    }
+
+    /** Opacity of the build-assist wire markers (wrong / extra / block-entity), independent of the
+     *  ghost opacity — they're alerts. */
+    public float markerOpacity() {
+        return markerOpacity;
+    }
+
+    public void setMarkerOpacity(float markerOpacity) {
+        this.markerOpacity = Mth.clamp(markerOpacity, 0.15f, 1.0f);
     }
 
     public boolean layerClip() {

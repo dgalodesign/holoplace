@@ -157,5 +157,6 @@
 	"holoplace.hud.wrong": "mal",
 	"holoplace.hud.extra": "sobran",
 	"holoplace.ui.error_box": "Caja en zonas con muchos errores",
-	"holoplace.tip.error_box": "Cuando el asistente marca muchos bloques a la vez, dibuja una caja alrededor de la zona en vez de marcar cada bloque. Apágalo para dejar solo el número."
+	"holoplace.tip.error_box": "Cuando el asistente marca muchos bloques a la vez, dibuja una caja alrededor de la zona en vez de marcar cada bloque. Apágalo para dejar solo el número.",
+	"holoplace.ui.marker_opacity": "Opacidad de marcadores: %s"
 }
