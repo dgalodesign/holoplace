@@ -584,6 +584,17 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
   captura con espacio (intro, seleccionar área, esquinas + tamaño, limpiar, nombre + guardar).
 - **"Mover a coords" quitado** de Avanzado (redundante con arrastrar y `/holoplace move`).
 - Hint de drag-and-drop bajo la lista ("suelta un .litematic en la ventana").
+- **Punto 3 (opciones)** — fusionados los toggles "Modelos de entidades de bloque" + "Entidades"
+  en uno solo: **"Detalles (cofres, carteles, marcos, cuadros)"** (Avanzado).
+- **Texto desbordado** — `label()` recorta al ancho del panel con "…"; las 4 frases largas
+  (prompt vacío, hint de drop, intro + hint de la pestaña Crear) usan `MultiLineTextWidget`.
+- **Marcadores del asistente sobre terreno** — un schematic sobre suelo marca casi todo como
+  mal/sobra y con see-through se volvía un maraña. Ahora: por encima de 150 celdas se dibuja
+  **una caja** en vez de un cubo por celda; el número real (`340 mal · 1200 sobran`) sale en el
+  HUD y en la pantalla K. `hideWrongToo` ya NO se fuerza a on (el modelo fantasma se queda
+  visible en las celdas mal colocadas). Marcadores: siguen el **slider de opacidad** (con suelo
+  ~40%), **líneas más finas** (1.5px celda / 2px caja), y toggle **"Caja en zonas con muchos
+  errores"** en Avanzado (default on).
 
 ### Pendiente M24
 - Verificar en el juego: las dos pestañas, layout/scroll, tooltips, la lista + hover de metadatos,
