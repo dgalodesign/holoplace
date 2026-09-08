@@ -100,8 +100,6 @@
 	"holoplace.ui.see_through": "See-through",
 	"holoplace.ui.hide_placed": "Hide placed",
 	"holoplace.ui.match_block_only": "Ignore block orientation",
-	"holoplace.ui.block_entity_models": "Block entity models",
-	"holoplace.ui.entities": "Entities",
 	"holoplace.ui.move": "Move",
 	"holoplace.ui.reset_transform": "Reset rot/mirror",
 	"holoplace.ui.hide": "Hide",
@@ -143,8 +141,6 @@
 	"holoplace.tip.hide_placed": "Stop drawing blocks you've already built correctly. Shows a progress %.",
 	"holoplace.tip.match_block_only": "Count a block as placed even if it faces the wrong way.",
 	"holoplace.tip.layers": "Show only a horizontal slice of the schematic, to build floor by floor.",
-	"holoplace.tip.block_entity_models": "Draw chests, signs, etc. as real models instead of a wire box.",
-	"holoplace.tip.entities": "Draw item frames, armour stands and paintings from the schematic.",
 	"holoplace.tip.capture_select": "Then left-click and right-click two blocks to mark the corners of what to save.",
 	"holoplace.tip.rotate": "Rotate the placement 90°. Also the R key.",
 	"holoplace.tip.mirror": "Mirror the placement. Also the M key.",
@@ -155,5 +151,7 @@
 	"holoplace.ui.create.selecting": "Selecting… (click two blocks)",
 	"holoplace.ui.create.select_hint": "Left-click and right-click two blocks to mark the corners.",
 	"holoplace.ui.create.clear": "Clear selection",
-	"holoplace.ui.create.name": "Schematic name:"
+	"holoplace.ui.create.name": "Schematic name:",
+	"holoplace.ui.details": "Details (chests, signs, item frames, paintings)",
+	"holoplace.tip.details": "Draw chests, signs, item frames, armour stands and paintings from the schematic. Turn off on a very large schematic if it lags."
 }

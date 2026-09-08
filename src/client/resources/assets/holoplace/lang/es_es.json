@@ -100,8 +100,6 @@
 	"holoplace.ui.see_through": "Ver a través",
 	"holoplace.ui.hide_placed": "Ocultar colocados",
 	"holoplace.ui.match_block_only": "Ignorar la orientación del bloque",
-	"holoplace.ui.block_entity_models": "Modelos de entidades de bloque",
-	"holoplace.ui.entities": "Entidades",
 	"holoplace.ui.move": "Mover",
 	"holoplace.ui.reset_transform": "Restablecer rot/espejo",
 	"holoplace.ui.hide": "Ocultar",
@@ -143,8 +141,6 @@
 	"holoplace.tip.hide_placed": "Deja de dibujar los bloques que ya construiste bien. Muestra un % de progreso.",
 	"holoplace.tip.match_block_only": "Cuenta un bloque como colocado aunque mire hacia otro lado.",
 	"holoplace.tip.layers": "Muestra solo una franja horizontal del schematic, para construir piso por piso.",
-	"holoplace.tip.block_entity_models": "Dibuja cofres, carteles, etc. como modelos reales en vez de una caja de alambre.",
-	"holoplace.tip.entities": "Dibuja marcos, soportes de armadura y cuadros del schematic.",
 	"holoplace.tip.capture_select": "Después, haz clic izquierdo y derecho en dos bloques para marcar las esquinas de lo que quieres guardar.",
 	"holoplace.tip.rotate": "Gira la colocación 90°. También con la tecla R.",
 	"holoplace.tip.mirror": "Refleja la colocación. También con la tecla M.",
@@ -155,5 +151,7 @@
 	"holoplace.ui.create.selecting": "Seleccionando… (haz clic en dos bloques)",
 	"holoplace.ui.create.select_hint": "Clic izquierdo y clic derecho en dos bloques para marcar las esquinas.",
 	"holoplace.ui.create.clear": "Limpiar selección",
-	"holoplace.ui.create.name": "Nombre del schematic:"
+	"holoplace.ui.create.name": "Nombre del schematic:",
+	"holoplace.ui.details": "Detalles (cofres, carteles, marcos, cuadros)",
+	"holoplace.tip.details": "Dibuja cofres, carteles, marcos, soportes de armadura y cuadros del schematic. Apágalo en un schematic enorme si va lento."
 }

@@ -186,13 +186,14 @@ public final class HoloPlaceScreen extends Screen {
                     g.matchBlockOnly(),
                     v -> { g.setMatchBlockOnly(v); cfg.matchBlockOnly = v; HoloPlaceConfig.save(); }, true);
             y += ROW;
-            check(x, y, "holoplace.ui.block_entity_models", "holoplace.tip.block_entity_models",
-                    g.blockEntityModels(),
-                    v -> { g.setBlockEntityModels(v); cfg.blockEntityModels = v; HoloPlaceConfig.save(); }, true);
-            y += ROW;
-            check(x, y, "holoplace.ui.entities", "holoplace.tip.entities",
-                    g.showEntities(),
-                    v -> { g.setShowEntities(v); cfg.showEntities = v; HoloPlaceConfig.save(); }, true);
+            check(x, y, "holoplace.ui.details", "holoplace.tip.details",
+                    g.blockEntityModels() && g.showEntities(), v -> {
+                        g.setBlockEntityModels(v);
+                        g.setShowEntities(v);
+                        cfg.blockEntityModels = v;
+                        cfg.showEntities = v;
+                        HoloPlaceConfig.save();
+                    }, true);
             y += ROW;
         }
         return y;
