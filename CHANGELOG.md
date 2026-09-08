@@ -15,13 +15,15 @@ verified in-game on Minecraft 26.1.2 unless noted.
   paintings, mobs) — all fading together with one opacity slider.
 - **Drag-to-position**: the ghost snaps to the block face under the crosshair; mouse wheel sets
   reach distance, `Shift`+wheel sets vertical offset. No coordinate typing, no nested menus.
-- One controls screen (`K`): opacity, rotate / mirror, show / hide, exact X/Y/Z, and two sliders
-  to view the schematic one floor at a time.
+- One screen (`K`) with two tabs — **Build** (load, position, rotate / mirror, opacity, see-through,
+  build-assist, layer sliders) and **Create** (select an area, save it as a `.litematic`) — so the
+  mod's two jobs are visible from the first open. Non-obvious controls carry tooltips; hovering a
+  schematic in the list shows its size / block count / regions.
 - Rotate (`R` / `Shift`+`R`) and mirror (`M`) about the footprint centre.
 - **See-through / x-ray** toggle (`X`) — draw the ghost over walls.
 - **Build-assist** (`H`) — hide blocks already placed correctly, show a progress %, outline
-  wrongly-placed blocks in red and blocks that don't belong at all in orange. Looking at either
-  shows a tooltip with the game's own item icon for the correct block. Optional "hide wrong too".
+  wrongly-placed blocks in red and blocks that don't belong at all in orange. A wrongly-placed
+  cell drops its ghost model so the marker (and the "should be X" crosshair tooltip) reads clearly.
 - **Material list** (`/holoplace materials`) — blocks needed and still missing.
 - **Schematic capture** — select a two-corner area (`B`), then `/holoplace capture save <name>`
   or the `K`-screen row writes blocks + block entities + entities to a new `.litematic`.

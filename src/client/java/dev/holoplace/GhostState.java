@@ -22,12 +22,10 @@ public final class GhostState {
     private boolean visible;
     private boolean seeThrough;
     private boolean hideMatched;
-    private boolean hideWrongToo;
     private boolean matchBlockOnly;
     private boolean blockEntityModels = true;
     private boolean showEntities = true;
     private boolean shade = true;
-    private boolean errorBox = true;
     private float markerOpacity = 0.85f;
     private int layerMin = 0;
     private int layerMax = Integer.MAX_VALUE;
@@ -91,17 +89,6 @@ public final class GhostState {
         this.hideMatched = hideMatched;
     }
 
-    /** When build-assist is on, also skip rendering the full ghost model for a wrongly-placed
-     *  block (world has a non-matching, non-air block there) — only the wrong-block marker shows.
-     *  Has no effect unless {@link #hideMatched()} is on. */
-    public boolean hideWrongToo() {
-        return hideWrongToo;
-    }
-
-    public void setHideWrongToo(boolean hideWrongToo) {
-        this.hideWrongToo = hideWrongToo;
-    }
-
     public boolean matchBlockOnly() {
         return matchBlockOnly;
     }
@@ -132,16 +119,6 @@ public final class GhostState {
 
     public void setShade(boolean shade) {
         this.shade = shade;
-    }
-
-    /** When build-assist flags too many cells at once, draw one box around the area (true) instead of
-     *  leaving just the count (false). */
-    public boolean errorBox() {
-        return errorBox;
-    }
-
-    public void setErrorBox(boolean errorBox) {
-        this.errorBox = errorBox;
     }
 
     /** Opacity of the build-assist wire markers (wrong / extra / block-entity), independent of the

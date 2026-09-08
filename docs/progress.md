@@ -588,19 +588,27 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
   en uno solo: **"Detalles (cofres, carteles, marcos, cuadros)"** (Avanzado).
 - **Texto desbordado** — `label()` recorta al ancho del panel con "…"; las 4 frases largas
   (prompt vacío, hint de drop, intro + hint de la pestaña Crear) usan `MultiLineTextWidget`.
-- **Marcadores del asistente sobre terreno** — un schematic sobre suelo marca casi todo como
-  mal/sobra y con see-through se volvía un maraña. Ahora: por encima de 150 celdas se dibuja
-  **una caja** en vez de un cubo por celda; el número real (`340 mal · 1200 sobran`) sale en el
-  HUD y en la pantalla K. `hideWrongToo` ya NO se fuerza a on (el modelo fantasma se queda
-  visible en las celdas mal colocadas). Marcadores: siguen el **slider de opacidad** (con suelo
-  ~40%), **líneas más finas** (1.5px celda / 2px caja), y toggle **"Caja en zonas con muchos
-  errores"** en Avanzado (default on).
+- **Celda mal colocada = sin fantasma** — cuando el asistente (`H`) está activo, una celda con un
+  bloque equivocado ya NO dibuja su modelo fantasma encima; solo queda el marcador rojo + el
+  tooltip "Debería ser: X" en la cruceta. Superponer fantasma y bloque real no aportaba nada.
+  `hideWrongToo` deja de ser opción (config / `GhostState.setHideWrongToo` fuera); es el
+  comportamiento fijo del asistente.
+- **Sin tope de marcadores** — se quitó `MARKER_CAP` (150). En esquemas grandes los marcadores
+  volvían a desaparecer del todo. Ahora se dibuja un cubo de alambre por celda marcada siempre,
+  como antes de M24. El `EXTRA_SCAN_VOLUME_LIMIT` (2M) y `MAX_QUADS` ya acotan el coste.
+- **Caja envolvente descartada** — la caja que salía con >150 errores parecía delimitar el
+  schematic y confundía; eliminada junto con su toggle (`GhostState.errorBox` / config /
+  `holoplace.ui.error_box`). Grosor/opacidad de marcadores: `MarkerOpacitySlider` propio en
+  Avanzado (default 0.85), líneas 2.5px.
 
-### Pendiente M24
-- Verificar en el juego: las dos pestañas, layout/scroll, tooltips, la lista + hover de metadatos,
-  el HUD colapsado, sub-opciones en gris, see-through + asistente.
-- Claves de lang muertas del diseño viejo (`holoplace.ui.layer_of/layer_one/layer_range/page/
-  capture/schematics`) — dejarlas o limpiarlas.
+### M24 — CERRADO (2026-09-08)
+- Verificado in-game por el usuario: las dos pestañas, layout/scroll, tooltips, la lista + hover de
+  metadatos, el HUD colapsado, sub-opciones en gris, see-through + asistente, y el asistente sobre
+  esquemas grandes con los cambios de marcadores.
+- Limpieza final: 11 claves de lang muertas del diseño viejo eliminadas
+  (`tip.layers`, `ui.capture_select`, `ui.go`, `ui.layer_of/layer_one/layer_range`, `ui.move`,
+  `ui.page`, `ui.reset_transform`, `ui.schematics`, `ui.sect.create`). Parity 147/147.
+- `./gradlew build` verde (18 tests), `holoplace-0.1.0.jar` generado.
 - Thumbnail 3D al hover → M26.5 (tras el horneador off-thread de M26).
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)

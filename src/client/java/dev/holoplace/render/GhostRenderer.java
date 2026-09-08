@@ -132,7 +132,10 @@ public final class GhostRenderer {
         int[] tint = tintFor(m, anchor, level, mc);
         boolean hideMatched = state.hideMatched();
         boolean[] needs = hideMatched ? placementScan(m, transform, anchor, level, state) : null;
-        boolean hideWrongToo = hideMatched && state.hideWrongToo();
+        // Build-assist always hides the ghost model on a wrongly-placed cell — a wrong block sitting
+        // where a different one belongs, with the ghost drawn on top, is just noise. The red marker
+        // (and the "should be X" crosshair tooltip) says what goes there.
+        boolean hideWrongToo = hideMatched;
         boolean[] wrong = wrongBlock;
         boolean layerClip = state.layerClip();
 
@@ -196,13 +199,7 @@ public final class GhostRenderer {
         int get(int index);
     }
 
-    /** Above this many flagged cells in one set, stop drawing a cube per cell (it becomes an
-     *  unreadable mesh — e.g. a schematic dropped on unclear terrain) and draw one box around the
-     *  lot instead. The true count still reaches the HUD. */
-    private static final int MARKER_CAP = 150;
-
     private static final float MARKER_LINE = 2.5f;
-    private static final float MARKER_BOX_LINE = 2.5f;
 
     private static int wrongMarkers;
     private static int extraMarkers;
@@ -222,7 +219,7 @@ public final class GhostRenderer {
     }
 
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
-     *  Returns how many cells were flagged (before the {@link #MARKER_CAP}). */
+     *  Returns how many cells were flagged. */
     private static int renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
                                        GhostState state, int color) {
@@ -231,19 +228,10 @@ public final class GhostRenderer {
         }
         boolean layerClip = state.layerClip();
         int n = 0;
-        int lox = Integer.MAX_VALUE, loy = Integer.MAX_VALUE, loz = Integer.MAX_VALUE;
-        int hix = Integer.MIN_VALUE, hiy = Integer.MIN_VALUE, hiz = Integer.MIN_VALUE;
         for (int i = 0; i < count; i++) {
-            if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
-                continue;
+            if (flags[i] && (!layerClip || state.layerVisible(y.get(i)))) {
+                n++;
             }
-            n++;
-            lox = Math.min(lox, x.get(i));
-            loy = Math.min(loy, y.get(i));
-            loz = Math.min(loz, z.get(i));
-            hix = Math.max(hix, x.get(i));
-            hiy = Math.max(hiy, y.get(i));
-            hiz = Math.max(hiz, z.get(i));
         }
         if (n == 0) {
             return 0;
@@ -253,24 +241,15 @@ public final class GhostRenderer {
         RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
         VertexConsumer lines = ctx.bufferSource().getBuffer(type);
         PoseStack ps = new PoseStack();
-        if (n > MARKER_CAP) {
-            if (state.errorBox()) {
-                ShapeRenderer.renderShape(ps, lines,
-                        Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
-                        anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
-                        argb, MARKER_BOX_LINE);
+        for (int i = 0; i < count; i++) {
+            if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
+                continue;
             }
-        } else {
-            for (int i = 0; i < count; i++) {
-                if (!flags[i] || (layerClip && !state.layerVisible(y.get(i)))) {
-                    continue;
-                }
-                ShapeRenderer.renderShape(ps, lines, Shapes.block(),
-                        anchor.getX() + x.get(i) - cam.x,
-                        anchor.getY() + y.get(i) - cam.y,
-                        anchor.getZ() + z.get(i) - cam.z,
-                        argb, MARKER_LINE);
-            }
+            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                    anchor.getX() + x.get(i) - cam.x,
+                    anchor.getY() + y.get(i) - cam.y,
+                    anchor.getZ() + z.get(i) - cam.z,
+                    argb, MARKER_LINE);
         }
         ctx.bufferSource().endBatch(type);
         return n;
@@ -286,19 +265,10 @@ public final class GhostRenderer {
         }
         boolean layerClip = state.layerClip();
         int n = 0;
-        int lox = Integer.MAX_VALUE, loy = Integer.MAX_VALUE, loz = Integer.MAX_VALUE;
-        int hix = Integer.MIN_VALUE, hiy = Integer.MIN_VALUE, hiz = Integer.MIN_VALUE;
         for (int i = 0; i < xs.length; i++) {
-            if (layerClip && !state.layerVisible(ys[i])) {
-                continue;
+            if (!layerClip || state.layerVisible(ys[i])) {
+                n++;
             }
-            n++;
-            lox = Math.min(lox, xs[i]);
-            loy = Math.min(loy, ys[i]);
-            loz = Math.min(loz, zs[i]);
-            hix = Math.max(hix, xs[i]);
-            hiy = Math.max(hiy, ys[i]);
-            hiz = Math.max(hiz, zs[i]);
         }
         if (n == 0) {
             return 0;
@@ -308,22 +278,13 @@ public final class GhostRenderer {
         RenderType type = GhostPipelines.linesForGhost(state.seeThrough());
         VertexConsumer lines = ctx.bufferSource().getBuffer(type);
         PoseStack ps = new PoseStack();
-        if (n > MARKER_CAP) {
-            if (state.errorBox()) {
-                ShapeRenderer.renderShape(ps, lines,
-                        Shapes.box(0, 0, 0, hix - lox + 1, hiy - loy + 1, hiz - loz + 1),
-                        anchor.getX() + lox - cam.x, anchor.getY() + loy - cam.y, anchor.getZ() + loz - cam.z,
-                        argb, MARKER_BOX_LINE);
+        for (int i = 0; i < xs.length; i++) {
+            if (layerClip && !state.layerVisible(ys[i])) {
+                continue;
             }
-        } else {
-            for (int i = 0; i < xs.length; i++) {
-                if (layerClip && !state.layerVisible(ys[i])) {
-                    continue;
-                }
-                ShapeRenderer.renderShape(ps, lines, Shapes.block(),
-                        anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y,
-                        anchor.getZ() + zs[i] - cam.z, argb, MARKER_LINE);
-            }
+            ShapeRenderer.renderShape(ps, lines, Shapes.block(),
+                    anchor.getX() + xs[i] - cam.x, anchor.getY() + ys[i] - cam.y,
+                    anchor.getZ() + zs[i] - cam.z, argb, MARKER_LINE);
         }
         ctx.bufferSource().endBatch(type);
         return n;
@@ -533,7 +494,7 @@ public final class GhostRenderer {
                 ctx.submitNodeCollector(), state.opacity());
         BlockPos anchor = state.anchor();
         boolean hideMatched = state.hideMatched();
-        boolean hideWrongToo = hideMatched && state.hideWrongToo();
+        boolean hideWrongToo = hideMatched;
         boolean layerClip = state.layerClip();
         PoseStack ps = new PoseStack();
         BlockPos.MutableBlockPos worldPos = new BlockPos.MutableBlockPos();

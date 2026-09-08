@@ -18,7 +18,7 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 
 | # | Milestone | Contenido | Esfuerzo |
 |---|---|---|---|
-| **M24** | Pase de UI/GUI | Pantalla `K` en secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado. **Escrito, compila — falta check in-game** | medio |
+| ~~M24~~ | Pase de UI/GUI | Pantalla `K` en dos pestañas (Construir/Crear) + secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado, celda-mal-colocada sin fantasma. **CERRADO — verificado in-game 2026-09-08** | medio |
 | ~~M25~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
 | **M25** | Paquete "asistencia" (solo lectura) | Info de bloque al mirar (nombre + orientación esperada) · "N bloques mal colocados" en `/holoplace materials` · *(pick-block del esquema — a decidir, ver §6)* | bajo-medio |
 | **M26** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |

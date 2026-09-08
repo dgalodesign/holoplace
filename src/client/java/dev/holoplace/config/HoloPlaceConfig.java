@@ -22,12 +22,10 @@ public final class HoloPlaceConfig {
     public int verticalOffset = 0;
     public boolean seeThrough = false;
     public boolean hideMatched = false;
-    public boolean hideWrongToo = false;
     public boolean matchBlockOnly = false;
     public boolean blockEntityModels = true;
     public boolean showEntities = true;
     public boolean ambientOcclusion = true;
-    public boolean errorBox = true;
     public float markerOpacity = 0.85f;
     public int layerMin = 0;
     public int layerMax = Integer.MAX_VALUE;

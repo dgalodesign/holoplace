@@ -2,9 +2,11 @@
 
 Rediseño de la pantalla `K` (`HoloPlaceScreen`) y retoque del HUD.
 
-**Estado (2026-09-07)**: estructura aprobada por el usuario. Mockup renderizado en
-`docs/assets/k-screen-mockup.html` (publicado como artifact). Pendiente: el visto bueno final
-sobre el mockup, y luego implementar.
+**Estado (2026-09-08)**: **CERRADO**. Implementado y verificado in-game. Cambió respecto al plan
+original: **dos pestañas** (Construir / Crear) en vez de una sola pantalla — el usuario prefirió
+separar las dos acciones principales del mod, visibles desde el primer momento. Mockup original en
+`docs/assets/k-screen-mockup.html`. El detalle final de lo implementado está en
+`progress.md` § "M24 — CERRADO".
 
 **Decisiones**:
 - Cabeceras de sección fijas + solo «Avanzado» plegable. ✅
@@ -14,8 +16,8 @@ sobre el mockup, y luego implementar.
 - Preview 3D al hover: **su propio milestone, después de M27** (ver §7).
 
 Norte (de `litematica-reference.md` §8): un jugador nuevo necesita ~6 controles visibles; el resto
-se agrupa, se esconde o se explica con tooltip. Sigue siendo **una sola pantalla, sin pestañas**
-(diferenciador vs Litematica).
+se agrupa, se esconde o se explica con tooltip. (Nota: se acabó con **dos pestañas**, Construir /
+Crear — ver estado arriba.)
 
 ---
 
