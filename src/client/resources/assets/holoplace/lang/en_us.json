@@ -7,9 +7,7 @@
 	"key.holoplace.see_through": "Toggle see-through (draw over walls)",
 	"key.holoplace.build_assist": "Toggle build-assist (hide placed blocks)",
 	"key.holoplace.capture_select": "Toggle capture-area selection",
-
 	"holoplace.welcome": "§e[HoloPlace]§r Drop a §f.litematic§r on the window, or press §fK§r. §7Type §f/holoplace help§7 for controls.",
-
 	"holoplace.capture.select_on": "§bCapture selection §aon §7— left/right-click a block for corner 1 / 2",
 	"holoplace.capture.select_off": "§bCapture selection §7off",
 	"holoplace.capture.corner1": "§bCorner 1 §f%s %s %s",
@@ -21,7 +19,6 @@
 	"holoplace.capture.save_no_selection": "§cSelect an area first — §fB§c, then left/right-click two blocks",
 	"holoplace.capture.save_too_big": "§cSelection too large to save: %s cells (max %s)",
 	"holoplace.capture.save_failed": "§cCouldn't save the schematic: %s",
-
 	"holoplace.hud.capture_title": "capture",
 	"holoplace.hud.capture_selecting": "selecting",
 	"holoplace.hud.capture_c1": "corner 1",
@@ -30,7 +27,6 @@
 	"holoplace.hud.capture_cells": "cells",
 	"holoplace.hud.capture_toobig": "selection very large",
 	"holoplace.hud.capture_hint": "%s toggle · L/R-click: corners · /holoplace capture save <name>",
-
 	"holoplace.hud.grab": "grab",
 	"holoplace.hud.pos": "pos",
 	"holoplace.hud.size": "size",
@@ -42,10 +38,8 @@
 	"holoplace.hud.build": "build",
 	"holoplace.hud.block_only": "block only",
 	"holoplace.hud.hint": "%s grab · %s/⇧%s rotate · %s mirror · %s x-ray · %s build · %s menu",
-
 	"holoplace.tooltip.extra": "This block doesn't belong here",
 	"holoplace.tooltip.should_be": "Should be: %s",
-
 	"holoplace.cmd.unknown_direction": "Unknown direction '%s'",
 	"holoplace.cmd.help.title": "§e§lHoloPlace§r §7— place schematics on screen",
 	"holoplace.cmd.help.drop": "§7Drop a §f.litematic§7 on the window, or §fK§7 for the menu.",
@@ -75,7 +69,6 @@
 	"holoplace.cmd.hide.done": "§7Ghost hidden §8(/holoplace show to bring it back)",
 	"holoplace.cmd.show.done": "§aShowing §e%s",
 	"holoplace.cmd.clear.done": "§7Placement cleared",
-
 	"holoplace.action.no_schematic": "§e[HoloPlace] no schematic — §f/holoplace show <file>",
 	"holoplace.action.grab_on": "§aGrab mode §7— look to position · wheel: distance · Shift+wheel: height · §fG§7 to lock",
 	"holoplace.action.locked": "§aLocked at §f%s %s %s",
@@ -92,7 +85,6 @@
 	"holoplace.action.buildassist_on": "§bBuild-assist §aon §7— placed blocks hidden from the ghost",
 	"holoplace.action.buildassist_off": "§bBuild-assist §7off",
 	"holoplace.action.opacity": "§bOpacity: §f%s",
-
 	"holoplace.rotation.0": "0°",
 	"holoplace.rotation.90cw": "90° CW",
 	"holoplace.rotation.180": "180°",
@@ -100,13 +92,11 @@
 	"holoplace.mirror.none": "none",
 	"holoplace.mirror.front_back": "front-back",
 	"holoplace.mirror.left_right": "left-right",
-
 	"holoplace.import.failed": "§cCould not import %s",
 	"holoplace.import.join_world": "§cJoin a world first",
 	"holoplace.import.showing": "§aShowing §e%s §7— look to position, §fG§7 to lock",
 	"holoplace.import.unknown_blocks": "  §c%s unknown block id(s) will be invisible",
 	"holoplace.import.read_failed": "§cFailed to read %s: %s",
-
 	"holoplace.ui.see_through": "See-through",
 	"holoplace.ui.hide_placed": "Hide placed",
 	"holoplace.ui.match_block_only": "Ignore block orientation",
@@ -157,5 +147,13 @@
 	"holoplace.tip.entities": "Draw item frames, armour stands and paintings from the schematic.",
 	"holoplace.tip.capture_select": "Then left-click and right-click two blocks to mark the corners of what to save.",
 	"holoplace.tip.rotate": "Rotate the placement 90°. Also the R key.",
-	"holoplace.tip.mirror": "Mirror the placement. Also the M key."
+	"holoplace.tip.mirror": "Mirror the placement. Also the M key.",
+	"holoplace.ui.tab.build": "Build",
+	"holoplace.ui.tab.create": "Create",
+	"holoplace.ui.create.intro": "Save a part of your world as a .litematic file.",
+	"holoplace.ui.create.select_area": "Select an area",
+	"holoplace.ui.create.selecting": "Selecting… (click two blocks)",
+	"holoplace.ui.create.select_hint": "Left-click and right-click two blocks to mark the corners.",
+	"holoplace.ui.create.clear": "Clear selection",
+	"holoplace.ui.create.name": "Schematic name:"
 }

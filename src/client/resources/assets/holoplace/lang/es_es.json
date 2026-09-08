@@ -7,9 +7,7 @@
 	"key.holoplace.see_through": "Alternar ver a través de paredes",
 	"key.holoplace.build_assist": "Alternar asistente de construcción (ocultar lo ya colocado)",
 	"key.holoplace.capture_select": "Alternar selección del área de captura",
-
 	"holoplace.welcome": "§e[HoloPlace]§r Suelta un archivo §f.litematic§r en la ventana, o presiona §fK§r. §7Escribe §f/holoplace help§7 para ver los controles.",
-
 	"holoplace.capture.select_on": "§bSelección de captura §aactivada §7— clic izq/der en un bloque para la esquina 1 / 2",
 	"holoplace.capture.select_off": "§bSelección de captura §7desactivada",
 	"holoplace.capture.corner1": "§bEsquina 1 §f%s %s %s",
@@ -21,7 +19,6 @@
 	"holoplace.capture.save_no_selection": "§cSeleccioná un área primero — §fB§c, después clic izq/der en dos bloques",
 	"holoplace.capture.save_too_big": "§cSelección demasiado grande para guardar: %s celdas (máx %s)",
 	"holoplace.capture.save_failed": "§cNo se pudo guardar el schematic: %s",
-
 	"holoplace.hud.capture_title": "captura",
 	"holoplace.hud.capture_selecting": "seleccionando",
 	"holoplace.hud.capture_c1": "esquina 1",
@@ -30,7 +27,6 @@
 	"holoplace.hud.capture_cells": "celdas",
 	"holoplace.hud.capture_toobig": "selección muy grande",
 	"holoplace.hud.capture_hint": "%s alternar · clic izq/der: esquinas · /holoplace capture save <nombre>",
-
 	"holoplace.hud.grab": "agarrar",
 	"holoplace.hud.pos": "pos",
 	"holoplace.hud.size": "tamaño",
@@ -42,10 +38,8 @@
 	"holoplace.hud.build": "construir",
 	"holoplace.hud.block_only": "solo bloque",
 	"holoplace.hud.hint": "%s agarrar · %s/⇧%s rotar · %s espejo · %s rayos-x · %s construir · %s menú",
-
 	"holoplace.tooltip.extra": "Este bloque no debería estar aquí",
 	"holoplace.tooltip.should_be": "Debería ser: %s",
-
 	"holoplace.cmd.unknown_direction": "Dirección desconocida '%s'",
 	"holoplace.cmd.help.title": "§e§lHoloPlace§r §7— coloca schematics en pantalla",
 	"holoplace.cmd.help.drop": "§7Suelta un archivo §f.litematic§7 en la ventana, o §fK§7 para el menú.",
@@ -75,7 +69,6 @@
 	"holoplace.cmd.hide.done": "§7Fantasma oculto §8(/holoplace show para mostrarlo de nuevo)",
 	"holoplace.cmd.show.done": "§aMostrando §e%s",
 	"holoplace.cmd.clear.done": "§7Colocación eliminada",
-
 	"holoplace.action.no_schematic": "§e[HoloPlace] sin esquema — §f/holoplace show <archivo>",
 	"holoplace.action.grab_on": "§aModo agarrar §7— mira para posicionar · rueda: distancia · Shift+rueda: altura · §fG§7 para bloquear",
 	"holoplace.action.locked": "§aBloqueado en §f%s %s %s",
@@ -92,7 +85,6 @@
 	"holoplace.action.buildassist_on": "§bAsistente de construcción §aactivado §7— los bloques colocados se ocultan del fantasma",
 	"holoplace.action.buildassist_off": "§bAsistente de construcción §7desactivado",
 	"holoplace.action.opacity": "§bOpacidad: §f%s",
-
 	"holoplace.rotation.0": "0°",
 	"holoplace.rotation.90cw": "90° horario",
 	"holoplace.rotation.180": "180°",
@@ -100,13 +92,11 @@
 	"holoplace.mirror.none": "ninguno",
 	"holoplace.mirror.front_back": "frente-atrás",
 	"holoplace.mirror.left_right": "izquierda-derecha",
-
 	"holoplace.import.failed": "§cNo se pudo importar %s",
 	"holoplace.import.join_world": "§cÚnete a un mundo primero",
 	"holoplace.import.showing": "§aMostrando §e%s §7— mira para posicionar, §fG§7 para bloquear",
 	"holoplace.import.unknown_blocks": "  §c%s id(s) de bloque desconocido(s) serán invisibles",
 	"holoplace.import.read_failed": "§cError al leer %s: %s",
-
 	"holoplace.ui.see_through": "Ver a través",
 	"holoplace.ui.hide_placed": "Ocultar colocados",
 	"holoplace.ui.match_block_only": "Ignorar la orientación del bloque",
@@ -157,5 +147,13 @@
 	"holoplace.tip.entities": "Dibuja marcos, soportes de armadura y cuadros del schematic.",
 	"holoplace.tip.capture_select": "Después, haz clic izquierdo y derecho en dos bloques para marcar las esquinas de lo que quieres guardar.",
 	"holoplace.tip.rotate": "Gira la colocación 90°. También con la tecla R.",
-	"holoplace.tip.mirror": "Refleja la colocación. También con la tecla M."
+	"holoplace.tip.mirror": "Refleja la colocación. También con la tecla M.",
+	"holoplace.ui.tab.build": "Construir",
+	"holoplace.ui.tab.create": "Crear",
+	"holoplace.ui.create.intro": "Guarda una parte de tu mundo como un archivo .litematic.",
+	"holoplace.ui.create.select_area": "Seleccionar un área",
+	"holoplace.ui.create.selecting": "Seleccionando… (haz clic en dos bloques)",
+	"holoplace.ui.create.select_hint": "Clic izquierdo y clic derecho en dos bloques para marcar las esquinas.",
+	"holoplace.ui.create.clear": "Limpiar selección",
+	"holoplace.ui.create.name": "Nombre del schematic:"
 }

@@ -5,6 +5,7 @@ import dev.holoplace.HoloPlaceKeys;
 import dev.holoplace.SchematicImport;
 import dev.holoplace.SchematicLibrary;
 import dev.holoplace.capture.CaptureController;
+import dev.holoplace.capture.SelectionState;
 import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.PlacementTransform;
@@ -39,9 +40,10 @@ import net.minecraft.world.level.block.Rotation;
 import org.jspecify.annotations.Nullable;
 
 /**
- * One screen for everything, in sections: a status header, then DISPLAY, BUILD ASSIST, SCHEMATICS,
- * CREATE, and a collapsible ADVANCED block. No tabs, no nested menus. If the content is taller than
- * the window it scrolls with the wheel.
+ * The {@code K} screen. Two tabs — <b>Build</b> (load a schematic, position it, build from it) and
+ * <b>Create</b> (select an area of the world, save it as a {@code .litematic}) — the mod's two jobs,
+ * visible from the first open. The Build tab is a status header + DISPLAY / BUILD ASSIST / SCHEMATICS
+ * sections and a collapsible ADVANCED block. Content taller than the window scrolls with the wheel.
  */
 public final class HoloPlaceScreen extends Screen {
 
@@ -52,10 +54,14 @@ public final class HoloPlaceScreen extends Screen {
     private static final int LIST_ROWS = 5;
     private static final int LIST_ROW_H = 14;
 
+    private static final int TAB_BUILD = 0;
+    private static final int TAB_CREATE = 1;
+
     private static boolean advancedOpen;
+    private static int activeTab = TAB_BUILD;
     private static int scrollY;
 
-    private final List<int[]> rules = new ArrayList<>();
+    private final List<int[]> rules = new ArrayList<>();   // {x0, y0, x1, y1, argb}
     private @Nullable SchematicList list;
     private int contentBottom;
 
@@ -74,7 +80,34 @@ public final class HoloPlaceScreen extends Screen {
         int x = (this.width - PANEL_W) / 2;
         int y = MARGIN - scrollY;
 
-        // ---- header ----------------------------------------------------
+        // ---- tab bar -------------------------------------------------
+        int tw = (PANEL_W - 4) / 2;
+        tab(x, y, tw, "holoplace.ui.tab.build", TAB_BUILD);
+        tab(x + tw + 4, y, tw, "holoplace.ui.tab.create", TAB_CREATE);
+        int accentX = activeTab == TAB_BUILD ? x : x + tw + 4;
+        rules.add(new int[] {accentX, y + 20, accentX + tw, y + 22, 0xFF5EE7FF});
+        y += 28;
+
+        y = activeTab == TAB_CREATE
+                ? createTab(x, y)
+                : buildTab(g, pc, cfg, x, y, loaded);
+
+        y += 8;
+        button(x + PANEL_W - 100, y, 100, 20, CommonComponents.GUI_DONE, b -> onClose(), null);
+        y += 26;
+
+        this.contentBottom = y + scrollY;
+        int maxScroll = Math.max(0, this.contentBottom + MARGIN - this.height);
+        int clamped = Mth.clamp(scrollY, 0, maxScroll);
+        if (clamped != scrollY) {
+            scrollY = clamped;
+            rebuildWidgets();
+        }
+    }
+
+    // ---- BUILD tab -------------------------------------------------------
+
+    private int buildTab(GhostState g, PlacementController pc, HoloPlaceConfig cfg, int x, int y, boolean loaded) {
         if (loaded) {
             label(x, y, "§b❖ §f" + safe(g.sourceName()));
             y += 13;
@@ -143,43 +176,12 @@ public final class HoloPlaceScreen extends Screen {
                 b -> Util.getPlatform().openPath(SchematicLibrary.primaryDir()), null);
         y += 24;
 
-        // ---- CREATE --------------------------------------------
-        y = section(x, y, "holoplace.ui.sect.create");
-        CaptureController cc = CaptureController.get();
-        EditBox name = new EditBox(this.font, x + 96, y, PANEL_W - 96 - 56, 18, Component.empty());
-        name.setMaxLength(48);
-        name.setHint(Component.translatable("holoplace.ui.capture_name_hint"));
-        button(x, y, 90, 18, Component.translatable("holoplace.ui.capture_select"),
-                b -> { cc.toggleSelecting(); onClose(); }, tip("holoplace.tip.capture_select"));
-        addRenderableWidget(name);
-        button(x + PANEL_W - 52, y, 52, 18, Component.translatable("holoplace.ui.capture_save"),
-                b -> { cc.save(name.getValue().isBlank() ? null : name.getValue()); onClose(); }, null);
-        y += 28;
-
         // ---- ADVANCED (collapsible) ---------------------------
         button(x, y, 124, 16,
                 Component.literal("§7" + (advancedOpen ? "▾ " : "▸ ") + tr("holoplace.ui.advanced")),
                 b -> { advancedOpen = !advancedOpen; rebuildWidgets(); }, null);
         y += 20;
         if (advancedOpen) {
-            BlockPos a = g.anchor();
-            EditBox bx = coordBox(x + 26, y, String.valueOf(a.getX()));
-            EditBox by = coordBox(x + 78, y, String.valueOf(a.getY()));
-            EditBox bz = coordBox(x + 130, y, String.valueOf(a.getZ()));
-            label(x, y + 5, "§7" + tr("holoplace.ui.move"));
-            addRenderableWidget(bx);
-            addRenderableWidget(by);
-            addRenderableWidget(bz);
-            button(x + 182, y, 42, 18, Component.translatable("holoplace.ui.go"), b -> {
-                Integer ix = parseInt(bx.getValue());
-                Integer iy = parseInt(by.getValue());
-                Integer iz = parseInt(bz.getValue());
-                if (ix != null && iy != null && iz != null) {
-                    pc.moveTo(ix, iy, iz);
-                    rebuildWidgets();
-                }
-            }, null).active = loaded;
-            y += 24;
             check(x, y, "holoplace.ui.match_block_only", "holoplace.tip.match_block_only",
                     g.matchBlockOnly(),
                     v -> { g.setMatchBlockOnly(v); cfg.matchBlockOnly = v; HoloPlaceConfig.save(); }, true);
@@ -193,27 +195,83 @@ public final class HoloPlaceScreen extends Screen {
                     v -> { g.setShowEntities(v); cfg.showEntities = v; HoloPlaceConfig.save(); }, true);
             y += ROW;
         }
-        y += 8;
+        return y;
+    }
 
-        button(x + PANEL_W - 100, y, 100, 20, CommonComponents.GUI_DONE, b -> onClose(), null);
-        y += 26;
+    // ---- CREATE tab ---------------------------------------------------
 
-        this.contentBottom = y + scrollY;
-        int maxScroll = Math.max(0, this.contentBottom + MARGIN - this.height);
-        int clamped = Mth.clamp(scrollY, 0, maxScroll);
-        if (clamped != scrollY) {
-            scrollY = clamped;
-            rebuildWidgets();
+    private int createTab(int x, int y) {
+        CaptureController cc = CaptureController.get();
+        SelectionState sel = cc.selection();
+        boolean selecting = cc.isSelecting();
+
+        label(x, y, "§7" + tr("holoplace.ui.create.intro"));
+        y += 20;
+
+        button(x, y, PANEL_W, 18,
+                Component.translatable(selecting ? "holoplace.ui.create.selecting" : "holoplace.ui.create.select_area"),
+                b -> { cc.toggleSelecting(); if (cc.isSelecting()) rebuildWidgets(); else onClose(); },
+                tip("holoplace.tip.capture_select"));
+        y += 21;
+        label(x, y, "§8" + tr("holoplace.ui.create.select_hint"));
+        y += 20;
+
+        BlockPos c1 = sel.corner1();
+        BlockPos c2 = sel.corner2();
+        label(x, y, "§7" + tr("holoplace.hud.capture_c1") + " " + cornerStr(c1));
+        y += 13;
+        label(x, y, "§7" + tr("holoplace.hud.capture_c2") + " " + cornerStr(c2));
+        y += 13;
+        if (sel.isComplete()) {
+            Vec3i s = sel.size();
+            label(x, y, "§7" + tr("holoplace.hud.capture_size") + " §f"
+                    + s.getX() + "×" + s.getY() + "×" + s.getZ()
+                    + " §8(" + sel.volume() + " " + tr("holoplace.hud.capture_cells") + ")");
+            y += 15;
         }
+        if (c1 != null || c2 != null) {
+            button(x, y, 130, 16, Component.translatable("holoplace.ui.create.clear"),
+                    b -> { cc.clearSelection(); rebuildWidgets(); }, null);
+            y += 22;
+        }
+
+        y += 6;
+        label(x, y, "§7" + tr("holoplace.ui.create.name"));
+        y += 12;
+        EditBox name = new EditBox(this.font, x, y, PANEL_W - 80, 18, Component.empty());
+        name.setMaxLength(48);
+        name.setHint(Component.translatable("holoplace.ui.capture_name_hint"));
+        addRenderableWidget(name);
+        button(x + PANEL_W - 76, y, 76, 18, Component.translatable("holoplace.ui.capture_save"),
+                b -> { cc.save(name.getValue().isBlank() ? null : name.getValue()); onClose(); }, null)
+                .active = sel.isComplete();
+        y += 24;
+        return y;
+    }
+
+    private static String cornerStr(@Nullable BlockPos p) {
+        return p == null ? "§8—" : "§f" + p.getX() + " " + p.getY() + " " + p.getZ();
     }
 
     // ---- builders --------------------------------------------------------
+
+    private void tab(int x, int y, int w, String key, int which) {
+        boolean on = activeTab == which;
+        button(x, y, w, 20, Component.literal((on ? "§f§l" : "§7") + tr(key)),
+                bt -> {
+                    if (activeTab != which) {
+                        activeTab = which;
+                        scrollY = 0;
+                        rebuildWidgets();
+                    }
+                }, null);
+    }
 
     private int section(int x, int y, String key) {
         y += SECT_GAP;
         String text = tr(key).toUpperCase(Locale.ROOT);
         label(x, y, "§7" + text);
-        rules.add(new int[] {x + this.font.width(text) + 8, y + 4, x + PANEL_W});
+        rules.add(new int[] {x + this.font.width(text) + 8, y + 4, x + PANEL_W, y + 5, 0x30FFFFFF});
         return y + 16;
     }
 
@@ -281,13 +339,6 @@ public final class HoloPlaceScreen extends Screen {
         return lo == hi ? String.valueOf(lo) : lo + "–" + hi;
     }
 
-    private EditBox coordBox(int x, int y, String value) {
-        EditBox box = new EditBox(this.font, x, y, 46, 18, Component.empty());
-        box.setMaxLength(8);
-        box.setValue(value);
-        return box;
-    }
-
     // ---- render override: section rules + hover metadata ----------------
 
     @Override
@@ -299,7 +350,7 @@ public final class HoloPlaceScreen extends Screen {
         graphics.fill(px - 10, 0, px + PANEL_W + 10, this.height, 0x66000008);
         super.extractRenderState(graphics, mouseX, mouseY, a);
         for (int[] r : rules) {
-            graphics.fill(r[0], r[1], r[2], r[1] + 1, 0x30FFFFFF);
+            graphics.fill(r[0], r[1], r[2], r[3], r[4]);
         }
         if (this.list != null) {
             SchematicList.Row row = this.list.hoveredRow();
@@ -379,13 +430,6 @@ public final class HoloPlaceScreen extends Screen {
         return t == null ? "" : t.footprintX() + "×" + t.footprintY() + "×" + t.footprintZ();
     }
 
-    private static @Nullable Integer parseInt(String s) {
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
 
     static String bareName(Path file) {
         String name = file.getFileName().toString();
