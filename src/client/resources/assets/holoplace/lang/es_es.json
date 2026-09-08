@@ -35,6 +35,7 @@
 	"holoplace.hud.opacity": "opacidad",
 	"holoplace.hud.xray": "rayos-x",
 	"holoplace.hud.too_large": "Schematic demasiado grande para renderizar",
+	"holoplace.hud.baking": "preparando el modelo…",
 	"holoplace.hud.build": "construir",
 	"holoplace.hud.block_only": "solo bloque",
 	"holoplace.hud.hint": "%s agarrar · %s/⇧%s rotar · %s espejo · %s rayos-x · %s construir · %s menú",

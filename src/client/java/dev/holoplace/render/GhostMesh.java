@@ -196,7 +196,112 @@ final class GhostMesh {
         return beEntities[i];
     }
 
-    static GhostMesh build(Schematic schematic, PlacementTransform transform) {
+    /** One schematic entity's raw NBT plus the region base it was authored against — enough to
+     *  construct the {@link GhostEntity} later, on the main thread. */
+    private record EntityDescriptor(CompoundTag tag, int baseX, int baseY, int baseZ) {
+    }
+
+    /**
+     * The result of {@link #bakeGeometry} — everything the heavy region walk produces, but with
+     * block entities and entities left as raw NBT descriptors. {@link #assemble} turns those into
+     * live objects and hands back a finished {@link GhostMesh}. Split so the walk (model tesselation,
+     * face culling — the part that hitches on a big schematic) runs off the render thread while only
+     * the cheap object construction stays on it.
+     */
+    static final class Geometry {
+        private final Schematic schematic;
+        private final PlacementTransform transform;
+        private final int[] blockX;
+        private final int[] blockY;
+        private final int[] blockZ;
+        private final BlockState[] blockStates;
+        private final int[] quadStart;
+        private final Quad[] quads;
+        private final int[] fluidX;
+        private final int[] fluidY;
+        private final int[] fluidZ;
+        private final BlockState[] fluidStates;
+        private final int[] beX;
+        private final int[] beY;
+        private final int[] beZ;
+        private final BlockState[] beStates;
+        private final CompoundTag[] beNbt;
+        private final EntityDescriptor[] entityDescriptors;
+
+        private Geometry(Schematic schematic, PlacementTransform transform,
+                         int[] blockX, int[] blockY, int[] blockZ, BlockState[] blockStates,
+                         int[] quadStart, Quad[] quads,
+                         int[] fluidX, int[] fluidY, int[] fluidZ, BlockState[] fluidStates,
+                         int[] beX, int[] beY, int[] beZ, BlockState[] beStates, CompoundTag[] beNbt,
+                         EntityDescriptor[] entityDescriptors) {
+            this.schematic = schematic;
+            this.transform = transform;
+            this.blockX = blockX;
+            this.blockY = blockY;
+            this.blockZ = blockZ;
+            this.blockStates = blockStates;
+            this.quadStart = quadStart;
+            this.quads = quads;
+            this.fluidX = fluidX;
+            this.fluidY = fluidY;
+            this.fluidZ = fluidZ;
+            this.fluidStates = fluidStates;
+            this.beX = beX;
+            this.beY = beY;
+            this.beZ = beZ;
+            this.beStates = beStates;
+            this.beNbt = beNbt;
+            this.entityDescriptors = entityDescriptors;
+        }
+
+        Schematic schematic() {
+            return schematic;
+        }
+
+        PlacementTransform transform() {
+            return transform;
+        }
+
+        int totalQuads() {
+            return quads.length;
+        }
+
+        /** Construct block entities + entities from the descriptors and finish the mesh. Main thread. */
+        GhostMesh assemble(HolderLookup.@Nullable Provider registries) {
+            BlockEntity[] beEntities = new BlockEntity[beStates.length];
+            long beOk = 0;
+            for (int i = 0; i < beStates.length; i++) {
+                beEntities[i] = makeBlockEntity(registries,
+                        new BlockPos(beX[i], beY[i], beZ[i]), beStates[i], beNbt[i]);
+                if (beEntities[i] != null) {
+                    beOk++;
+                }
+            }
+            List<GhostEntity> ghostEntities = new ArrayList<>();
+            for (EntityDescriptor d : entityDescriptors) {
+                GhostEntity ge = makeEntity(registries, d.tag(), transform, d.baseX(), d.baseY(), d.baseZ());
+                if (ge != null) {
+                    ghostEntities.add(ge);
+                }
+            }
+            if (beStates.length > 0 || entityDescriptors.length > 0) {
+                HoloPlaceClient.LOGGER.info("Ghost mesh: {} block-entity cells ({} constructed), {} entities",
+                        beStates.length, beOk, ghostEntities.size());
+            }
+            return new GhostMesh(schematic, transform, blockX, blockY, blockZ, blockStates, quadStart,
+                    quads, fluidX, fluidY, fluidZ, fluidStates,
+                    beX, beY, beZ, beStates, beEntities,
+                    ghostEntities.toArray(new GhostEntity[0]));
+        }
+    }
+
+    /**
+     * The heavy half of the bake: walk every region, tesselate block models, cull faces, collect
+     * fluids and raw block-entity / entity NBT. No live {@link BlockEntity} or {@link Entity} is
+     * created here, so this is safe to run on a worker thread. Baked models are immutable after
+     * resource load, which is what makes the tesselation thread-safe.
+     */
+    static Geometry bakeGeometry(Schematic schematic, PlacementTransform transform) {
         Minecraft mc = Minecraft.getInstance();
         BlockStateModelSet models = mc.getModelManager().getBlockStateModelSet();
         SchematicBlockView view = new SchematicBlockView(schematic, BlockPos.ZERO, transform);
@@ -211,9 +316,8 @@ final class GhostMesh {
         List<BlockState> fluidStateList = new ArrayList<>();
         List<int[]> bePositions = new ArrayList<>();
         List<BlockState> beStateList = new ArrayList<>();
-        List<BlockEntity> beEntityList = new ArrayList<>();
-        List<GhostEntity> ghostEntities = new ArrayList<>();
-        var registries = mc.level != null ? mc.level.registryAccess() : null;
+        List<CompoundTag> beNbtList = new ArrayList<>();
+        List<EntityDescriptor> entityDescriptors = new ArrayList<>();
 
         int schMinX = schematic.min().getX();
         int schMinY = schematic.min().getY();
@@ -227,11 +331,8 @@ final class GhostMesh {
             int authoredBaseZ = origin.getZ() - schMinZ;
 
             for (CompoundTag entityTag : region.entities()) {
-                GhostEntity ge = makeEntity(registries, entityTag, transform,
-                        authoredBaseX, authoredBaseY, authoredBaseZ);
-                if (ge != null) {
-                    ghostEntities.add(ge);
-                }
+                entityDescriptors.add(new EntityDescriptor(entityTag,
+                        authoredBaseX, authoredBaseY, authoredBaseZ));
             }
 
             for (int y = 0; y < region.sizeY(); y++) {
@@ -257,8 +358,7 @@ final class GhostMesh {
                         if (state.hasBlockEntity()) {
                             bePositions.add(new int[] {f[0], f[1], f[2]});
                             beStateList.add(state);
-                            beEntityList.add(makeBlockEntity(registries, fp.immutable(), state,
-                                    region.blockEntityNbt(x, y, z)));
+                            beNbtList.add(region.blockEntityNbt(x, y, z));
                         }
                         if (!producedQuads) {
                             continue;
@@ -286,20 +386,14 @@ final class GhostMesh {
         }
         quadStart[blockCount] = allQuads.size();
 
-        long beOk = beEntityList.stream().filter(java.util.Objects::nonNull).count();
-        if (!bePositions.isEmpty() || !ghostEntities.isEmpty()) {
-            HoloPlaceClient.LOGGER.info("Ghost mesh: {} block-entity cells ({} constructed), {} entities",
-                    bePositions.size(), beOk, ghostEntities.size());
-        }
-
-        return new GhostMesh(schematic, transform, bx, by, bz, stateArr, quadStart,
+        return new Geometry(schematic, transform, bx, by, bz, stateArr, quadStart,
                 allQuads.toArray(new Quad[0]),
                 col(fluidPositions, 0), col(fluidPositions, 1), col(fluidPositions, 2),
                 fluidStateList.toArray(new BlockState[0]),
                 col(bePositions, 0), col(bePositions, 1), col(bePositions, 2),
                 beStateList.toArray(new BlockState[0]),
-                beEntityList.toArray(new BlockEntity[0]),
-                ghostEntities.toArray(new GhostEntity[0]));
+                beNbtList.toArray(new CompoundTag[0]),
+                entityDescriptors.toArray(new EntityDescriptor[0]));
     }
 
     /**

@@ -44,6 +44,9 @@ public final class GhostRenderer {
     private static final long EXTRA_SCAN_VOLUME_LIMIT = 2_000_000L;
     private static final int WRONG_COLOR = 0xC0FF3030;
     private static final int EXTRA_COLOR = 0xC0FF9933;
+    /** {@code matchedBlocks} sentinel: the mesh is still baking off-thread (HUD shows "preparing"). */
+    static final int MESH_BAKING = -3;
+    private static final int OUTLINE_COLOR = 0xC05EE7FF;
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
@@ -76,6 +79,7 @@ public final class GhostRenderer {
 
     public static void invalidate() {
         mesh = null;
+        GhostMeshBaker.invalidate();
         blockTint = null;
         needsPlacing = null;
         wrongBlock = null;
@@ -102,9 +106,15 @@ public final class GhostRenderer {
             return;
         }
 
-        if (mesh == null || !mesh.matches(schematic, transform)) {
-            long start = System.nanoTime();
-            mesh = GhostMesh.build(schematic, transform);
+        GhostMesh baked = GhostMeshBaker.poll(schematic, transform);
+        if (baked == null) {
+            // Still baking (or a bake just failed) — show the footprint so positioning still works.
+            renderFootprintOutline(transform, state.anchor(), ctx, mc);
+            state.setRemainingBlocks(MESH_BAKING, 0);
+            return;
+        }
+        if (baked != mesh) {
+            mesh = baked;
             blockTint = null;
             needsPlacing = null;
             wrongBlock = null;
@@ -113,8 +123,6 @@ public final class GhostRenderer {
             extraX = null;
             warnedTooLarge = false;
             warnedExtrasTooLarge = false;
-            HoloPlaceClient.LOGGER.debug("Rebuilt ghost mesh: {} blocks / {} quads in {} ms",
-                    mesh.blockCount(), mesh.totalQuads(), (System.nanoTime() - start) / 1_000_000);
         }
         GhostMesh m = mesh;
 
@@ -193,6 +201,20 @@ public final class GhostRenderer {
         }
 
         state.setRemainingBlocks(hideMatched ? placedCount : -1, m.blockCount());
+    }
+
+    /** Cyan wire box around the placement footprint — shown while the mesh bakes so the schematic's
+     *  position and size are still visible and adjustable. */
+    private static void renderFootprintOutline(PlacementTransform t, BlockPos anchor,
+                                               LevelRenderContext ctx, Minecraft mc) {
+        Vec3 cam = mc.gameRenderer.getMainCamera().position();
+        RenderType type = GhostPipelines.linesForGhost(true); // over walls: it's a transient hint
+        VertexConsumer lines = ctx.bufferSource().getBuffer(type);
+        ShapeRenderer.renderShape(new PoseStack(), lines,
+                Shapes.box(0, 0, 0, t.footprintX(), t.footprintY(), t.footprintZ()),
+                anchor.getX() - cam.x, anchor.getY() - cam.y, anchor.getZ() - cam.z,
+                OUTLINE_COLOR, 2.5f);
+        ctx.bufferSource().endBatch(type);
     }
 
     private interface IntLookup {
@@ -482,7 +504,7 @@ public final class GhostRenderer {
         }
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
-        if (level == null || m.schematic() != state.schematic()) {
+        if (level == null || !m.matches(state.schematic(), state.transform())) {
             return;
         }
 
@@ -542,7 +564,7 @@ public final class GhostRenderer {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || m.schematic() != state.schematic()) {
+        if (mc.level == null || !m.matches(state.schematic(), state.transform())) {
             return;
         }
 

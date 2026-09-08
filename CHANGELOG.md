@@ -34,6 +34,10 @@ verified in-game on Minecraft 26.1.2 unless noted.
 - Full English and Spanish localization (HUD, tooltips, commands, `K` screen).
 - First-join welcome message and `/holoplace help` with the full command + key list.
 
+### Performance
+- The ghost mesh is tesselated on a background thread. Loading or rotating a large schematic shows
+  a footprint outline and a "preparing" note instead of freezing the game for a moment.
+
 ### Security / robustness
 - Bounded schematic loading: 256 MiB NBT accounter, per-axis (30 000) / per-region-volume
   (64 M cells) / region-count (4096) caps, and a `LitematicaBitArray` overflow guard — a corrupt

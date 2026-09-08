@@ -612,6 +612,31 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
 - `./gradlew build` verde (18 tests), `holoplace-0.1.0.jar` generado.
 - Thumbnail 3D al hover → M26.5 (tras el horneador off-thread de M26).
 
+## M26 — horneado de malla off-thread (2026-09-08, falta check in-game)
+
+El tirón al cargar / rotar un schematic grande venía de `GhostMesh.build` corriendo entero en el
+hilo de render.
+
+- **`GhostMesh.build` partido en dos**: `bakeGeometry(schematic, transform)` → `GhostMesh.Geometry`
+  (el paseo pesado: teselado de modelos, culling de caras, fluidos, NBT crudo de BE/entidades — sin
+  crear ningún objeto vivo, seguro fuera del hilo de render); `Geometry.assemble(registries)` →
+  `GhostMesh` (construye los `BlockEntity` / entidades desde el NBT, esto sí en el hilo de render,
+  pero es barato — decenas de objetos, no millones de quads).
+- **`GhostMeshBaker`** — ejecutor de un solo hilo daemon (`holoplace-mesh-baker`, prioridad −2).
+  `poll(schematic, transform)` (render thread, 1×/frame): devuelve la malla lista, o `null` mientras
+  hornea. Cuando el `CompletableFuture` termina, llama a `assemble` en el hilo de render y cachea.
+  Rehornea al cambiar schematic o transform. `invalidate()` tira todo (cambio de mundo).
+- **Mientras hornea**: `GhostRenderer` dibuja el **contorno del footprint** (caja de alambre cian,
+  sobre paredes) para que puedas seguir posicionando, y el HUD muestra "preparando el modelo…"
+  (`matchedBlocks == MESH_BAKING = -3`, clave `holoplace.hud.baking`).
+- `submitBlockEntities` / `submitEntities` ahora salen si `!m.matches(schematic, transform)` — así
+  una malla vieja no renderiza sus BE en la rotación anterior durante el rehorneado.
+- Modelos horneados = inmutables tras la carga de recursos → teselar fuera del hilo es seguro
+  (es lo que hace el propio Sodium para las secciones de chunk).
+- Posible micro-parpadeo al rotar un schematic **pequeño** (1-2 frames de contorno antes de que el
+  worker entregue) — verificar en el juego si molesta; si sí, añadir una gracia "mantener malla
+  vieja N ms".
+
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
 *(from the publish-readiness audit — the [High] finding was: no size cap before allocating memory.)*

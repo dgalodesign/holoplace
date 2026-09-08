@@ -43,7 +43,9 @@ public final class GhostHud {
         String name = state.sourceName() == null ? "?" : state.sourceName();
 
         String progress = null;
-        if (state.matchedBlocks() == -2) {
+        if (state.matchedBlocks() == GhostRenderer.MESH_BAKING) {
+            progress = "§b" + text("holoplace.hud.baking");
+        } else if (state.matchedBlocks() == -2) {
             progress = "§c" + text("holoplace.hud.too_large");
         } else if (state.hideMatched() && state.totalBlocks() > 0) {
             int placed = state.matchedBlocks();

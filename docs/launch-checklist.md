@@ -2,8 +2,9 @@
 
 Estado a 2026-09-08. Decisiones tomadas con el usuario:
 
-- **Alcance**: 0.1.0 mete mejoras de UX (rediseño UI, asistencia al construir en modo *solo lectura*,
-  rendimiento) para que el mod sea **relevante** de salida.
+- **Alcance**: 0.1.0 mete mejoras de UX (rediseño UI, rendimiento) para que el mod sea **relevante**
+  de salida. El paquete "asistencia solo-lectura" (M25) pasó a backlog el 2026-09-08 — el usuario
+  quiere cero fricción con anticheats.
 - **Easy Place descartado (2026-09-08)** — "1 clic = coloca el bloque por ti" tiene fricción
   histórica con anticheats. HoloPlace NO coloca bloques; se queda en "mira y construye a mano".
 - **Versión de MC**: portar a **26.2** (la última estable) y soltar 26.1.x.
@@ -20,8 +21,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 |---|---|---|---|
 | ~~M24~~ | Pase de UI/GUI | Pantalla `K` en dos pestañas (Construir/Crear) + secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado, celda-mal-colocada sin fantasma. **CERRADO — verificado in-game 2026-09-08** | medio |
 | ~~M25 (Easy Place)~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
-| **M25** | Paquete "asistencia" (solo lectura) | Info de bloque al mirar (nombre + orientación esperada) · "N bloques mal colocados" en `/holoplace materials`. **Sin pick-block** — a backlog (2026-09-08), el usuario no quiere fricción con anticheats | bajo |
-| **M26** | Malla off-thread | Mover `GhostMesh.build` a un hilo de trabajo con placeholder mientras carga; quita el hitch de esquemas grandes | medio |
+| ~~M25 (asistencia)~~ | Paquete "asistencia" (solo lectura) | Info de bloque al mirar + "N mal colocados" en `/materials`. **A BACKLOG (2026-09-08)** — el usuario no quiere ninguna fricción con anticheats; fuera de 0.1.0. Ver §6 | bajo |
+| ~~M26~~ | Malla off-thread | `GhostMesh.bakeGeometry` en un worker daemon; mientras hornea se dibuja el contorno del footprint + "preparando el modelo…" en el HUD; la construcción de BE/entidades se queda en el hilo de render. **HECHO — falta check in-game** | medio |
 | **M26.5** | Thumbnail 3D al hover | Preview del schematic en la lista, reusando el horneador de M26 (PIP de la GUI) | pequeño |
 | **M27** | Port a 26.2 | Subir `minecraft_version` / `fabric_api_version` / Loom, `genSources`, arreglar API rota, re-test. Soltar 26.1 | medio, incierto |
 | **M28** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
@@ -138,12 +139,15 @@ de Litematica reescritos, `LICENSE` MIT consistente en jar + `fabric.mod.json`, 
 
 ---
 
-## 6. Pick-block del esquema — BACKLOG (descartado de 0.1.0)
+## 6. Backlog (fuera de 0.1.0)
 
-**Decisión del usuario (2026-09-08): fuera, a backlog.** No quiere ninguna fricción con anticheats,
-aunque el riesgo aquí sea bajo. HoloPlace se queda estrictamente "no toca tu inventario ni el mundo":
-el jugador usa el pick-block de vanilla mirando el fantasma.
+**Decisión del usuario (2026-09-08): cero fricción con anticheats.** Todo lo que toque inventario,
+hotbar o mundo se aparca, aunque el riesgo sea bajo. HoloPlace 0.1.0 es estrictamente "mira el
+fantasma y construye a mano".
 
-Si algún día se revisita: la rueda / una tecla saca el bloque correcto del esquema (hotbar en
-creativo, selección en survival), no coloca nada. Tecla dedicada sin bind por defecto, solo el
-bloque bajo la mira.
+- **M25 — asistencia solo-lectura**: info del bloque bajo la mira (nombre + orientación esperada) y
+  un contador "N mal colocados" en `/holoplace materials`. No toca nada del jugador, pero se aparca
+  con el resto para no dispersar el alcance de 0.1.0. Retomable cuando el mod ya esté publicado.
+- **Pick-block del esquema**: la rueda / una tecla saca el bloque correcto al hotbar (creativo) o lo
+  selecciona (survival) — no coloca nada. Tecla dedicada sin bind por defecto, solo el bloque bajo
+  la mira. Riesgo anticheat bajo pero toca el hotbar → aparcado.
