@@ -24,8 +24,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 | ~~M25 (Easy Place)~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
 | ~~M25 (asistencia)~~ | Paquete "asistencia" (solo lectura) | Info de bloque al mirar + "N mal colocados" en `/materials`. **A BACKLOG (2026-09-08)** — el usuario no quiere ninguna fricción con anticheats; fuera de 0.1.0. Ver §6 | bajo |
 | ~~M26~~ | Malla off-thread | `GhostMesh.bakeGeometry` en un worker daemon; mientras hornea se dibuja el contorno del footprint + "preparando el modelo…" en el HUD. **CERRADO — verificado in-game 2026-09-08** | medio |
-| **M28** | Pre-lanzamiento | §3: `fabric.mod.json` ✅ · smoke test (`docs/smoke-test-0.1.0.md`) · Iris · compat mods · jar real | bajo |
-| **—** | **Lanzamiento 0.1.0 en MC 26.1.2** | Ficha Modrinth + release (§4). 26.1.2 sigue estable y listada | bajo |
+| ~~M28~~ | Pre-lanzamiento | `fabric.mod.json` ✅ · **smoke test PASADO 2026-09-08** (jar real, Modrinth App). CHANGELOG → `[0.1.0]` | bajo |
+| **—** | **Lanzamiento 0.1.0 en MC 26.1.2** | Repo GitHub público + push · ficha Modrinth (`docs/modrinth-listing.md`) + subir jar/ícono/screenshots (§4) | bajo |
 | ~~M26.5~~ | Thumbnail al hover → **0.2.0** | **Aplazado (decisión 2026-09-08).** En 26.1 no hay estado PIP para "structure" — el 3D vivo pediría `RenderTarget` + pipeline propios a mano en la capa de render frágil, justo antes del lanzamiento. La lista se queda con el tooltip de metadatos. Se hace (2D isométrico o 3D) junto al port a 26.2 | pequeño-medio |
 | ~~M27~~ | Port a 26.2 → **0.2.0** | **Aplazado tras el lanzamiento (decisión 2026-09-08).** 26.2 reescribió el pipeline de render de nivel (submit-node, sin `ShapeRenderer`/`bufferSource`). Recon + arreglos mecánicos hechos en rama `port/mc-26.2`; ver `docs/port-26.2-notes.md` | medio |
 

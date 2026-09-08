@@ -3,10 +3,10 @@
 All notable changes to HoloPlace are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0] — 2026-09-08
 
-Work in progress toward the first public release (`0.1.0`). Everything below is built and
-verified in-game on Minecraft 26.1.2 unless noted.
+First public release. Built for Minecraft 26.1.2 (Fabric, client-side). Full smoke test passed
+in-game on a production instance.
 
 ### Added
 - Load a `.litematic` and see it as a **textured translucent ghost** in the world — blocks,

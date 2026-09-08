@@ -646,9 +646,12 @@ al hover pasan a 0.2.0.
 - **`fabric.mod.json`** (hecho): `contact.homepage` (`modrinth.com/mod/holoplace`, verificar tras
   crear el proyecto) + `contact.issues`; `authors` → `"Edgar D' Galo"`; `depends.minecraft` → `~26.1.2`
   (exacto a lo probado). Entrypoint `modmenu` omitido (evita `compileOnly` de ModMenu; la K abre con tecla).
-- **Smoke test**: `docs/smoke-test-0.1.0.md` — checklist runnable con el jar real. Pendiente correrlo.
-- **Iris / compat mods**: pendiente (§3.2 / §3.3).
-- **Repo GitHub + Modrinth**: pendiente.
+- **Smoke test**: `docs/smoke-test-0.1.0.md` — **PASADO (2026-09-08)** con el jar real en una
+  instancia de la Modrinth App (Fabric Loader 0.19.5, Fabric API 0.155.2+26.1.2, MC 26.1.2).
+  Todas las features funcionan. (Nota inicial: la instancia traía loader 0.19.3 y el `depends`
+  bloqueó el arranque como se esperaba — subir a 0.19.5 lo resolvió.)
+- **`CHANGELOG.md`**: `[Unreleased]` → `[0.1.0] — 2026-09-08`.
+- **Repo GitHub + Modrinth**: pendiente (último paso).
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
