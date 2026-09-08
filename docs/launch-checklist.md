@@ -23,8 +23,8 @@ Estado a 2026-09-08. Decisiones tomadas con el usuario:
 | ~~M24~~ | Pase de UI/GUI | Pantalla `K` en dos pestañas (Construir/Crear) + secciones, rotar/espejo en el panel, tooltips, lista con scroll + metadatos al hover, HUD colapsado, celda-mal-colocada sin fantasma. **CERRADO — verificado in-game 2026-09-08** | medio |
 | ~~M25 (Easy Place)~~ | ~~Easy Place~~ | **Descartado** — riesgo anticheat. HoloPlace no coloca bloques | — |
 | ~~M25 (asistencia)~~ | Paquete "asistencia" (solo lectura) | Info de bloque al mirar + "N mal colocados" en `/materials`. **A BACKLOG (2026-09-08)** — el usuario no quiere ninguna fricción con anticheats; fuera de 0.1.0. Ver §6 | bajo |
-| ~~M26~~ | Malla off-thread | `GhostMesh.bakeGeometry` en un worker daemon; mientras hornea se dibuja el contorno del footprint + "preparando el modelo…" en el HUD; la construcción de BE/entidades se queda en el hilo de render. **HECHO — falta check in-game** | medio |
-| **M28** | Pre-lanzamiento | §3 de este doc (smoke test, shaders, mods, jar real, metadata) | bajo |
+| ~~M26~~ | Malla off-thread | `GhostMesh.bakeGeometry` en un worker daemon; mientras hornea se dibuja el contorno del footprint + "preparando el modelo…" en el HUD. **CERRADO — verificado in-game 2026-09-08** | medio |
+| **M28** | Pre-lanzamiento | §3: `fabric.mod.json` ✅ · smoke test (`docs/smoke-test-0.1.0.md`) · Iris · compat mods · jar real | bajo |
 | **—** | **Lanzamiento 0.1.0 en MC 26.1.2** | Ficha Modrinth + release (§4). 26.1.2 sigue estable y listada | bajo |
 | ~~M26.5~~ | Thumbnail al hover → **0.2.0** | **Aplazado (decisión 2026-09-08).** En 26.1 no hay estado PIP para "structure" — el 3D vivo pediría `RenderTarget` + pipeline propios a mano en la capa de render frágil, justo antes del lanzamiento. La lista se queda con el tooltip de metadatos. Se hace (2D isométrico o 3D) junto al port a 26.2 | pequeño-medio |
 | ~~M27~~ | Port a 26.2 → **0.2.0** | **Aplazado tras el lanzamiento (decisión 2026-09-08).** 26.2 reescribió el pipeline de render de nivel (submit-node, sin `ShapeRenderer`/`bufferSource`). Recon + arreglos mecánicos hechos en rama `port/mc-26.2`; ver `docs/port-26.2-notes.md` | medio |
@@ -63,13 +63,10 @@ Al publicar: subir el 512 a la ficha. (El 128 aguanta a ~32 px en las listas; el
 
 ---
 
-## 3. Pre-lanzamiento — detalle de cada check (M29)
+## 3. Pre-lanzamiento — detalle de cada check (M28)
 
 ### 3.1 Smoke test completo + actualizar `progress.md`
-Una sesión de juego ejercitando **cada** feature una vez, de forma deliberada, con la build final:
-cargar esquema → arrastrar → rotar → espejar → opacidad → ver-a-través → build-assist con bloques
-bien / mal / extra → tooltip al mirar → lista de materiales → capturar un área y recargarla →
-capas → salir y reconectar (persistencia) → soltar un archivo en la ventana.
+**Checklist runnable: `docs/smoke-test-0.1.0.md`** — cada feature una vez, con el jar real.
 **Por qué**: `progress.md` dice "verificado" en casi todo, pero fue verificación incremental
 durante el desarrollo, no un pase completo con la build 0.1.0. Los bugs de integración
 (una feature rompió otra) se escapan así. Nada visual es testeable con los 18 unit tests.
@@ -90,12 +87,15 @@ y jugar un rato.
 `cancellable=true` en `HEAD`. Cualquier otro mod que también capture la rueda (zoom, otro asistente)
 es un conflicto potencial de "quién consume el evento". Sodium ya se validó; el resto no.
 
-### 3.4 Metadata de `fabric.mod.json`
-- Añadir `contact.homepage` (ficha Modrinth) e `contact.issues` (GitHub issues) — Mod Menu los
-  muestra como botones.
-- `authors`: nombre visible, no solo el handle.
-- Revisar `description` (Mod Menu la trunca si es muy larga).
-- Opcional: entrypoint `modmenu` para que el botón de config de Mod Menu abra la pantalla `K`.
+### 3.4 Metadata de `fabric.mod.json` — HECHO (2026-09-08)
+- ✅ `contact.homepage` (`modrinth.com/mod/holoplace` — **verificar tras crear el proyecto**) +
+  `contact.issues` (GitHub issues).
+- ✅ `authors`: `"Edgar D' Galo"` (nombre visible).
+- ✅ `depends.minecraft`: `~26.1.2` (antes `~26.1` — ahora exacto a lo probado).
+- ✅ `description` revisada — cabe.
+- ⏭️ Entrypoint `modmenu`: **omitido en 0.1.0**. Añadiría `com.terraformersmc:modmenu` como
+  `compileOnly` (poco, pero el "cero dependencias" es argumento de venta y la K abre con tecla).
+  Retomable en 0.2.0.
 
 ### 3.5 Build limpio + probar el jar real
 `./gradlew clean build` → coger `build/libs/holoplace-0.1.0.jar` (**no** el `-sources.jar`) →

@@ -614,7 +614,7 @@ el resto agrupado/oculto/explicado. Propuesta + mockup aprobados: `docs/ui-redes
   el 3D vivo pediría RenderTarget + pipeline propios en la capa de render, y 0.1.0 sale en 26.1.2
   para no arriesgar esa capa antes del lanzamiento. Se hace junto al port a 26.2.
 
-## M26 — horneado de malla off-thread (2026-09-08, falta check in-game)
+## M26 — horneado de malla off-thread (2026-09-08, verificado in-game)
 
 El tirón al cargar / rotar un schematic grande venía de `GhostMesh.build` corriendo entero en el
 hilo de render.
@@ -635,9 +635,20 @@ hilo de render.
   una malla vieja no renderiza sus BE en la rotación anterior durante el rehorneado.
 - Modelos horneados = inmutables tras la carga de recursos → teselar fuera del hilo es seguro
   (es lo que hace el propio Sodium para las secciones de chunk).
-- Posible micro-parpadeo al rotar un schematic **pequeño** (1-2 frames de contorno antes de que el
-  worker entregue) — verificar en el juego si molesta; si sí, añadir una gracia "mantener malla
-  vieja N ms".
+- Posible micro-parpadeo al rotar un schematic **pequeño** (1-2 frames de contorno) — verificado
+  in-game, aceptable.
+
+## M28 — pre-lanzamiento (en curso, 2026-09-08)
+
+0.1.0 sale en **MC 26.1.2** (ver decisión en `launch-checklist.md`). El port a 26.2 y el thumbnail
+al hover pasan a 0.2.0.
+
+- **`fabric.mod.json`** (hecho): `contact.homepage` (`modrinth.com/mod/holoplace`, verificar tras
+  crear el proyecto) + `contact.issues`; `authors` → `"Edgar D' Galo"`; `depends.minecraft` → `~26.1.2`
+  (exacto a lo probado). Entrypoint `modmenu` omitido (evita `compileOnly` de ModMenu; la K abre con tecla).
+- **Smoke test**: `docs/smoke-test-0.1.0.md` — checklist runnable con el jar real. Pendiente correrlo.
+- **Iris / compat mods**: pendiente (§3.2 / §3.3).
+- **Repo GitHub + Modrinth**: pendiente.
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
