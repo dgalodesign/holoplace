@@ -3,10 +3,10 @@
 All notable changes to HoloPlace are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning is [SemVer](https://semver.org/).
 
-## [0.1.0] — 2026-09-08
+## [0.1.0] — 2026-09-09
 
 First public release. Built for Minecraft 26.1.2 (Fabric, client-side). Full smoke test passed
-in-game on a production instance.
+in-game on a production instance, including with Sodium and Iris.
 
 ### Added
 - Load a `.litematic` and see it as a **textured translucent ghost** in the world — blocks,
@@ -20,13 +20,13 @@ in-game on a production instance.
   mod's two jobs are visible from the first open. Non-obvious controls carry tooltips; hovering a
   schematic in the list shows its size / block count / regions.
 - Rotate (`R` / `Shift`+`R`) and mirror (`M`) about the footprint centre.
-- **See-through / x-ray** toggle (`X`) — draw the ghost over walls (composited the same way as the
-  normal ghost, so nothing draws over it).
-- **Build-assist** (`H`) — hide blocks already placed correctly, show a progress %, outline
+- **See-through / x-ray** toggle (`X`) — draw the ghost over walls. Works without shaders; limited
+  with Iris shaders (see `KNOWN_ISSUES.md`).
+- **Build-assist** (`H`) — hide blocks already placed correctly, show a progress %, mark
   wrongly-placed blocks in red and terrain clipping into the build in orange. A wrongly-placed
   cell drops its ghost model so the marker (and the "should be X" crosshair tooltip) reads clearly.
-  If the schematic is mostly inside terrain, it says so and shows the outline to clear, rather than
-  a wall of markers.
+  Markers only appear where you can see and reach them; the HUD shows `visible/total`
+  (e.g. `30/500 wrong`).
 - **Material list** (`/holoplace materials`) — blocks needed and still missing.
 - **Schematic capture** — select a two-corner area (`B`), then `/holoplace capture save <name>`
   or the `K`-screen row writes blocks + block entities + entities to a new `.litematic`.
@@ -46,6 +46,8 @@ in-game on a production instance.
 - The ghost's geometry is uploaded to the GPU once and redrawn each frame, instead of rebuilding
   every vertex on the CPU every frame. Large, detailed schematics no longer cost frame rate just by
   being visible.
+- Build-assist markers are limited to the exposed surface, so a schematic sunk into terrain doesn't
+  try to draw a marker for every buried cell.
 
 ### Security / robustness
 - Bounded schematic loading: 256 MiB NBT accounter, per-axis (30 000) / per-region-volume
