@@ -655,6 +655,29 @@ al hover pasan a 0.2.0.
   URLs de `contact.*` y LICENSE actualizadas a `dgalodesign` / "Edgar D' Galo".
 - **Modrinth**: pendiente — crear proyecto con `docs/modrinth-listing.md`, subir jar + ícono + capturas.
 
+## Rendimiento + x-ray + reset al cargar (2026-09-09, antes de publicar)
+
+Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE/entidades) baja a ~20 FPS.
+
+- **`GhostGpuMesh`** — los quads del fantasma se hornean a un `GpuBuffer` persistente y se dibujan
+  con **un `drawIndexed`** por frame (RenderPass manual, patrón de `WorldBorderRenderer`: coords
+  locales en el buffer + offset cámara-relativo en `DynamicTransforms.ModelOffset`, que
+  `core/block.vsh` aplica — verificado en el shader). Se re-hornea solo cuando cambia la clave de
+  contenido (identidad de la malla, opacidad, culling del asistente, corte de capas, ancla
+  gruesa para el tinte de bioma). Mover el fantasma en grab NO re-hornea.
+  `GhostRenderer.renderBlocksImmediate` queda como **fallback**: si el path GPU lanza, se activa
+  `gpuUnavailable` (log una vez) y vuelve a la subida por-frame.
+  - Sin re-sort translúcido por frame (usa el index buffer secuencial compartido) — artefactos de
+    orden menores a la opacidad del fantasma; se puede añadir después.
+- **X-ray arreglado** — `GhostPipelines.SEE_THROUGH` reconstruido para reflejar exactamente
+  `translucentMovingBlock` de vanilla: sampler con mipmaps, `affectsCrumbling`, outline y sobre todo
+  el **`OutputTarget.ITEM_ENTITY_TARGET`**. Antes renderizaba directo al target principal a mitad de
+  pase, así que clima / partículas / la mano dibujaban encima del fantasma. Ahora solo difiere el
+  depth state del pipeline (`ALWAYS_PASS`, sin escritura).
+- **Reset al cargar un esquema** — `SchematicImport.show()` → `PlacementController.resetForNewSchematic()`:
+  rotación / espejo / corte de capas vuelven a "como se creó". Un esquema nuevo ya no hereda la
+  orientación del anterior ni un corte de capas dimensionado para otra altura.
+
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 
 *(from the publish-readiness audit — the [High] finding was: no size cap before allocating memory.)*

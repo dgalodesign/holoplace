@@ -20,7 +20,8 @@ in-game on a production instance.
   mod's two jobs are visible from the first open. Non-obvious controls carry tooltips; hovering a
   schematic in the list shows its size / block count / regions.
 - Rotate (`R` / `Shift`+`R`) and mirror (`M`) about the footprint centre.
-- **See-through / x-ray** toggle (`X`) — draw the ghost over walls.
+- **See-through / x-ray** toggle (`X`) — draw the ghost over walls (composited the same way as the
+  normal ghost, so nothing draws over it).
 - **Build-assist** (`H`) — hide blocks already placed correctly, show a progress %, outline
   wrongly-placed blocks in red and blocks that don't belong at all in orange. A wrongly-placed
   cell drops its ghost model so the marker (and the "should be X" crosshair tooltip) reads clearly.
@@ -37,6 +38,9 @@ in-game on a production instance.
 ### Performance
 - The ghost mesh is tesselated on a background thread. Loading or rotating a large schematic shows
   a footprint outline and a "preparing" note instead of freezing the game for a moment.
+- The ghost's geometry is uploaded to the GPU once and redrawn each frame, instead of rebuilding
+  every vertex on the CPU every frame. Large, detailed schematics no longer cost frame rate just by
+  being visible.
 
 ### Security / robustness
 - Bounded schematic loading: 256 MiB NBT accounter, per-axis (30 000) / per-region-volume

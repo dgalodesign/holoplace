@@ -2,24 +2,20 @@
 
 Ideas deliberately deferred from the MVP. Not scheduled — pick up if/when there's a real need.
 
-## GPU vertex-buffer upload
+## GPU vertex-buffer upload — DONE (2026-09-09, `GhostGpuMesh`)
 
-**Problem**: the ghost's block quads are re-emitted into the frame's vertex buffer every frame
-(`VertexConsumer.putBlockBakedQuad` per quad in `GhostRenderer.render`). `GhostMesh` already bakes
-the geometry once (no re-tesselation), but the per-frame vertex *write* is still O(quads). Fine up to
-the current 4M-quad cap; a very large schematic (megabuild-sized) would visibly cost frame time.
+The ghost's block quads are baked into a persistent `GpuBuffer` and redrawn each frame with one
+`drawIndexed` (manual `RenderPass`, patterned on vanilla `WorldBorderRenderer` — local coords in the
+buffer, camera-relative offset in `DynamicTransforms.ModelOffset`, which `core/block.vsh` applies).
+Rebuilt only when the content key changes (mesh identity, opacity, build-assist cull, layer slice,
+coarse anchor for biome tint). `GhostRenderer.renderBlocksImmediate` stays as a fallback that engages
+if the GPU path ever throws (`gpuUnavailable` latch, logged once).
 
-**Fix**: upload the baked mesh to a persistent `GpuBuffer` once (per mesh build) and draw it each
-frame with a `RenderPass` (`setPipeline` / `setVertexBuffer` / `drawIndexed`), the way vanilla's
-`ChunkSectionsToRender` and litematica's `WorldRendererSchematic` do — instead of walking a `List` and
-calling `addVertex` per vertex every frame.
+Triggered by a 23k-block statue (`estatua-thor.litematic`) dropping to ~20 FPS — the per-frame
+`putBlockBakedQuad` loop over ~200k quads was the bottleneck.
 
-**Why deferred**: real GPU-command-queue work on 26.1's newly-rewritten rendering pipeline
-(`RenderPipeline` / `RenderPass` / `GpuBuffer` / `DynamicTransforms` uniforms) — sparse docs, harder to
-debug blind, meaningfully riskier than everything shipped so far. See [[holoplace-render-gotchas]]
-(session memory) for the API notes gathered while scoping this.
-
-**Trigger to revisit**: a schematic that visibly stutters to load/rotate, or hits the 4M-quad cap.
+Not yet done: per-frame translucent re-sort (uses the shared sequential index buffer, so overlapping
+translucent faces can draw slightly out of order — minor at the ghost's opacity).
 
 ## Other deferred ideas (from the original plan, still not done)
 

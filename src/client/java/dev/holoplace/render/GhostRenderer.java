@@ -30,15 +30,16 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Draws the current {@link GhostState} schematic as a textured, translucent ghost during
- * {@code AFTER_TRANSLUCENT_TERRAIN}. Geometry is baked once by {@link GhostMesh}; each frame the
- * renderer only walks the baked blocks, optionally skipping any that already match the world
- * (build-assist), and replays their quads with a per-frame translate and colour. Biome tint
- * (grass/leaves/water) is resolved against the real world and cached until the anchor moves.
+ * {@code AFTER_TRANSLUCENT_TERRAIN}. Geometry is baked once off-thread by {@link GhostMesh} /
+ * {@link GhostMeshBaker}, then uploaded to a persistent GPU buffer ({@link GhostGpuMesh}) and
+ * redrawn each frame with one indexed call — rebuilt only when its content changes (opacity,
+ * build-assist culling, layer slice). {@link #renderBlocksImmediate} is the fallback if the GPU
+ * path throws. Biome tint (grass/leaves/water) is resolved against the real world and cached.
  */
 public final class GhostRenderer {
 
     private static final int FULL_BRIGHT = 0x00F000F0;
-    private static final int NO_TINT = -1;
+    static final int NO_TINT = -1;
     private static final int MAX_QUADS = 4_000_000;
     private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
     private static final long EXTRA_SCAN_VOLUME_LIMIT = 2_000_000L;
@@ -50,6 +51,11 @@ public final class GhostRenderer {
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
+    private static @Nullable GhostGpuMesh gpuMesh;
+    /** Set once if the persistent-buffer path throws — from then on the per-frame upload is used. */
+    private static boolean gpuUnavailable;
+    /** Bumped every time the build-assist scan rewrites its flags, so the GPU mesh rebuilds. */
+    private static int scanVersion;
     private static int @Nullable [] blockTint;
     private static long tintKey;
 
@@ -80,6 +86,7 @@ public final class GhostRenderer {
     public static void invalidate() {
         mesh = null;
         GhostMeshBaker.invalidate();
+        closeGpuMesh();
         blockTint = null;
         needsPlacing = null;
         wrongBlock = null;
@@ -148,35 +155,47 @@ public final class GhostRenderer {
         boolean layerClip = state.layerClip();
 
         var cam = mc.gameRenderer.getMainCamera().position();
-        float ox = (float) (anchor.getX() - cam.x);
-        float oy = (float) (anchor.getY() - cam.y);
-        float oz = (float) (anchor.getZ() - cam.z);
         int alpha = state.opacityAlpha() << 24;
-        int white = alpha | 0x00FFFFFF;
-
-        RenderType renderType = GhostPipelines.forGhost(state.seeThrough());
-        VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
-        QUAD.setLightCoords(FULL_BRIGHT);
         boolean shade = state.shade();
+        RenderType renderType = GhostPipelines.forGhost(state.seeThrough());
 
-        for (int i = 0, blocks = m.blockCount(); i < blocks; i++) {
-            if (needs != null && !needs[i]) {
-                continue;
+        // Fast path: the ghost's block quads live in a persistent GPU buffer, redrawn with one
+        // indexed call. Rebuilt only when its content key changes (mesh, opacity, build-assist
+        // culling, layer slice, coarse anchor). Falls back to the per-frame upload if it ever throws.
+        boolean drewBlocks = false;
+        if (!gpuUnavailable) {
+            try {
+                long gpuKey = System.identityHashCode(m);
+                gpuKey = gpuKey * 1099511628211L + state.opacityAlpha();
+                gpuKey = gpuKey * 1099511628211L + (layerClip ? state.layerMin() : -1);
+                gpuKey = gpuKey * 1099511628211L + (layerClip ? state.layerMax() : -1);
+                gpuKey = gpuKey * 1099511628211L + (hideMatched ? scanVersion : -1);
+                gpuKey = gpuKey * 1099511628211L + (anchor.getX() >> 3);
+                gpuKey = gpuKey * 1099511628211L + (anchor.getY() >> 3);
+                gpuKey = gpuKey * 1099511628211L + (anchor.getZ() >> 3);
+                if (gpuMesh == null || gpuMesh.key != gpuKey) {
+                    GhostGpuMesh old = gpuMesh;
+                    gpuMesh = GhostGpuMesh.build(gpuKey, m, needs, wrong, hideWrongToo, layerClip,
+                            state, tint, alpha, shade);
+                    if (old != null) {
+                        old.close();
+                    }
+                }
+                gpuMesh.draw(renderType, cam, anchor);
+                drewBlocks = true;
+            } catch (Throwable t) {
+                gpuUnavailable = true;
+                HoloPlaceClient.LOGGER.error(
+                        "Ghost GPU render failed — falling back to per-frame vertex upload", t);
+                closeGpuMesh();
             }
-            if (hideWrongToo && wrong != null && wrong.length == blocks && wrong[i]) {
-                continue;
-            }
-            if (layerClip && !state.layerVisible(m.blockY(i))) {
-                continue;
-            }
-            int baseRgb = tint[i] == NO_TINT ? 0x00FFFFFF : (tint[i] & 0x00FFFFFF);
-            int end = m.quadStart(i + 1);
-            for (int q = m.quadStart(i); q < end; q++) {
-                GhostMesh.Quad quad = m.quad(q);
-                int rgb = quad.tinted() ? baseRgb : 0x00FFFFFF;
-                QUAD.setColor(shade ? alpha | shadeRgb(rgb, quad.quad()) : alpha | rgb);
-                buffer.putBlockBakedQuad(quad.x() + ox, quad.y() + oy, quad.z() + oz, quad.quad(), QUAD);
-            }
+        }
+
+        VertexConsumer buffer = ctx.bufferSource().getBuffer(renderType);
+        if (!drewBlocks) {
+            renderBlocksImmediate(m, needs, wrong, hideWrongToo, layerClip, state, tint, alpha, shade,
+                    (float) (anchor.getX() - cam.x), (float) (anchor.getY() - cam.y),
+                    (float) (anchor.getZ() - cam.z), buffer);
         }
 
         if (m.fluidCount() > 0) {
@@ -349,6 +368,7 @@ public final class GhostRenderer {
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
+        scanVersion++;
         scanExtraBlocks(m, transform, anchor, level);
         return out;
     }
@@ -659,8 +679,48 @@ public final class GhostRenderer {
         }
     }
 
+    /** Per-frame upload of every visible ghost quad — the fallback for when {@link GhostGpuMesh}
+     *  can't be used. Same block / quad selection as {@link GhostGpuMesh#build}. */
+    private static void renderBlocksImmediate(GhostMesh m, boolean @Nullable [] needs,
+            boolean @Nullable [] wrong, boolean hideWrongToo, boolean layerClip, GhostState state,
+            int[] tint, int alpha, boolean shade, float ox, float oy, float oz, VertexConsumer buffer) {
+        QUAD.setLightCoords(FULL_BRIGHT);
+        int blocks = m.blockCount();
+        boolean wrongUsable = hideWrongToo && wrong != null && wrong.length == blocks;
+        for (int i = 0; i < blocks; i++) {
+            if (needs != null && !needs[i]) {
+                continue;
+            }
+            if (wrongUsable && wrong[i]) {
+                continue;
+            }
+            if (layerClip && !state.layerVisible(m.blockY(i))) {
+                continue;
+            }
+            int baseRgb = tint[i] == NO_TINT ? 0x00FFFFFF : (tint[i] & 0x00FFFFFF);
+            int end = m.quadStart(i + 1);
+            for (int q = m.quadStart(i); q < end; q++) {
+                GhostMesh.Quad quad = m.quad(q);
+                int rgb = quad.tinted() ? baseRgb : 0x00FFFFFF;
+                QUAD.setColor(shade ? alpha | shadeRgb(rgb, quad.quad()) : alpha | rgb);
+                buffer.putBlockBakedQuad(quad.x() + ox, quad.y() + oy, quad.z() + oz, quad.quad(), QUAD);
+            }
+        }
+    }
+
+    private static void closeGpuMesh() {
+        if (gpuMesh != null) {
+            try {
+                gpuMesh.close();
+            } catch (RuntimeException ignored) {
+                // best effort
+            }
+            gpuMesh = null;
+        }
+    }
+
     /** Classic Minecraft per-face darkening (top bright, bottom dim), applied per quad. */
-    private static int shadeRgb(int rgb, net.minecraft.client.resources.model.geometry.BakedQuad quad) {
+    static int shadeRgb(int rgb, net.minecraft.client.resources.model.geometry.BakedQuad quad) {
         if (!quad.materialInfo().shade()) {
             return rgb;
         }
