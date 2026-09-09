@@ -675,8 +675,28 @@ Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE
   pase, así que clima / partículas / la mano dibujaban encima del fantasma. Ahora solo difiere el
   depth state del pipeline (`ALWAYS_PASS`, sin escritura).
 - **Reset al cargar un esquema** — `SchematicImport.show()` → `PlacementController.resetForNewSchematic()`:
-  rotación / espejo / corte de capas vuelven a "como se creó". Un esquema nuevo ya no hereda la
-  orientación del anterior ni un corte de capas dimensionado para otra altura.
+  rotación / espejo / corte de capas vuelven a "como se creó", **y `reach` (8) + `verticalOffset` (0)
+  al default** — así el esquema nuevo aterriza en la mira y no hereda la posición/distancia del
+  anterior. El posicionamiento sigue siendo "centro en el bloque que miras" (decisión del usuario,
+  2026-09-09).
+
+## Test in-game 2026-09-09 (con Iris + Complementary shaders) — 3 hallazgos
+
+1. **Pipelines custom incompatibles con Iris** — `SEE_THROUGH_*` (depth-always) salían de la lista
+   de programas de Iris ("Missing program holoplace:pipeline/see_through_* in override list") y en
+   build empaquetado un pipeline sin programa compilado **se salta el draw en silencio** → el
+   fantasma desaparecía con x-ray bajo shaders. **Fix**: fuera los 4 campos custom de `GhostPipelines`;
+   ambos modos usan tipos vanilla (`translucentMovingBlock`, `lines`). X-ray ahora se hace creando
+   el render pass del fantasma **sin depth attachment** (`GhostGpuMesh.draw`, param `seeThrough`).
+   Los marcadores de línea y el contorno del horneado van por el buffer source compartido → siguen
+   con depth test en modo x-ray (regresión menor, anotada). *X-ray con shaders sigue siendo
+   best-effort — Iris gestiona sus propios framebuffers.*
+2. **Caída de FPS con estatua grande bajo tierra + asistente** — un esquema enterrado marca cada
+   celda como mal/sobra. `scanExtraBlocks` era un paseo O(volumen del footprint) con lookup al
+   mundo por celda cada 250 ms (516k para thor). **Fix**: `EXTRA_CAP = 400` corta el escaneo;
+   `MARKER_CAP = 600` corta el dibujo de cubos por celda (el HUD sigue mostrando el número real,
+   `1200 mal` / `400+ sobran`). Sin caja.
+3. **`reset` no reseteaba distancia/offset** — ver arriba.
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
 

@@ -28,10 +28,11 @@ public final class PlacementController {
 
     private static final double MIN_REACH = 1.0;
     private static final double MAX_REACH = 64.0;
+    private static final double DEFAULT_REACH = 8.0;
     private static final int MAX_VOFFSET = 64;
 
     private boolean grabbing;
-    private double reach = 8.0;
+    private double reach = DEFAULT_REACH;
     private int verticalOffset;
 
     private PlacementController() {
@@ -207,19 +208,24 @@ public final class PlacementController {
         actionBar(Minecraft.getInstance(), text("holoplace.action.reset"));
     }
 
-    /** Rotation / mirror / layer clip back to "as authored" — for when a new schematic is loaded, so
-     *  it doesn't inherit the previous one's orientation or a layer slice that made sense for a
-     *  different height. No message; the caller persists via {@link WorldPlacements#saveCurrent()}. */
+    /** Everything that shouldn't carry over to a freshly loaded schematic: rotation / mirror / layer
+     *  slice back to "as authored", and the grab reach / vertical offset back to default so the new
+     *  ghost lands predictably at the crosshair instead of wherever the last one was positioned.
+     *  No message; the caller persists via {@link WorldPlacements#saveCurrent()}. */
     public void resetForNewSchematic() {
         GhostState g = GhostState.get();
         g.setRotation(Rotation.NONE);
         g.setMirror(Mirror.NONE);
         g.clearLayers();
+        this.reach = DEFAULT_REACH;
+        this.verticalOffset = 0;
         HoloPlaceConfig cfg = HoloPlaceConfig.get();
         cfg.rotation = Rotation.NONE.name();
         cfg.mirror = Mirror.NONE.name();
         cfg.layerMin = 0;
         cfg.layerMax = Integer.MAX_VALUE;
+        cfg.reach = DEFAULT_REACH;
+        cfg.verticalOffset = 0;
         HoloPlaceConfig.save();
     }
 

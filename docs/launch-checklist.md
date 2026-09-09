@@ -72,13 +72,13 @@ durante el desarrollo, no un pase completo con la build 0.1.0. Los bugs de integ
 (una feature rompió otra) se escapan así. Nada visual es testeable con los 18 unit tests.
 **Salida**: marcar en `progress.md` qué pasó el pase y qué no.
 
-### 3.2 Compatibilidad con shaders (Iris)
-Sodium + Iris + un shaderpack (Complementary / BSL), shaders activos, comprobar que el ghost
-sigue viéndose: translúcido, con color de bioma, sin z-fighting agresivo, sin desaparecer.
-**Por qué**: el ghost usa render types y un `RenderPipeline` propio (`GhostPipelines`). Iris
-reemplaza los shaders del juego y puede ignorar o romper pipelines custom — es la incompatibilidad
-más probable y la más reportada (Litematica la ha sufrido).
-**Si rompe**: no bloquea el lanzamiento; se documenta "shaders: soporte limitado" y se abre issue.
+### 3.2 Compatibilidad con shaders (Iris) — probado 2026-09-09
+Testeado con Sodium + Iris + Complementary Reimagined r5.9. Hallazgo: los pipelines custom de
+see-through salían de la lista de programas de Iris y sus draws se saltaban → **fantasma
+desaparecía con x-ray**. Corregido quitando los pipelines custom (ahora todo vanilla; x-ray por
+render pass sin depth attachment). El fantasma normal renderiza bien con shaders.
+**Estado**: x-ray con shaders sigue siendo best-effort (Iris gestiona sus framebuffers). Documentar
+en la ficha "see-through: soporte limitado con shaders" y abrir issue tras el lanzamiento. No bloquea.
 
 ### 3.3 Compatibilidad con otros mods
 Instalar 2–3 mods populares a la vez (Litematica misma, un mod de zoom con scroll, WorldEdit CUI)
