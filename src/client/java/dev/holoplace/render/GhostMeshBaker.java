@@ -60,11 +60,16 @@ final class GhostMeshBaker {
         if (!pending.isDone()) {
             return null;
         }
+        if (pending.isCompletedExceptionally()) {
+            // The bake threw (already logged by whenComplete). Drop it; poll() restarts it next frame.
+            pending = null;
+            return null;
+        }
 
         GhostMesh.Geometry geom = pending.getNow(null);
         pending = null;
         if (geom == null) {
-            return null; // bake threw; poll again next frame and it will restart
+            return null;
         }
         var registries = Minecraft.getInstance().level != null
                 ? Minecraft.getInstance().level.registryAccess() : null;

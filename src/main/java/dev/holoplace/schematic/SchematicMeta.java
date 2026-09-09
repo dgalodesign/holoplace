@@ -52,11 +52,8 @@ public final class SchematicMeta {
 
     /** Cached metadata for {@code file}, or {@code null} while the background read is in flight. */
     public static @Nullable SchematicMeta peek(Path file) {
-        CompletableFuture<SchematicMeta> f = CACHE.get(file);
-        if (f == null) {
-            CACHE.put(file, CompletableFuture.supplyAsync(() -> read(file), EXEC));
-            return null;
-        }
+        CompletableFuture<SchematicMeta> f =
+                CACHE.computeIfAbsent(file, p -> CompletableFuture.supplyAsync(() -> read(p), EXEC));
         return f.isDone() && !f.isCompletedExceptionally() ? f.getNow(null) : null;
     }
 

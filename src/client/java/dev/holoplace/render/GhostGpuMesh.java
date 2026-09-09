@@ -62,7 +62,12 @@ final class GhostGpuMesh implements AutoCloseable {
                               int[] tint, int alphaShifted, boolean shade) {
         GhostGpuMesh out = new GhostGpuMesh(key);
         int blocks = m.blockCount();
-        ByteBufferBuilder bytes = new ByteBufferBuilder(RenderType.BIG_BUFFER_SIZE);
+        // Size for the worst case (no culling) up front so a big schematic doesn't realloc-and-copy
+        // several times: 4 verts/quad, 28 bytes/vert in DefaultVertexFormat.BLOCK, rounded to 32.
+        // Capped so a near-cap mesh doesn't grab half a gig before we know how much it needs.
+        int initial = (int) Math.min(64L * 1024 * 1024,
+                Math.max(RenderType.SMALL_BUFFER_SIZE, (long) m.totalQuads() * 4 * 32 + 1024));
+        ByteBufferBuilder bytes = new ByteBufferBuilder(initial);
         try {
             BufferBuilder bb = new BufferBuilder(bytes, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
             QuadInstance quad = new QuadInstance();
