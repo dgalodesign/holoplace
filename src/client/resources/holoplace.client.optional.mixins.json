@@ -1,0 +1,11 @@
+{
+	"required": false,
+	"package": "dev.holoplace.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"MinecraftCrashReportMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

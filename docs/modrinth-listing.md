@@ -79,8 +79,12 @@ All keys are rebindable. `/holoplace help` lists everything.
 - **Fabric only.** Requires [Fabric API](https://modrinth.com/mod/fabric-api).
 - **Client-side.** Works on any server; nothing is installed server-side.
 - Fine alongside **Sodium**.
-- **Shaders (Iris):** the hologram may render differently or not at all with some shaderpacks — this is a known limitation, reports welcome.
+- **See-through / x-ray with shaders (Iris) is limited** — the hologram can stay hidden behind the world. The normal ghost works with shaders. See [Known issues](https://github.com/dgalodesign/holoplace/blob/main/KNOWN_ISSUES.md).
 - Reads the `.litematic` format directly. You do **not** need Litematica installed, and HoloPlace does not depend on it or share any code.
+
+## Reporting a bug
+
+Run **`/holoplace debug`** in-game and paste its output into a [GitHub issue](https://github.com/dgalodesign/holoplace/issues) along with your `latest.log`. Check [Known issues](https://github.com/dgalodesign/holoplace/blob/main/KNOWN_ISSUES.md) first.
 
 ## What HoloPlace does *not* do
 

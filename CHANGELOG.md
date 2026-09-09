@@ -35,7 +35,8 @@ in-game on a production instance.
 - Per-world placement persistence — where you leave a schematic is restored when you rejoin.
 - OS drag-and-drop import (drop a `.litematic` on the window).
 - Commands: `show` / `hide` / `clear` / `reset` / `move` / `nudge` / `layers` / `materials` /
-  `capture` / `help`, with tab-completion.
+  `capture` / `help` / `debug`, with tab-completion. `/holoplace debug` prints an environment +
+  state block for bug reports (also added to crash reports).
 - Full English and Spanish localization (HUD, tooltips, commands, `K` screen).
 - First-join welcome message and `/holoplace help` with the full command + key list.
 

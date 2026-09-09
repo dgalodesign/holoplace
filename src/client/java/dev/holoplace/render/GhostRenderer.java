@@ -85,6 +85,17 @@ public final class GhostRenderer {
         LevelRenderEvents.COLLECT_SUBMITS.register(GhostRenderer::submitEntities);
     }
 
+    /** One-line render-layer status for {@code /holoplace debug} and the crash report. */
+    public static String debugStatus() {
+        GhostMesh m = mesh;
+        String meshInfo = m == null ? "none"
+                : m.blockCount() + " blocks / " + m.totalQuads() + " quads"
+                        + (m.totalQuads() > MAX_QUADS ? " [OVER CAP — not drawn]" : "");
+        return "gpu-path=" + (gpuUnavailable ? "FALLBACK (per-frame upload)" : "ok")
+                + " · mesh=" + meshInfo
+                + " · baker=" + GhostMeshBaker.debugStatus();
+    }
+
     public static void invalidate() {
         mesh = null;
         GhostMeshBaker.invalidate();

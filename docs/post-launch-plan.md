@@ -150,10 +150,10 @@ respondo cuando puedo, los crashes van primero. No hay soporte por DM."
 
 ## Acciones antes de lanzar (derivadas de este plan)
 
-- [ ] `/holoplace debug` (§2.1)
-- [ ] Sección en el crash report (§2.3)
-- [ ] `.github/ISSUE_TEMPLATE/bug_report.yml` + `config.yml` (§2.4)
-- [ ] `KNOWN_ISSUES.md` (§5) + sección en la ficha de Modrinth
+- [x] `/holoplace debug` (§2.1) — `dev.holoplace.Diagnostics`, comando `debug`
+- [x] Sección en el crash report (§2.3) — `MinecraftCrashReportMixin` (config opcional, `required: false`)
+- [x] `.github/ISSUE_TEMPLATE/bug_report.yml` + `feature_request.yml` + `config.yml` (§2.4)
+- [x] `KNOWN_ISSUES.md` (§5) + sección en la ficha de Modrinth
 - [ ] CI mínimo en Actions (§4, opcional)
 - [ ] `git tag v0.1.0` + GitHub Release al publicar (§6)
 - [ ] Añadir expectativas de soporte al README y la ficha (§3)

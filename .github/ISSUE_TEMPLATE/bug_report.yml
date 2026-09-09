@@ -1,0 +1,84 @@
+name: Bug report
+description: Something is broken, crashing, or not working as expected.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. HoloPlace is a one-person project, so a complete first report
+        saves a lot of back-and-forth. **`/holoplace debug` (in-game) prints most of what's asked
+        below** — paste its output.
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: "`/holoplace debug` output"
+      description: Run `/holoplace debug` in-game and paste the block. It's also written to `latest.log`.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happens
+    attributes:
+      label: What happens, and what you expected
+      description: Be specific. "The ghost disappears when I look at it from the side" beats "rendering is broken".
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load 'my-build.litematic'
+        2. Press G, look at a wall
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: minimal
+    attributes:
+      label: Does it still happen with only HoloPlace + Fabric API + Sodium?
+      description: A minimal instance is the fastest way to tell if another mod is involved.
+      options:
+        - "Yes — still broken with a minimal set"
+        - "No — works fine minimal, so another mod is involved"
+        - "Not tested yet"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: shaders
+    attributes:
+      label: Iris shaders?
+      options:
+        - "No shaders / no Iris installed"
+        - "Iris installed, shaders OFF — still happens"
+        - "Only happens with shaders ON"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log / crash report
+      description: >
+        Attach the full `latest.log` (drag the file in — don't paste it), or the `crash-reports/…`
+        file if it crashed. The crash report already includes a "HoloPlace" section.
+    validations:
+      required: true
+
+  - type: input
+    id: schematic
+    attributes:
+      label: The .litematic file (if the bug is specific to one file)
+      description: Attach it to the issue, or link it. Skip if the bug happens with any schematic.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, video, other mods you suspect, GPU driver version…

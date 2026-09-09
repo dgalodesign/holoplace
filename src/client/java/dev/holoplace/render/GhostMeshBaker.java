@@ -82,6 +82,13 @@ final class GhostMeshBaker {
         return ready;
     }
 
+    static String debugStatus() {
+        if (pending != null && !pending.isDone()) {
+            return "baking";
+        }
+        return ready != null ? "ready" : "idle";
+    }
+
     /** Drop the ready mesh and any in-flight bake (schematic cleared, world change). */
     static void invalidate() {
         ready = null;

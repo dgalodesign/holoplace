@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an idea. HoloPlace stays small and simple on purpose — see the README's scope.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do that HoloPlace makes hard?
+      description: Describe the situation, not just the feature. The best solution is often not the one first imagined.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This does not require HoloPlace to place blocks, touch my inventory, or run on the server (those are out of scope on purpose).
+          required: true

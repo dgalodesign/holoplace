@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How to use HoloPlace
+    url: https://modrinth.com/mod/holoplace
+    about: Controls, commands and setup are on the Modrinth page. This tracker is for bugs.
+  - name: Known limitations
+    url: https://github.com/dgalodesign/holoplace/blob/main/KNOWN_ISSUES.md
+    about: Check here first — some things (e.g. see-through with shaders) are known and tracked.

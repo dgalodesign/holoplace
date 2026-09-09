@@ -24,6 +24,10 @@
 		{
 			"config": "holoplace.client.mixins.json",
 			"environment": "client"
+		},
+		{
+			"config": "holoplace.client.optional.mixins.json",
+			"environment": "client"
 		}
 	],
 	"depends": {

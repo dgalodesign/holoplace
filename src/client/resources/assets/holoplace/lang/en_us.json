@@ -46,7 +46,7 @@
 	"holoplace.cmd.help.drop": "§7Drop a §f.litematic§7 on the window, or §fK§7 for the menu.",
 	"holoplace.cmd.help.keys": "§fKeys:§7 G grab · R/⇧R rotate · M mirror · X x-ray · H build-assist · B capture · ⎇wheel opacity",
 	"holoplace.cmd.help.commands1": "§fCommands:§7 show <f> · hide · show · clear · reset · move <x y z> · nudge <dir> [n]",
-	"holoplace.cmd.help.commands2": "§7          seethrough · buildassist · materials · layers <min> <max>|off · capture [pos1|pos2|clear|save <name>] · info <f> · list",
+	"holoplace.cmd.help.commands2": "§7          seethrough · buildassist · materials · layers <min> <max>|off · capture [pos1|pos2|clear|save <name>] · info <f> · list · debug",
 	"holoplace.cmd.list.none": "No .litematic files found. Put them in %s",
 	"holoplace.cmd.list.count": "§e%s schematic(s):",
 	"holoplace.cmd.list.entry": " §7- §f%s",

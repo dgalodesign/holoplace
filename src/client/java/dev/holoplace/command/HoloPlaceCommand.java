@@ -118,6 +118,7 @@ public final class HoloPlaceCommand {
                                                     return 1;
                                                 }))))
                         .then(ClientCommands.literal("help").executes(ctx -> help(ctx.getSource())))
+                        .then(ClientCommands.literal("debug").executes(ctx -> debug(ctx.getSource())))
                         .then(ClientCommands.literal("layers")
                                 .then(ClientCommands.literal("off").executes(ctx -> {
                                     PlacementController.get().clearLayers();
@@ -136,6 +137,18 @@ public final class HoloPlaceCommand {
                                                             IntegerArgumentType.getInteger(ctx, "max"));
                                                     return 1;
                                                 }))))));
+    }
+
+    /** Print the diagnostics block to chat and the log — the thing to paste into a bug report. */
+    private static int debug(FabricClientCommandSource source) {
+        List<String> lines = dev.holoplace.Diagnostics.lines();
+        source.sendFeedback(Component.literal("§e§l[HoloPlace] debug §7— copy this into a bug report:"));
+        for (String line : lines) {
+            source.sendFeedback(Component.literal("§7" + line));
+        }
+        HoloPlaceClient.LOGGER.info("=== /holoplace debug ===\n{}", String.join("\n", lines));
+        source.sendFeedback(Component.literal("§8(also written to the log — latest.log)"));
+        return 1;
     }
 
     private static int nudge(FabricClientCommandSource source, String dirName, int amount) {
