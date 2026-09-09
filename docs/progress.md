@@ -711,11 +711,14 @@ Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE
   (0 marcadores, fantasma completo, sin coste). El `N/total` del HUD se entiende bien. Quitados
   `BURIED_PERCENT`, `GhostRenderer.buried()`, la rama del contorno y la clave `holoplace.hud.buried`.
   `hideWrongToo` vuelve a ser `= hideMatched` (sobre `wrongBlockVisible`).
-- **HUD movible** — `HoloPlaceConfig.hudX/hudY` (fracción 0..1 de la pantalla, esquina sup-izq del
-  panel). Botón "Colocar HUD" en Avanzado → `GhostHud.placing = true`: el panel sigue al cursor, la
-  pantalla K muestra solo "Haz clic donde quieras el panel · Esc para cancelar". Clic → guarda,
-  Esc/cerrar → cancela. `GhostHud.drawPanel` clampa para que el panel entero quede en pantalla sea
-  cual sea su tamaño (agarrando vs bloqueado).
+- **HUD anclado a una esquina** — `HoloPlaceConfig.hudCorner` (0=sup-izq … 3=inf-izq). Botón "HUD:
+  <esquina>" en Avanzado cicla las 4. (La primera versión con arrastre libre la cambió el usuario a
+  solo 4 esquinas.)
+- **Un solo panel HUD** — `GhostHud` ahora renderiza tanto el panel de construcción como el de
+  captura, **cajas separadas apiladas** en la esquina elegida. `CaptureHud` se reduce a `lines()`
+  (proveedor de contenido); su `register()` fuera. Si solo hay uno activo, va solo en la esquina;
+  si los dos, se apilan (construcción arriba, captura debajo, con hueco). Esquinas inferiores: la
+  pila crece hacia arriba.
 
 ## Marcadores solo en lo visible (2026-09-09, idea del usuario)
 

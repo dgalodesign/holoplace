@@ -147,7 +147,10 @@
 	"holoplace.hud.wrong": "wrong",
 	"holoplace.hud.extra": "extra",
 	"holoplace.ui.marker_opacity": "Marker opacity: %s",
-	"holoplace.ui.move_hud": "Move HUD",
-	"holoplace.ui.move_hud_hint": "Click where you want the panel  ·  Esc to cancel",
-	"holoplace.tip.move_hud": "Reposition the on-screen status panel. Click a spot; it stays there."
+	"holoplace.ui.hud_corner": "HUD: %s",
+	"holoplace.tip.hud_corner": "Which screen corner the status panels sit in. Click to cycle.",
+	"holoplace.ui.corner_tl": "top left",
+	"holoplace.ui.corner_tr": "top right",
+	"holoplace.ui.corner_br": "bottom right",
+	"holoplace.ui.corner_bl": "bottom left"
 }

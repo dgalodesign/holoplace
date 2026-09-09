@@ -147,7 +147,10 @@
 	"holoplace.hud.wrong": "mal",
 	"holoplace.hud.extra": "sobran",
 	"holoplace.ui.marker_opacity": "Opacidad de marcadores: %s",
-	"holoplace.ui.move_hud": "Colocar HUD",
-	"holoplace.ui.move_hud_hint": "Haz clic donde quieras el panel  ·  Esc para cancelar",
-	"holoplace.tip.move_hud": "Recoloca el panel de estado en pantalla. Haz clic en un sitio y se queda ahí."
+	"holoplace.ui.hud_corner": "HUD: %s",
+	"holoplace.tip.hud_corner": "En qué esquina de la pantalla van los paneles de estado. Clic para ciclar.",
+	"holoplace.ui.corner_tl": "arriba izq.",
+	"holoplace.ui.corner_tr": "arriba der.",
+	"holoplace.ui.corner_br": "abajo der.",
+	"holoplace.ui.corner_bl": "abajo izq."
 }

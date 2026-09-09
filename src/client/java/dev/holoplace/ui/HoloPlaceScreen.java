@@ -29,7 +29,6 @@ import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import dev.holoplace.render.GhostHud;
 import net.minecraft.core.BlockPos;
@@ -75,12 +74,6 @@ public final class HoloPlaceScreen extends Screen {
     @Override
     protected void init() {
         rules.clear();
-        if (GhostHud.placing) {
-            // Panel is following the cursor; show only how to finish. The HUD renders itself.
-            String hint = tr("holoplace.ui.move_hud_hint");
-            label((this.width - this.font.width(hint)) / 2, this.height / 2 - 24, "§f" + hint);
-            return;
-        }
         GhostState g = GhostState.get();
         PlacementController pc = PlacementController.get();
         HoloPlaceConfig cfg = HoloPlaceConfig.get();
@@ -214,8 +207,9 @@ public final class HoloPlaceScreen extends Screen {
             y += ROW;
             addRenderableWidget(new MarkerOpacitySlider(x, y, PANEL_W));
             y += 22;
-            button(x, y, PANEL_W, 18, Component.translatable("holoplace.ui.move_hud"),
-                    b -> { GhostHud.placing = true; rebuildWidgets(); }, tip("holoplace.tip.move_hud"));
+            button(x, y, PANEL_W, 18,
+                    Component.translatable("holoplace.ui.hud_corner", GhostHud.cornerLabel()),
+                    b -> { GhostHud.cycleCorner(); rebuildWidgets(); }, tip("holoplace.tip.hud_corner"));
             y += 22;
         }
         return y;
@@ -376,12 +370,6 @@ public final class HoloPlaceScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        if (GhostHud.placing) {
-            // Keep the world (and the HUD panel following the cursor) clearly visible.
-            graphics.fill(0, 0, this.width, this.height, 0x40000008);
-            super.extractRenderState(graphics, mouseX, mouseY, a);
-            return;
-        }
         // The in-world menu background is a light tint that doesn't hold up over bright terrain;
         // dim the whole screen and darken a band behind the panel so the text stays readable.
         int px = (this.width - PANEL_W) / 2;
@@ -444,33 +432,10 @@ public final class HoloPlaceScreen extends Screen {
         return true;
     }
 
-    // ---- "move HUD" mode --------------------------------------------
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (GhostHud.placing) {
-            GhostHud.commitPlacement(event.x(), event.y());
-            rebuildWidgets();
-            return true;
-        }
-        return super.mouseClicked(event, doubleClick);
-    }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (GhostHud.placing && event.isEscape()) {
-            GhostHud.placing = false;
-            rebuildWidgets();
-            return true;
-        }
-        return super.keyPressed(event);
-    }
-
     // ---- misc -----------------------------------------------------
 
     @Override
     public void onClose() {
-        GhostHud.placing = false;
         this.minecraft.setScreen(null);
     }
 
