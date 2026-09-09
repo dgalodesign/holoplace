@@ -43,6 +43,10 @@ public final class GhostRenderer {
     private static final int MAX_QUADS = 4_000_000;
     private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
     private static final long EXTRA_SCAN_VOLUME_LIMIT = 2_000_000L;
+    /** Stop collecting "extra block" cells past this many — a schematic buried in terrain flags every
+     *  cell, and neither the scan (per-cell world lookup) nor the render (a wire cube each) is worth
+     *  it. The HUD still shows the count as "N+". */
+    private static final int EXTRA_CAP = 400;
     private static final int WRONG_COLOR = 0xC0FF3030;
     private static final int EXTRA_COLOR = 0xC0FF9933;
     /** {@code matchedBlocks} sentinel: the mesh is still baking off-thread (HUD shows "preparing"). */
@@ -181,7 +185,7 @@ public final class GhostRenderer {
                         old.close();
                     }
                 }
-                gpuMesh.draw(renderType, cam, anchor);
+                gpuMesh.draw(renderType, state.seeThrough(), cam, anchor);
                 drewBlocks = true;
             } catch (Throwable t) {
                 gpuUnavailable = true;
@@ -244,6 +248,8 @@ public final class GhostRenderer {
 
     private static int wrongMarkers;
     private static int extraMarkers;
+    /** True when the extra-block scan hit {@link #EXTRA_CAP} — the real count is higher. */
+    private static boolean extraCapped;
 
     public static int wrongMarkers() {
         return wrongMarkers;
@@ -253,14 +259,22 @@ public final class GhostRenderer {
         return extraMarkers;
     }
 
+    public static boolean extraCapped() {
+        return extraCapped;
+    }
+
     /** {@code rgb} at the marker opacity (its own control — markers are alerts, not the ghost). */
     private static int markerColor(int rgb, GhostState state) {
         int a = Mth.clamp(Math.round(state.markerOpacity() * 255f), 8, 255);
         return (a << 24) | (rgb & 0x00FFFFFF);
     }
 
+    /** Above this many wire cubes in one marker set, stop drawing them — a schematic buried in
+     *  terrain flags every cell and it's just a wall of wireframe. The count still reaches the HUD. */
+    private static final int MARKER_CAP = 600;
+
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
-     *  Returns how many cells were flagged. */
+     *  Returns how many cells were flagged; past {@link #MARKER_CAP} the cubes aren't drawn. */
     private static int renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
                                        GhostState state, int color) {
@@ -274,8 +288,8 @@ public final class GhostRenderer {
                 n++;
             }
         }
-        if (n == 0) {
-            return 0;
+        if (n == 0 || n > MARKER_CAP) {
+            return n;
         }
 
         int argb = markerColor(color, state);
@@ -435,12 +449,14 @@ public final class GhostRenderer {
             extraX = new int[0];
             extraY = new int[0];
             extraZ = new int[0];
+            extraCapped = false;
             return;
         }
 
         SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, transform);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         java.util.List<int[]> found = new java.util.ArrayList<>();
+        outer:
         for (int y = 0; y < fy; y++) {
             for (int z = 0; z < fz; z++) {
                 for (int x = 0; x < fx; x++) {
@@ -449,9 +465,13 @@ public final class GhostRenderer {
                         continue;
                     }
                     found.add(new int[] {x, y, z});
+                    if (found.size() >= EXTRA_CAP) {
+                        break outer; // buried schematic: stop the O(volume) walk
+                    }
                 }
             }
         }
+        extraCapped = found.size() >= EXTRA_CAP;
         int n = found.size();
         int[] xs = new int[n];
         int[] ys = new int[n];

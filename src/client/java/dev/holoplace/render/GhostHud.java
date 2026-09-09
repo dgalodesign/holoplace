@@ -55,10 +55,11 @@ public final class GhostHud {
                     + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : "");
             int wrong = GhostRenderer.wrongMarkers();
             int extra = GhostRenderer.extraMarkers();
+            String extraStr = extra + (GhostRenderer.extraCapped() ? "+" : "");
             if (wrong > 0 || extra > 0) {
                 progress += "  " + (wrong > 0 ? "§c" + wrong + " " + text("holoplace.hud.wrong") : "")
                         + (wrong > 0 && extra > 0 ? "  " : "")
-                        + (extra > 0 ? "§6" + extra + " " + text("holoplace.hud.extra") : "");
+                        + (extra > 0 ? "§6" + extraStr + " " + text("holoplace.hud.extra") : "");
             }
         }
 

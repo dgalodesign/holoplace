@@ -8,7 +8,6 @@ import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.config.WorldPlacements;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.render.GhostHud;
-import dev.holoplace.render.GhostPipelines;
 import dev.holoplace.render.GhostRenderer;
 import dev.holoplace.render.GhostTooltipHud;
 import net.fabricmc.api.ClientModInitializer;
@@ -24,8 +23,6 @@ public class HoloPlaceClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         SchematicLibrary.ensurePrimaryDir();
-
-        GhostPipelines.bootstrap();
 
         HoloPlaceConfig config = HoloPlaceConfig.get();
         GhostState.get().setOpacity(config.opacity);

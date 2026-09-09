@@ -119,8 +119,10 @@ final class GhostGpuMesh implements AutoCloseable {
 
     /** One indexed draw of the whole ghost, offset so footprint-local {@code (0,0,0)} sits at
      *  {@code anchor}. The camera-relative offset goes in the {@code DynamicTransforms} model-offset
-     *  vector (vanilla's {@code WorldBorderRenderer} does the same). */
-    void draw(RenderType type, Vec3 cam, BlockPos anchor) {
+     *  vector (vanilla's {@code WorldBorderRenderer} does the same). When {@code seeThrough}, the pass
+     *  gets no depth attachment, so the world can't occlude the ghost — x-ray without a custom
+     *  depth-always pipeline (which shader mods drop). */
+    void draw(RenderType type, boolean seeThrough, Vec3 cam, BlockPos anchor) {
         if (isEmpty()) {
             return;
         }
@@ -136,7 +138,8 @@ final class GhostGpuMesh implements AutoCloseable {
 
         var renderTarget = type.outputTarget().getRenderTarget();
         GpuTextureView color = renderTarget.getColorTextureView();
-        GpuTextureView depth = renderTarget.useDepth ? renderTarget.getDepthTextureView() : null;
+        GpuTextureView depth = (seeThrough || !renderTarget.useDepth)
+                ? null : renderTarget.getDepthTextureView();
 
         var atlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
         GpuTextureView lightmap = mc.gameRenderer.lightmap();
