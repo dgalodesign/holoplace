@@ -154,6 +154,6 @@ respondo cuando puedo, los crashes van primero. No hay soporte por DM."
 - [x] Sección en el crash report (§2.3) — `MinecraftCrashReportMixin` (config opcional, `required: false`)
 - [x] `.github/ISSUE_TEMPLATE/bug_report.yml` + `feature_request.yml` + `config.yml` (§2.4)
 - [x] `KNOWN_ISSUES.md` (§5) + sección en la ficha de Modrinth
-- [ ] CI mínimo en Actions (§4, opcional)
+- [x] CI en Actions (§4) — `.github/workflows/build.yml` (`gradlew build` + tests en push/PR, sube el jar)
 - [ ] `git tag v0.1.0` + GitHub Release al publicar (§6)
-- [ ] Añadir expectativas de soporte al README y la ficha (§3)
+- [x] Expectativas de soporte en el README (§3) — sección "Support"

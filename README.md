@@ -1,5 +1,7 @@
 # HoloPlace
 
+[![build](https://github.com/dgalodesign/holoplace/actions/workflows/build.yml/badge.svg)](https://github.com/dgalodesign/holoplace/actions/workflows/build.yml)
+
 Modern UX for building from schematics in Minecraft (Fabric, client-side).
 
 Load a `.litematic` file, see it as a **textured ghost overlay** in the world (blocks,
@@ -13,8 +15,10 @@ on Litematica.
 
 ## Status
 
-MVP complete and verified in-game (Minecraft 26.1.2). Docs index: [`docs/README.md`](docs/README.md)
-— plan, milestone history, capture sub-project, Litematica config reference, licensing, backlog.
+**0.1.0 — first public release, on Minecraft 26.1.2.** Built and verified in-game. Docs index:
+[`docs/README.md`](docs/README.md) — plan, milestone history, capture sub-project, Litematica
+config reference, code audit, post-launch plan, licensing, backlog. Known limitations:
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -39,9 +43,12 @@ MVP complete and verified in-game (Minecraft 26.1.2). Docs index: [`docs/README.
 | M18 | Spanish translation · extra-block marker (orange) · look-at tooltip with item icon | ✅ |
 | M19–M22 | Schematic capture — area select · `.litematic` writer · blocks + block entities + entities · `K`-screen row | ✅ |
 | M23 | Render schematic entities in the ghost (item frames, armour stands, paintings…) | ✅ |
+| M24 | UI/GUI pass — two tabs (Build / Create), sectioned panel, tooltips, list metadata on hover, collapsed HUD | ✅ |
+| M26 | Off-thread mesh bake + persistent GPU buffer (large schematics don't hitch or cost frame rate) | ✅ |
+| 0.1.0 polish | `/holoplace debug`, crash-report section, corner-anchored HUD, visibility-culled build-assist markers | ✅ |
 
-Not done: GPU vertex-buffer upload (a perf win for very large schematics — the current
-per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/backlog.md).
+Deferred to 0.2.0: port to MC 26.2 (branch `port/mc-26.2`), hover 3D thumbnail, Iris-aware
+see-through. See [`docs/backlog.md`](docs/backlog.md) and [`docs/launch-checklist.md`](docs/launch-checklist.md).
 
 ## Controls
 
@@ -55,6 +62,7 @@ per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/bac
 | `/holoplace move <x y z>` · `/holoplace nudge <dir> [n]` | Place at exact coords · shift by n blocks |
 | `/holoplace layers <min> [max]` · `/holoplace layers off` | Show only a Y-slice of the ghost |
 | `/holoplace materials` · `/holoplace help` | Blocks needed / still missing · full command + key list |
+| `/holoplace debug` | Print an environment + state block for a bug report (also in crash reports) |
 | `B`, then left/right-click two blocks | Select a capture area (also on the `K` screen) |
 | `/holoplace capture save <name>` | Save the selected area as a new `.litematic` |
 | Look around (grab mode) | Position the ghost; snaps to the block face under the crosshair |
@@ -66,13 +74,13 @@ per-frame vertex submit is capped at 4M quads). See [`docs/backlog.md`](docs/bac
 | `H` | Toggle build-assist (hide blocks you've already placed) |
 | `Alt`+wheel | Opacity ±5% |
 
-The `K` screen has the opacity slider, every toggle (with its key), X/Y/Z fields, and
-two "layer" sliders to view the schematic one floor at a time. With build-assist on,
-blocks you've placed wrong show a red outline, and blocks that don't belong to the
-build at all (world has a block, schematic wants air there) show an orange outline.
-Looking at either while build-assist is on shows a tooltip near the crosshair with the
-game's own item icon for the correct block. "Hide wrong too" (off by default) also hides
-the full ghost model for wrongly-placed blocks, leaving just the red outline — less to render.
+The `K` screen has the opacity slider, rotate / mirror, the toggles (with their keys), a
+schematic list with size/block-count on hover, and two "layer" sliders to view the build one
+floor at a time. Advanced has "ignore block orientation", a details toggle, marker opacity, and
+which screen corner the status panel anchors to. With build-assist on, a wrongly-placed block
+drops its ghost model and shows a red marker (with a "should be X" tooltip and item icon at the
+crosshair); terrain clipping into the build shows an orange marker. Markers only appear on
+surfaces you can actually see and reach — the HUD shows `visible/total`, e.g. `30/500 wrong`.
 
 Schematics are read from `config/holoplace/schematics/` and `<gamedir>/schematics/`. Where you
 leave a placed schematic is remembered per world and restored when you rejoin.
@@ -98,6 +106,26 @@ official launcher) is a full JDK 25 and works.
 ```bash
 ./gradlew runClient
 ```
+
+## Support
+
+HoloPlace is a one-person project, worked on in spare time. What that means in practice:
+
+- **Bugs go in [GitHub issues](https://github.com/dgalodesign/holoplace/issues)**, using the
+  template. Run `/holoplace debug` and attach your `latest.log`. Check
+  [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) first.
+- **No support over DMs, Discord, or Modrinth comments** — those get redirected to an issue.
+- **Crashes and "won't start" come first.** Broken features are next. Nice-to-haves and
+  single-mod compat quirks get batched.
+- **Response time is "when I can"**, not an SLA. A clear, reproducible report with the debug
+  block and a minimal-instance check gets looked at fastest.
+- **Minecraft version support:** only versions where the full smoke test has passed. A new
+  Minecraft release is *not* supported until then — `depends.minecraft` is pinned deliberately.
+  0.1.x fixes target 26.1.2; 26.2 lands in 0.2.0.
+- **Shaders:** the normal ghost works with Iris; see-through/x-ray is limited (see KNOWN_ISSUES).
+
+Feature ideas are welcome, but HoloPlace stays small and deliberately does **not** place blocks,
+touch your inventory, or run on the server.
 
 ## License
 
