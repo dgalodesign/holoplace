@@ -3,6 +3,7 @@ package dev.holoplace.render;
 import dev.holoplace.GhostState;
 import dev.holoplace.HoloPlaceClient;
 import dev.holoplace.HoloPlaceKeys;
+import dev.holoplace.config.HoloPlaceConfig;
 import dev.holoplace.placement.PlacementController;
 import dev.holoplace.schematic.PlacementTransform;
 import java.util.ArrayList;
@@ -13,11 +14,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 
-/** Always-visible one-panel status readout while a ghost is shown. No nested menus. */
+/** Always-visible one-panel status readout while a ghost is shown. No nested menus. Position is a
+ *  fraction of the free screen space ({@link HoloPlaceConfig#hudX}/{@code hudY}); {@link #placing}
+ *  makes it follow the cursor for the "move HUD" mode of the {@code K} screen. */
 public final class GhostHud {
+
+    /** When set, the panel follows the cursor instead of its saved position (K-screen "move HUD"). */
+    public static boolean placing;
 
     private GhostHud() {
     }
@@ -29,17 +36,24 @@ public final class GhostHud {
 
     private static void render(net.minecraft.client.gui.GuiGraphicsExtractor graphics) {
         GhostState state = GhostState.get();
-        if (!state.isVisible()) {
+        if (!state.isVisible() && !placing) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
         Font font = mc.font;
 
+        List<String> lines = new ArrayList<>();
+        if (!state.isVisible()) {
+            // "Move HUD" mode with nothing loaded — show a representative panel to position.
+            lines.add("§b❖ §fHoloPlace");
+            lines.add("§7" + text("holoplace.hud.build") + " §a0§7/§f999 §8(0%)");
+            drawPanel(graphics, font, lines, mc);
+            return;
+        }
+
         BlockPos a = state.anchor();
         PlacementTransform t = state.transform();
         boolean grabbing = PlacementController.get().isGrabbing();
-
-        List<String> lines = new ArrayList<>();
         String name = state.sourceName() == null ? "?" : state.sourceName();
 
         String progress = null;
@@ -53,18 +67,14 @@ public final class GhostHud {
             int pct = total == 0 ? 0 : Math.round(placed * 100f / total);
             progress = "§7" + text("holoplace.hud.build") + " §a" + placed + "§7/§f" + total + " §8(" + pct + "%)"
                     + (state.matchBlockOnly() ? " §8[" + text("holoplace.hud.block_only") + "]" : "");
-            if (GhostRenderer.buried()) {
-                progress += "  §e" + text("holoplace.hud.buried");
-            } else {
-                int wrong = GhostRenderer.wrongMarkers();
-                int wrongAll = GhostRenderer.wrongTotal();
-                int extra = GhostRenderer.extraMarkers();
-                String wrongStr = wrongAll > wrong ? wrong + "§8/" + wrongAll + "§c" : String.valueOf(wrong);
-                if (wrongAll > 0 || extra > 0) {
-                    progress += "  " + (wrongAll > 0 ? "§c" + wrongStr + " " + text("holoplace.hud.wrong") : "")
-                            + (wrongAll > 0 && extra > 0 ? "  " : "")
-                            + (extra > 0 ? "§6" + extra + " " + text("holoplace.hud.extra") : "");
-                }
+            int wrong = GhostRenderer.wrongMarkers();
+            int wrongAll = GhostRenderer.wrongTotal();
+            int extra = GhostRenderer.extraMarkers();
+            String wrongStr = wrongAll > wrong ? wrong + "§8/" + wrongAll + "§c" : String.valueOf(wrong);
+            if (wrongAll > 0 || extra > 0) {
+                progress += "  " + (wrongAll > 0 ? "§c" + wrongStr + " " + text("holoplace.hud.wrong") : "")
+                        + (wrongAll > 0 && extra > 0 ? "  " : "")
+                        + (extra > 0 ? "§6" + extra + " " + text("holoplace.hud.extra") : "");
             }
         }
 
@@ -90,19 +100,60 @@ public final class GhostHud {
             lines.add("§8" + hint());
         }
 
+        drawPanel(graphics, font, lines, mc);
+    }
+
+    /** Draw the panel at its saved screen position, or under the cursor while {@link #placing}. The
+     *  saved position ({@code hudX}/{@code hudY}) is the top-left corner as a fraction of the screen;
+     *  it's clamped so the whole panel stays on screen whatever its current size. */
+    private static void drawPanel(net.minecraft.client.gui.GuiGraphicsExtractor graphics, Font font,
+                                  List<String> lines, Minecraft mc) {
         int pad = 3;
         int lineH = font.lineHeight + 1;
-        int width = 0;
+        int textW = 0;
         for (String line : lines) {
-            width = Math.max(width, font.width(Component.literal(line)));
+            textW = Math.max(textW, font.width(Component.literal(line)));
         }
-        int x = 4;
-        int y = 4;
-        graphics.fill(x - pad, y - pad, x + width + pad, y + lines.size() * lineH + pad - 1, 0xA0100010);
+        int boxW = textW + pad * 2;
+        int boxH = lines.size() * lineH + pad * 2 - 1;
+
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+
+        int bx;
+        int by;
+        if (placing) {
+            bx = (int) Math.round(mc.mouseHandler.getScaledXPos(mc.getWindow()));
+            by = (int) Math.round(mc.mouseHandler.getScaledYPos(mc.getWindow()));
+        } else {
+            HoloPlaceConfig cfg = HoloPlaceConfig.get();
+            bx = Math.round(cfg.hudX * sw);
+            by = Math.round(cfg.hudY * sh);
+        }
+        bx = Mth.clamp(bx, 0, Math.max(0, sw - boxW));
+        by = Mth.clamp(by, 0, Math.max(0, sh - boxH));
+
+        graphics.fill(bx, by, bx + boxW, by + boxH, placing ? 0xC0402C00 : 0xA0100010);
+        if (placing) {
+            graphics.fill(bx, by, bx + boxW, by + 1, 0xFFE0A030);
+            graphics.fill(bx, by + boxH - 1, bx + boxW, by + boxH, 0xFFE0A030);
+        }
+        int ty = by + pad;
         for (String line : lines) {
-            graphics.text(font, Component.literal(line), x, y, 0xFFFFFFFF, true);
-            y += lineH;
+            graphics.text(font, Component.literal(line), bx + pad, ty, 0xFFFFFFFF, true);
+            ty += lineH;
         }
+    }
+
+    /** Save the panel's top-left at GUI-scaled {@code (px, py)} as a fraction of the screen, and
+     *  leave placing mode. Called by the K screen when the player clicks. */
+    public static void commitPlacement(double px, double py) {
+        Minecraft mc = Minecraft.getInstance();
+        HoloPlaceConfig cfg = HoloPlaceConfig.get();
+        cfg.hudX = Mth.clamp((float) (px / mc.getWindow().getGuiScaledWidth()), 0f, 1f);
+        cfg.hudY = Mth.clamp((float) (py / mc.getWindow().getGuiScaledHeight()), 0f, 1f);
+        HoloPlaceConfig.save();
+        placing = false;
     }
 
     private static String hint() {

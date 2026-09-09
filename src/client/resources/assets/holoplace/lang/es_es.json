@@ -36,7 +36,6 @@
 	"holoplace.hud.xray": "rayos-x",
 	"holoplace.hud.too_large": "Schematic demasiado grande para renderizar",
 	"holoplace.hud.baking": "preparando el modelo…",
-	"holoplace.hud.buried": "enterrado — despeja el área primero",
 	"holoplace.hud.build": "construir",
 	"holoplace.hud.block_only": "solo bloque",
 	"holoplace.hud.hint": "%s agarrar · %s/⇧%s rotar · %s espejo · %s rayos-x · %s construir · %s menú",
@@ -147,5 +146,8 @@
 	"holoplace.tip.details": "Dibuja cofres, carteles, marcos, soportes de armadura y cuadros del schematic. Apágalo en un schematic enorme si va lento.",
 	"holoplace.hud.wrong": "mal",
 	"holoplace.hud.extra": "sobran",
-	"holoplace.ui.marker_opacity": "Opacidad de marcadores: %s"
+	"holoplace.ui.marker_opacity": "Opacidad de marcadores: %s",
+	"holoplace.ui.move_hud": "Colocar HUD",
+	"holoplace.ui.move_hud_hint": "Haz clic donde quieras el panel  ·  Esc para cancelar",
+	"holoplace.tip.move_hud": "Recoloca el panel de estado en pantalla. Haz clic en un sitio y se queda ahí."
 }

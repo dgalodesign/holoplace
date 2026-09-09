@@ -36,7 +36,6 @@
 	"holoplace.hud.xray": "x-ray",
 	"holoplace.hud.too_large": "Schematic too large to render",
 	"holoplace.hud.baking": "preparing the model…",
-	"holoplace.hud.buried": "buried — clear the area first",
 	"holoplace.hud.build": "build",
 	"holoplace.hud.block_only": "block only",
 	"holoplace.hud.hint": "%s grab · %s/⇧%s rotate · %s mirror · %s x-ray · %s build · %s menu",
@@ -147,5 +146,8 @@
 	"holoplace.tip.details": "Draw chests, signs, item frames, armour stands and paintings from the schematic. Turn off on a very large schematic if it lags.",
 	"holoplace.hud.wrong": "wrong",
 	"holoplace.hud.extra": "extra",
-	"holoplace.ui.marker_opacity": "Marker opacity: %s"
+	"holoplace.ui.marker_opacity": "Marker opacity: %s",
+	"holoplace.ui.move_hud": "Move HUD",
+	"holoplace.ui.move_hud_hint": "Click where you want the panel  ·  Esc to cancel",
+	"holoplace.tip.move_hud": "Reposition the on-screen status panel. Click a spot; it stays there."
 }

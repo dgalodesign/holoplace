@@ -705,6 +705,18 @@ Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE
      en el esquema y bloque en el mundo, es "sobra". Terreno en un hueco de aire que no toca nada
      ya no se marca.
 
+## Detección de "enterrado" retirada + HUD movible (2026-09-09)
+
+- **"Enterrado" fuera** — con el filtro de visibilidad de abajo, el caso enterrado ya degrada solo
+  (0 marcadores, fantasma completo, sin coste). El `N/total` del HUD se entiende bien. Quitados
+  `BURIED_PERCENT`, `GhostRenderer.buried()`, la rama del contorno y la clave `holoplace.hud.buried`.
+  `hideWrongToo` vuelve a ser `= hideMatched` (sobre `wrongBlockVisible`).
+- **HUD movible** — `HoloPlaceConfig.hudX/hudY` (fracción 0..1 de la pantalla, esquina sup-izq del
+  panel). Botón "Colocar HUD" en Avanzado → `GhostHud.placing = true`: el panel sigue al cursor, la
+  pantalla K muestra solo "Haz clic donde quieras el panel · Esc para cancelar". Clic → guarda,
+  Esc/cerrar → cancela. `GhostHud.drawPanel` clampa para que el panel entero quede en pantalla sea
+  cual sea su tamaño (agarrando vs bloqueado).
+
 ## Marcadores solo en lo visible (2026-09-09, idea del usuario)
 
 Un marcador de un bloque a 5 capas de profundidad no sirve de nada — no lo ves ni lo puedes tocar.

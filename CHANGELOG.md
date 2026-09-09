@@ -30,6 +30,7 @@ in-game on a production instance.
 - **Material list** (`/holoplace materials`) — blocks needed and still missing.
 - **Schematic capture** — select a two-corner area (`B`), then `/holoplace capture save <name>`
   or the `K`-screen row writes blocks + block entities + entities to a new `.litematic`.
+- Movable status panel — "Move HUD" on the `K` screen, click anywhere to drop it.
 - Per-world placement persistence — where you leave a schematic is restored when you rejoin.
 - OS drag-and-drop import (drop a `.litematic` on the window).
 - Commands: `show` / `hide` / `clear` / `reset` / `move` / `nudge` / `layers` / `materials` /

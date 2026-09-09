@@ -42,16 +42,11 @@ public final class GhostRenderer {
     static final int NO_TINT = -1;
     private static final int MAX_QUADS = 4_000_000;
     private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
-    /** When this share of the schematic's blocks can't be placed because a non-air world block is in
-     *  the way, treat it as buried: skip the per-cell markers (they'd be a wall of wireframe and
-     *  useless — the answer is "clear the area"), show the footprint outline + the ghost model. */
-    private static final int BURIED_PERCENT = 60;
     private static final int WRONG_COLOR = 0xC0FF3030;
     private static final int EXTRA_COLOR = 0xC0FF9933;
     /** {@code matchedBlocks} sentinel: the mesh is still baking off-thread (HUD shows "preparing"). */
     static final int MESH_BAKING = -3;
     private static final int OUTLINE_COLOR = 0xC05EE7FF;
-    private static final int[] EMPTY_INT = new int[0];
     private static final net.minecraft.core.Direction[] FACES = net.minecraft.core.Direction.values();
     private static final QuadInstance QUAD = new QuadInstance();
 
@@ -154,12 +149,11 @@ public final class GhostRenderer {
         int[] tint = tintFor(m, anchor, level, mc);
         boolean hideMatched = state.hideMatched();
         boolean[] needs = hideMatched ? placementScan(m, transform, anchor, level, state) : null;
-        // Build-assist always hides the ghost model on a wrongly-placed cell — a wrong block sitting
-        // where a different one belongs, with the ghost drawn on top, is just noise. The red marker
-        // (and the "should be X" crosshair tooltip) says what goes there. Only for *visible* wrong
-        // cells though — a wrong cell buried in terrain keeps its faint ghost (no marker, so nothing
-        // else shows what belongs there) and the buried case keeps the whole model.
-        boolean hideWrongToo = hideMatched && !buried;
+        // Build-assist hides the ghost model on a wrongly-placed cell — a wrong block with the ghost
+        // drawn on top is just noise; the red marker (and the "should be X" crosshair tooltip) says
+        // what goes there. Only for *visible* wrong cells: a wrong cell buried in terrain keeps its
+        // faint ghost (there's no marker, so nothing else would show what belongs there).
+        boolean hideWrongToo = hideMatched;
         boolean[] wrong = wrongBlockVisible;
         boolean layerClip = state.layerClip();
 
@@ -215,12 +209,7 @@ public final class GhostRenderer {
         if (m.blockEntityCount() > 0) {
             renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched, hideWrongToo);
         }
-        if (hideMatched && buried) {
-            // Wall-of-wireframe territory — one outline of what to clear reads better than 20k cubes.
-            renderFootprintOutline(transform, anchor, ctx, mc);
-            wrongMarkers = 0;
-            extraMarkers = 0;
-        } else if (hideMatched) {
+        if (hideMatched) {
             wrongMarkers = renderMarkerSet(wrongBlockVisible, m::blockX, m::blockY, m::blockZ, m.blockCount(),
                     anchor, cam, ctx, state, WRONG_COLOR)
                     + renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
@@ -259,8 +248,6 @@ public final class GhostRenderer {
     private static int wrongMarkers;
     private static int wrongTotal;
     private static int extraMarkers;
-    /** Set by {@link #placementScan}: the schematic is mostly inside solid terrain. */
-    private static boolean buried;
 
     /** Wrong cells with a marker drawn (visible / reachable ones). */
     public static int wrongMarkers() {
@@ -276,10 +263,6 @@ public final class GhostRenderer {
         return extraMarkers;
     }
 
-    public static boolean buried() {
-        return buried;
-    }
-
     /** {@code rgb} at the marker opacity (its own control — markers are alerts, not the ghost). */
     private static int markerColor(int rgb, GhostState state) {
         int a = Mth.clamp(Math.round(state.markerOpacity() * 255f), 8, 255);
@@ -287,7 +270,7 @@ public final class GhostRenderer {
     }
 
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
-     *  Returns how many cells were flagged. The buried case (a wall of these) is handled upstream. */
+     *  Returns how many cells were flagged. */
     private static int renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
                                        GhostState state, int color) {
@@ -404,12 +387,7 @@ public final class GhostRenderer {
         placedCount = placed;
         wrongTotal = wrongCount;
         scanVersion++;
-        buried = out.length > 0 && (long) wrongCount * 100L >= (long) out.length * BURIED_PERCENT;
-        if (buried) {
-            extraX = extraY = extraZ = EMPTY_INT;
-        } else {
-            scanExtraBlocks(m, transform, anchor, level);
-        }
+        scanExtraBlocks(m, transform, anchor, level);
         return out;
     }
 

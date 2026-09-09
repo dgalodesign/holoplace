@@ -27,6 +27,9 @@ public final class HoloPlaceConfig {
     public boolean showEntities = true;
     public boolean ambientOcclusion = true;
     public float markerOpacity = 0.85f;
+    /** HUD panel position as a fraction of the free screen space: 0,0 = top-left, 1,1 = bottom-right. */
+    public float hudX = 0f;
+    public float hudY = 0f;
     public int layerMin = 0;
     public int layerMax = Integer.MAX_VALUE;
     public boolean seenIntro = false;
