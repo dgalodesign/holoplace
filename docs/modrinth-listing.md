@@ -115,18 +115,18 @@ No coloca bloques por ti ni toca tu inventario.
 ## Changelog de la versión 0.1.0 (pegar al subir el archivo)
 
 ```markdown
-First public release.
+First public release. Minecraft 26.1.2, Fabric, client-side (requires Fabric API).
 
-- Textured translucent hologram of any `.litematic`: blocks, biome tint, fluids, block-entity and entity models, one opacity slider.
-- Drag-to-position (raycast from the crosshair), rotate / mirror about the centre, see-through mode.
-- Build-assist: hide placed blocks, progress %, red/orange markers for wrong / extra blocks, "should be X" tooltip.
-- Layer view, material list (`/holoplace materials`).
-- Create a `.litematic` from a two-corner world selection (`B`) — blocks, block entities, entities.
-- Drag-and-drop import, per-world placement memory, full English + Spanish.
-- Ghost mesh baked on a background thread — large schematics don't freeze the game.
-- Bounded schematic loading (size / volume / region caps) against corrupt or hostile files.
+- Load a .litematic and see it as a textured translucent hologram — blocks, biome tint, face shading, fluids, real chest/sign/frame models, entities — all fading with one opacity slider.
+- Drag-to-position: the ghost snaps to the block face under your crosshair. Wheel = distance, Shift+wheel = height.
+- K screen with Build and Create tabs; rotate / mirror / see-through (X) / layer view; the status panel anchors to a screen corner of your choice.
+- Build-assist (H): hides what you've placed correctly, shows a progress %, marks wrong blocks (red) and terrain in the way (orange) — only where you can see and reach them.
+- Create a .litematic from a two-corner world selection (B) — blocks, block entities, entities.
+- Material list (/holoplace materials), per-world placement memory, drag-and-drop import, full English + Spanish.
+- Ghost geometry baked off-thread and uploaded to the GPU — large, detailed schematics don't hitch or cost frame rate.
+- /holoplace debug prints an environment block for bug reports.
 
-Client-side, Fabric, requires Fabric API. MC 26.1.2.
+Known: see-through / x-ray is limited with Iris shaders (the normal ghost is fine) — see KNOWN_ISSUES on GitHub.
 ```
 
 ---
@@ -144,9 +144,28 @@ Client-side, Fabric, requires Fabric API. MC 26.1.2.
 
 ---
 
-## Pendiente antes de publicar
+## Checklist de publicación de Modrinth (los 3 que quedan)
 
-- [ ] Sustituir las URLs `REPLACE-with-screenshot-url` por capturas reales (o quitar las líneas de
-      imagen y subir las capturas en la pestaña **Gallery** de Modrinth).
-- [ ] Confirmar el slug y, si cambió, actualizar `fabric.mod.json` → `contact.homepage`.
-- [ ] Smoke test pasado (`smoke-test-0.1.0.md`).
+1. **Upload a version** — Versions → Create:
+   - Version number `0.1.0` · type **Release** · Loader **Fabric** · Game version **26.1.2**
+   - Archivo: `holoplace-0.1.0.jar` (el del GitHub Release / `build/libs/`, **no** el `-sources.jar`)
+   - Changelog: el bloque de arriba
+   - Dependencies → **Fabric API** → **Required**
+   - Marcar como **Featured** (es la primera)
+2. **Review disclosures** (sugerencia, no obligatorio): todo **No** — HoloPlace no recopila datos, no
+   tiene analytics, no hace peticiones de red, no es un re-upload, no muestra anuncios ni pide pago.
+3. **Submit for review** → cola de moderación de Modrinth (< 48 h normalmente). No es público hasta
+   que lo aprueban.
+
+Antes de enviar, confirmar que ya está: descripción (markdown de arriba), ícono 512, links
+(source + issues), licencia MIT, categorías Utility + Game Mechanics. **Recomendado**: subir 2-3
+capturas a la pestaña **Gallery** (el fantasma sobre una construcción, el asistente con marcadores,
+la pantalla K) — la descripción las referencia; si no las subes, quita las líneas de imagen del
+markdown.
+
+## Ya hecho
+
+- Repo GitHub público + CI verde.
+- Tag `v0.1.0` + GitHub Release con el jar: https://github.com/dgalodesign/holoplace/releases/tag/v0.1.0
+- Smoke test pasado (`smoke-test-0.1.0.md`), incluido con Sodium + Iris.
+- Slug: confirmar que quedó `holoplace`; si es otro, actualizar `fabric.mod.json` → `contact.homepage` y recompilar.
