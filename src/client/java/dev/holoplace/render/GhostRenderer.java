@@ -42,16 +42,17 @@ public final class GhostRenderer {
     static final int NO_TINT = -1;
     private static final int MAX_QUADS = 4_000_000;
     private static final long SCAN_INTERVAL_NANOS = 250_000_000L;
-    private static final long EXTRA_SCAN_VOLUME_LIMIT = 2_000_000L;
-    /** Stop collecting "extra block" cells past this many — a schematic buried in terrain flags every
-     *  cell, and neither the scan (per-cell world lookup) nor the render (a wire cube each) is worth
-     *  it. The HUD still shows the count as "N+". */
-    private static final int EXTRA_CAP = 400;
+    /** When this share of the schematic's blocks can't be placed because a non-air world block is in
+     *  the way, treat it as buried: skip the per-cell markers (they'd be a wall of wireframe and
+     *  useless — the answer is "clear the area"), show the footprint outline + the ghost model. */
+    private static final int BURIED_PERCENT = 60;
     private static final int WRONG_COLOR = 0xC0FF3030;
     private static final int EXTRA_COLOR = 0xC0FF9933;
     /** {@code matchedBlocks} sentinel: the mesh is still baking off-thread (HUD shows "preparing"). */
     static final int MESH_BAKING = -3;
     private static final int OUTLINE_COLOR = 0xC05EE7FF;
+    private static final int[] EMPTY_INT = new int[0];
+    private static final net.minecraft.core.Direction[] FACES = net.minecraft.core.Direction.values();
     private static final QuadInstance QUAD = new QuadInstance();
 
     private static @Nullable GhostMesh mesh;
@@ -74,7 +75,6 @@ public final class GhostRenderer {
     private static long lastScanNanos;
     private static int placedCount;
     private static boolean warnedTooLarge;
-    private static boolean warnedExtrasTooLarge;
     private static @Nullable GhostMesh loggedBeMesh;
     private static @Nullable GhostMesh loggedEntityMesh;
 
@@ -100,7 +100,6 @@ public final class GhostRenderer {
         extraY = null;
         extraZ = null;
         warnedTooLarge = false;
-        warnedExtrasTooLarge = false;
     }
 
     private static void render(LevelRenderContext ctx) {
@@ -133,7 +132,6 @@ public final class GhostRenderer {
             wrongFluid = null;
             extraX = null;
             warnedTooLarge = false;
-            warnedExtrasTooLarge = false;
         }
         GhostMesh m = mesh;
 
@@ -154,7 +152,9 @@ public final class GhostRenderer {
         // Build-assist always hides the ghost model on a wrongly-placed cell — a wrong block sitting
         // where a different one belongs, with the ghost drawn on top, is just noise. The red marker
         // (and the "should be X" crosshair tooltip) says what goes there.
-        boolean hideWrongToo = hideMatched;
+        // When buried, keep the ghost model on wrong cells (don't hide it) so you can still see the
+        // build you need to clear space for.
+        boolean hideWrongToo = hideMatched && !buried;
         boolean[] wrong = wrongBlock;
         boolean layerClip = state.layerClip();
 
@@ -210,7 +210,12 @@ public final class GhostRenderer {
         if (m.blockEntityCount() > 0) {
             renderBlockEntityMarkers(m, anchor, level, cam, ctx, hideMatched, hideWrongToo);
         }
-        if (hideMatched) {
+        if (hideMatched && buried) {
+            // Wall-of-wireframe territory — one outline of what to clear reads better than 20k cubes.
+            renderFootprintOutline(transform, anchor, ctx, mc);
+            wrongMarkers = 0;
+            extraMarkers = 0;
+        } else if (hideMatched) {
             wrongMarkers = renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
                     anchor, cam, ctx, state, WRONG_COLOR)
                     + renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
@@ -248,8 +253,8 @@ public final class GhostRenderer {
 
     private static int wrongMarkers;
     private static int extraMarkers;
-    /** True when the extra-block scan hit {@link #EXTRA_CAP} — the real count is higher. */
-    private static boolean extraCapped;
+    /** Set by {@link #placementScan}: the schematic is mostly inside solid terrain. */
+    private static boolean buried;
 
     public static int wrongMarkers() {
         return wrongMarkers;
@@ -259,8 +264,8 @@ public final class GhostRenderer {
         return extraMarkers;
     }
 
-    public static boolean extraCapped() {
-        return extraCapped;
+    public static boolean buried() {
+        return buried;
     }
 
     /** {@code rgb} at the marker opacity (its own control — markers are alerts, not the ghost). */
@@ -269,12 +274,8 @@ public final class GhostRenderer {
         return (a << 24) | (rgb & 0x00FFFFFF);
     }
 
-    /** Above this many wire cubes in one marker set, stop drawing them — a schematic buried in
-     *  terrain flags every cell and it's just a wall of wireframe. The count still reaches the HUD. */
-    private static final int MARKER_CAP = 600;
-
     /** Wire cube for every flagged index, using the given per-index footprint-local coordinates.
-     *  Returns how many cells were flagged; past {@link #MARKER_CAP} the cubes aren't drawn. */
+     *  Returns how many cells were flagged. The buried case (a wall of these) is handled upstream. */
     private static int renderMarkerSet(boolean @Nullable [] flags, IntLookup x, IntLookup y, IntLookup z,
                                        int count, BlockPos anchor, Vec3 cam, LevelRenderContext ctx,
                                        GhostState state, int color) {
@@ -288,8 +289,8 @@ public final class GhostRenderer {
                 n++;
             }
         }
-        if (n == 0 || n > MARKER_CAP) {
-            return n;
+        if (n == 0) {
+            return 0;
         }
 
         int argb = markerColor(color, state);
@@ -365,6 +366,7 @@ public final class GhostRenderer {
         boolean[] wrong = new boolean[m.blockCount()];
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         int placed = 0;
+        int wrongCount = 0;
         for (int i = 0; i < out.length; i++) {
             pos.set(anchor.getX() + m.blockX(i), anchor.getY() + m.blockY(i), anchor.getZ() + m.blockZ(i));
             BlockState world = level.getBlockState(pos);
@@ -373,6 +375,8 @@ public final class GhostRenderer {
             wrong[i] = !built && !world.isAir();
             if (built) {
                 placed++;
+            } else if (wrong[i]) {
+                wrongCount++;
             }
         }
         needsPlacing = out;
@@ -383,7 +387,12 @@ public final class GhostRenderer {
         lastScanNanos = now;
         placedCount = placed;
         scanVersion++;
-        scanExtraBlocks(m, transform, anchor, level);
+        buried = out.length > 0 && (long) wrongCount * 100L >= (long) out.length * BURIED_PERCENT;
+        if (buried) {
+            extraX = extraY = extraZ = EMPTY_INT;
+        } else {
+            scanExtraBlocks(m, transform, anchor, level);
+        }
         return out;
     }
 
@@ -429,49 +438,54 @@ public final class GhostRenderer {
     }
 
     /**
-     * Cells inside the schematic's bounding box where the schematic is air but the world isn't —
-     * blocks that don't belong to the build. Skipped above {@value #EXTRA_SCAN_VOLUME_LIMIT} cells to
-     * avoid a hitch on a very large or very sparse schematic.
+     * World blocks sitting in the way of the build: a cell that touches at least one schematic block
+     * (a face neighbour of one), is air in the schematic, and has a non-air block in the world. Walks
+     * the schematic's own blocks (O(blocks), not O(footprint volume)), so it stays cheap and only
+     * flags terrain actually clipping the build — not every stray block in the bounding box.
      */
     private static void scanExtraBlocks(GhostMesh m, PlacementTransform transform, BlockPos anchor,
                                         ClientLevel level) {
+        int blocks = m.blockCount();
+        java.util.HashSet<Long> schematicCells = new java.util.HashSet<>(blocks * 2);
+        for (int i = 0; i < blocks; i++) {
+            schematicCells.add(packLocal(m.blockX(i), m.blockY(i), m.blockZ(i)));
+        }
+        for (int i = 0, n = m.fluidCount(); i < n; i++) {
+            schematicCells.add(packLocal(m.fluidX(i), m.fluidY(i), m.fluidZ(i)));
+        }
+        for (int i = 0, n = m.blockEntityCount(); i < n; i++) {
+            schematicCells.add(packLocal(m.beX(i), m.beY(i), m.beZ(i)));
+        }
+
         int fx = transform.footprintX();
         int fy = transform.footprintY();
         int fz = transform.footprintZ();
-        long volume = (long) fx * fy * fz;
-        if (volume > EXTRA_SCAN_VOLUME_LIMIT) {
-            if (!warnedExtrasTooLarge) {
-                warnedExtrasTooLarge = true;
-                HoloPlaceClient.LOGGER.info(
-                        "Skipping extra-block scan for '{}': bounding volume {} exceeds {}",
-                        m.schematic().name(), volume, EXTRA_SCAN_VOLUME_LIMIT);
-            }
-            extraX = new int[0];
-            extraY = new int[0];
-            extraZ = new int[0];
-            extraCapped = false;
-            return;
-        }
-
-        SchematicBlockView view = new SchematicBlockView(m.schematic(), anchor, transform);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        java.util.HashSet<Long> seen = new java.util.HashSet<>();
         java.util.List<int[]> found = new java.util.ArrayList<>();
-        outer:
-        for (int y = 0; y < fy; y++) {
-            for (int z = 0; z < fz; z++) {
-                for (int x = 0; x < fx; x++) {
-                    pos.set(anchor.getX() + x, anchor.getY() + y, anchor.getZ() + z);
-                    if (!view.getBlockState(pos).isAir() || level.getBlockState(pos).isAir()) {
-                        continue;
-                    }
-                    found.add(new int[] {x, y, z});
-                    if (found.size() >= EXTRA_CAP) {
-                        break outer; // buried schematic: stop the O(volume) walk
-                    }
+
+        for (int i = 0; i < blocks; i++) {
+            int bx = m.blockX(i);
+            int by = m.blockY(i);
+            int bz = m.blockZ(i);
+            for (net.minecraft.core.Direction d : FACES) {
+                int nx = bx + d.getStepX();
+                int ny = by + d.getStepY();
+                int nz = bz + d.getStepZ();
+                if (nx < 0 || ny < 0 || nz < 0 || nx >= fx || ny >= fy || nz >= fz) {
+                    continue;
+                }
+                long packed = packLocal(nx, ny, nz);
+                if (schematicCells.contains(packed) || !seen.add(packed)) {
+                    continue; // the schematic fills this cell, or we already flagged it
+                }
+                pos.set(anchor.getX() + nx, anchor.getY() + ny, anchor.getZ() + nz);
+                if (!level.getBlockState(pos).isAir()) {
+                    found.add(new int[] {nx, ny, nz});
                 }
             }
         }
-        extraCapped = found.size() >= EXTRA_CAP;
+
         int n = found.size();
         int[] xs = new int[n];
         int[] ys = new int[n];
@@ -485,6 +499,11 @@ public final class GhostRenderer {
         extraX = xs;
         extraY = ys;
         extraZ = zs;
+    }
+
+    /** Pack a small non-negative footprint-local coord triple into one long (17 bits per axis). */
+    private static long packLocal(int x, int y, int z) {
+        return ((long) (x & 0x1FFFF) << 34) | ((long) (y & 0x1FFFF) << 17) | (z & 0x1FFFF);
     }
 
     /** Wire cube for block entities we can't (or are told not to) render as a real model. */

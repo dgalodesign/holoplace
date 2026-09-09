@@ -36,6 +36,7 @@
 	"holoplace.hud.xray": "x-ray",
 	"holoplace.hud.too_large": "Schematic too large to render",
 	"holoplace.hud.baking": "preparing the model…",
+	"holoplace.hud.buried": "buried — clear the area first",
 	"holoplace.hud.build": "build",
 	"holoplace.hud.block_only": "block only",
 	"holoplace.hud.hint": "%s grab · %s/⇧%s rotate · %s mirror · %s x-ray · %s build · %s menu",

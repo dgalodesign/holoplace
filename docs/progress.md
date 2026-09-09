@@ -692,10 +692,19 @@ Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE
    con depth test en modo x-ray (regresión menor, anotada). *X-ray con shaders sigue siendo
    best-effort — Iris gestiona sus propios framebuffers.*
 2. **Caída de FPS con estatua grande bajo tierra + asistente** — un esquema enterrado marca cada
-   celda como mal/sobra. `scanExtraBlocks` era un paseo O(volumen del footprint) con lookup al
-   mundo por celda cada 250 ms (516k para thor). **Fix**: `EXTRA_CAP = 400` corta el escaneo;
-   `MARKER_CAP = 600` corta el dibujo de cubos por celda (el HUD sigue mostrando el número real,
-   `1200 mal` / `400+ sobran`). Sin caja.
+   celda como mal/sobra. Primera versión (caps `EXTRA_CAP`/`MARKER_CAP` + número pelado) la rechazó
+   el usuario: "no es buena UX". **Versión final** (opción elegida por el usuario 2026-09-09):
+   - **Detección de "enterrado"** (`BURIED_PERCENT = 60`): si ≥60% de los bloques del esquema no se
+     pueden colocar porque hay terreno no-aire delante, `GhostRenderer.buried()` = true. En ese
+     caso: **no se dibujan marcadores** (serían un muro de wireframe inútil), se dibuja el
+     **contorno del footprint** + mensaje `holoplace.hud.buried` ("enterrado — despeja el área
+     primero") en HUD y pantalla K, y **el modelo fantasma se queda visible** (`hideWrongToo` off)
+     para que veas qué construir. El escaneo de "sobra" se salta entero.
+   - **"Sobra" ahora solo cuenta terreno que TOCA el build** — `scanExtraBlocks` recorre los
+     bloques del esquema (`O(bloques)`, no `O(volumen)`) y mira sus 6 vecinos: si el vecino es aire
+     en el esquema y bloque en el mundo, es "sobra". Terreno en un hueco de aire que no toca nada
+     ya no se marca. Sin caps: si no está enterrado, se dibujan todos los marcadores (el caso
+     legítimo "coloqué mal 300 bloques" los ve todos).
 3. **`reset` no reseteaba distancia/offset** — ver arriba.
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)
