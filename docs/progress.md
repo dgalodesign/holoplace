@@ -703,8 +703,21 @@ Reportado: `estatua-thor.litematic` (64×126×64, 23.574 bloques, 16 tipos, 0 BE
    - **"Sobra" ahora solo cuenta terreno que TOCA el build** — `scanExtraBlocks` recorre los
      bloques del esquema (`O(bloques)`, no `O(volumen)`) y mira sus 6 vecinos: si el vecino es aire
      en el esquema y bloque en el mundo, es "sobra". Terreno en un hueco de aire que no toca nada
-     ya no se marca. Sin caps: si no está enterrado, se dibujan todos los marcadores (el caso
-     legítimo "coloqué mal 300 bloques" los ve todos).
+     ya no se marca.
+
+## Marcadores solo en lo visible (2026-09-09, idea del usuario)
+
+Un marcador de un bloque a 5 capas de profundidad no sirve de nada — no lo ves ni lo puedes tocar.
+
+- `placementScan` calcula `wrongBlockVisible[]` = subconjunto de `wrongBlock[]` que tiene **al menos
+  un vecino de cara que es aire en el mundo** (`hasAirNeighbour`, 6 lookups por celda mal, solo si
+  no está enterrado). Solo estas celdas reciben marcador rojo.
+- Un bloque mal **enterrado** (sin vecino aire): mantiene su fantasma tenue (para que veas qué va
+  ahí), sin marcador. `hideWrongToo` ahora usa `wrongBlockVisible`, no `wrongBlock`.
+- El HUD y la pantalla K muestran `visible/total` cuando difieren: `§c30/500 mal`. El fantasma que
+  desaparece se explica; el número decrece según trabajas la superficie.
+- Efecto en thor bajo tierra: de ~23k marcadores a las decenas de la superficie expuesta (túneles,
+  aberturas). Combinado con "enterrado" (≥60%): cero marcadores + contorno + mensaje.
 3. **`reset` no reseteaba distancia/offset** — ver arriba.
 
 ## Reader hardening + licensing note (pre-publish, 2026-09)

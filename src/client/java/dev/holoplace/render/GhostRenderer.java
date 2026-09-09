@@ -66,6 +66,9 @@ public final class GhostRenderer {
 
     private static boolean @Nullable [] needsPlacing;
     private static boolean @Nullable [] wrongBlock;
+    /** Subset of {@link #wrongBlock} that has an air world neighbour — the ones you can actually see
+     *  and reach. Only these get a marker; a wrong block five layers into a wall is just cost. */
+    private static boolean @Nullable [] wrongBlockVisible;
     private static boolean @Nullable [] wrongBE;
     private static boolean @Nullable [] wrongFluid;
     private static int @Nullable [] extraX;
@@ -94,6 +97,7 @@ public final class GhostRenderer {
         blockTint = null;
         needsPlacing = null;
         wrongBlock = null;
+        wrongBlockVisible = null;
         wrongBE = null;
         wrongFluid = null;
         extraX = null;
@@ -128,6 +132,7 @@ public final class GhostRenderer {
             blockTint = null;
             needsPlacing = null;
             wrongBlock = null;
+            wrongBlockVisible = null;
             wrongBE = null;
             wrongFluid = null;
             extraX = null;
@@ -151,11 +156,11 @@ public final class GhostRenderer {
         boolean[] needs = hideMatched ? placementScan(m, transform, anchor, level, state) : null;
         // Build-assist always hides the ghost model on a wrongly-placed cell — a wrong block sitting
         // where a different one belongs, with the ghost drawn on top, is just noise. The red marker
-        // (and the "should be X" crosshair tooltip) says what goes there.
-        // When buried, keep the ghost model on wrong cells (don't hide it) so you can still see the
-        // build you need to clear space for.
+        // (and the "should be X" crosshair tooltip) says what goes there. Only for *visible* wrong
+        // cells though — a wrong cell buried in terrain keeps its faint ghost (no marker, so nothing
+        // else shows what belongs there) and the buried case keeps the whole model.
         boolean hideWrongToo = hideMatched && !buried;
-        boolean[] wrong = wrongBlock;
+        boolean[] wrong = wrongBlockVisible;
         boolean layerClip = state.layerClip();
 
         var cam = mc.gameRenderer.getMainCamera().position();
@@ -216,7 +221,7 @@ public final class GhostRenderer {
             wrongMarkers = 0;
             extraMarkers = 0;
         } else if (hideMatched) {
-            wrongMarkers = renderMarkerSet(wrongBlock, m::blockX, m::blockY, m::blockZ, m.blockCount(),
+            wrongMarkers = renderMarkerSet(wrongBlockVisible, m::blockX, m::blockY, m::blockZ, m.blockCount(),
                     anchor, cam, ctx, state, WRONG_COLOR)
                     + renderMarkerSet(wrongBE, m::beX, m::beY, m::beZ, m.blockEntityCount(),
                             anchor, cam, ctx, state, WRONG_COLOR)
@@ -252,12 +257,19 @@ public final class GhostRenderer {
     private static final float MARKER_LINE = 2.5f;
 
     private static int wrongMarkers;
+    private static int wrongTotal;
     private static int extraMarkers;
     /** Set by {@link #placementScan}: the schematic is mostly inside solid terrain. */
     private static boolean buried;
 
+    /** Wrong cells with a marker drawn (visible / reachable ones). */
     public static int wrongMarkers() {
         return wrongMarkers;
+    }
+
+    /** All wrong cells, including ones buried inside solid blocks with no marker. */
+    public static int wrongTotal() {
+        return wrongTotal;
     }
 
     public static int extraMarkers() {
@@ -364,7 +376,9 @@ public final class GhostRenderer {
         }
         boolean[] out = new boolean[m.blockCount()];
         boolean[] wrong = new boolean[m.blockCount()];
+        boolean[] wrongVis = new boolean[m.blockCount()];
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos npos = new BlockPos.MutableBlockPos();
         int placed = 0;
         int wrongCount = 0;
         for (int i = 0; i < out.length; i++) {
@@ -377,15 +391,18 @@ public final class GhostRenderer {
                 placed++;
             } else if (wrong[i]) {
                 wrongCount++;
+                wrongVis[i] = hasAirNeighbour(level, pos, npos);
             }
         }
         needsPlacing = out;
         wrongBlock = wrong;
+        wrongBlockVisible = wrongVis;
         wrongBE = scanWrongBlockEntities(m, anchor, level, state, pos);
         wrongFluid = scanWrongFluids(m, anchor, level, state, pos);
         scanKey = key;
         lastScanNanos = now;
         placedCount = placed;
+        wrongTotal = wrongCount;
         scanVersion++;
         buried = out.length > 0 && (long) wrongCount * 100L >= (long) out.length * BURIED_PERCENT;
         if (buried) {
@@ -499,6 +516,18 @@ public final class GhostRenderer {
         extraX = xs;
         extraY = ys;
         extraZ = zs;
+    }
+
+    /** True if any of the six face neighbours is air in the world — a proxy for "on a surface the
+     *  player can see and reach". A cell buried inside solid terrain fails this. */
+    private static boolean hasAirNeighbour(ClientLevel level, BlockPos cell, BlockPos.MutableBlockPos scratch) {
+        for (net.minecraft.core.Direction d : FACES) {
+            scratch.setWithOffset(cell, d);
+            if (level.getBlockState(scratch).isAir()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Pack a small non-negative footprint-local coord triple into one long (17 bits per axis). */

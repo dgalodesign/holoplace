@@ -57,10 +57,12 @@ public final class GhostHud {
                 progress += "  §e" + text("holoplace.hud.buried");
             } else {
                 int wrong = GhostRenderer.wrongMarkers();
+                int wrongAll = GhostRenderer.wrongTotal();
                 int extra = GhostRenderer.extraMarkers();
-                if (wrong > 0 || extra > 0) {
-                    progress += "  " + (wrong > 0 ? "§c" + wrong + " " + text("holoplace.hud.wrong") : "")
-                            + (wrong > 0 && extra > 0 ? "  " : "")
+                String wrongStr = wrongAll > wrong ? wrong + "§8/" + wrongAll + "§c" : String.valueOf(wrong);
+                if (wrongAll > 0 || extra > 0) {
+                    progress += "  " + (wrongAll > 0 ? "§c" + wrongStr + " " + text("holoplace.hud.wrong") : "")
+                            + (wrongAll > 0 && extra > 0 ? "  " : "")
                             + (extra > 0 ? "§6" + extra + " " + text("holoplace.hud.extra") : "");
                 }
             }

@@ -163,10 +163,12 @@ public final class HoloPlaceScreen extends Screen {
                 y += 14;
             } else {
                 int wrong = dev.holoplace.render.GhostRenderer.wrongMarkers();
+                int wrongAll = dev.holoplace.render.GhostRenderer.wrongTotal();
                 int extra = dev.holoplace.render.GhostRenderer.extraMarkers();
-                if (wrong > 0 || extra > 0) {
-                    label(x + 18, y, (wrong > 0 ? "§c" + wrong + " " + tr("holoplace.hud.wrong") : "")
-                            + (wrong > 0 && extra > 0 ? "§8  ·  " : "")
+                String wrongStr = wrongAll > wrong ? wrong + "§8/" + wrongAll + "§c" : String.valueOf(wrong);
+                if (wrongAll > 0 || extra > 0) {
+                    label(x + 18, y, (wrongAll > 0 ? "§c" + wrongStr + " " + tr("holoplace.hud.wrong") : "")
+                            + (wrongAll > 0 && extra > 0 ? "§8  ·  " : "")
                             + (extra > 0 ? "§6" + extra + " " + tr("holoplace.hud.extra") : ""));
                     y += 14;
                 }
