@@ -207,6 +207,22 @@ public final class PlacementController {
         actionBar(Minecraft.getInstance(), text("holoplace.action.reset"));
     }
 
+    /** Rotation / mirror / layer clip back to "as authored" — for when a new schematic is loaded, so
+     *  it doesn't inherit the previous one's orientation or a layer slice that made sense for a
+     *  different height. No message; the caller persists via {@link WorldPlacements#saveCurrent()}. */
+    public void resetForNewSchematic() {
+        GhostState g = GhostState.get();
+        g.setRotation(Rotation.NONE);
+        g.setMirror(Mirror.NONE);
+        g.clearLayers();
+        HoloPlaceConfig cfg = HoloPlaceConfig.get();
+        cfg.rotation = Rotation.NONE.name();
+        cfg.mirror = Mirror.NONE.name();
+        cfg.layerMin = 0;
+        cfg.layerMax = Integer.MAX_VALUE;
+        HoloPlaceConfig.save();
+    }
+
     public void toggleSeeThrough() {
         if (notReady()) {
             return;

@@ -58,6 +58,9 @@ public final class SchematicImport {
         try {
             Schematic schematic = LitematicaSchematicReader.read(file);
             GhostState ghost = GhostState.get();
+            // A freshly loaded schematic starts "as authored" — it must not inherit the previous
+            // schematic's rotation / mirror / layer slice.
+            PlacementController.get().resetForNewSchematic();
             ghost.setAnchor(mc.player.blockPosition());
             ghost.setSchematic(schematic, file.getFileName().toString());
             WorldPlacements.saveCurrent();
