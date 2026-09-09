@@ -155,5 +155,5 @@ respondo cuando puedo, los crashes van primero. No hay soporte por DM."
 - [x] `.github/ISSUE_TEMPLATE/bug_report.yml` + `feature_request.yml` + `config.yml` (§2.4)
 - [x] `KNOWN_ISSUES.md` (§5) + sección en la ficha de Modrinth
 - [x] CI en Actions (§4) — `.github/workflows/build.yml` (`gradlew build` + tests en push/PR, sube el jar)
-- [ ] `git tag v0.1.0` + GitHub Release al publicar (§6)
+- [x] `git tag v0.1.0` + GitHub Release — https://github.com/dgalodesign/holoplace/releases/tag/v0.1.0
 - [x] Expectativas de soporte en el README (§3) — sección "Support"
