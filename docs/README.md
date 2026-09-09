@@ -15,6 +15,7 @@ Ver el [`README.md`](../README.md) raíz para la descripción del producto y el 
 | [`smoke-test-0.1.0.md`](smoke-test-0.1.0.md) | Checklist runnable: montar la instancia (Modrinth App) + probar cada feature una vez con el jar real | Antes de publicar 0.1.0 |
 | [`modrinth-listing.md`](modrinth-listing.md) | Ficha de Modrinth lista para pegar: campos del proyecto, descripción markdown (EN + ES), changelog de la versión, datos del archivo | Al crear el proyecto en Modrinth |
 | [`port-26.2-notes.md`](port-26.2-notes.md) | Hallazgos del port a MC 26.2 (0.2.0): matriz de versiones, arreglos mecánicos hechos, la reescritura del pipeline de render pendiente. Trabajo en rama `port/mc-26.2` | Al retomar el port a 26.2 |
+| [`code-audit-2026-09-09.md`](code-audit-2026-09-09.md) | Auditoría de calidad de todo el código pre-0.1.0: veredicto, 3 fixes aplicados, observaciones para 0.1.x / 0.2.0 | Referencia de deuda técnica conocida |
 | [`ui-redesign-m24.md`](ui-redesign-m24.md) | Propuesta de rediseño de la pantalla `K` y el HUD (M24): análisis del estado actual, layout nuevo, tooltips, preguntas abiertas | Antes de tocar la UI |
 | [`licensing.md`](licensing.md) | Postura legal: Litematica/MaLiLib son LGPL-3.0; HoloPlace es MIT e independiente. Checklist previo a publicar | Antes de publicar o de copiar cualquier cosa |
 | [`backlog.md`](backlog.md) | Ideas aplazadas deliberadamente (subida de vértices a GPU, multi-schematic, WorldEdit, historial de versiones) | Cuando algo real justifique retomar una |
